@@ -49,12 +49,7 @@ export default function VoluntariosPage() {
   const [user, setUser] = useState<User>(null);
   const [enrolledIds, setEnrolledIds] = useState<Set<string>>(new Set());
 
-  const [activeView, setActiveView] = useState<ViewType>(() => {
-    if (typeof window !== "undefined") {
-      return (localStorage.getItem("voluntarios-view") as ViewType) || "list";
-    }
-    return "list";
-  });
+  const [activeView, setActiveView] = useState<ViewType>("list");
 
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [weekStart, setWeekStart] = useState<Date>(getWeekStart(new Date()));
