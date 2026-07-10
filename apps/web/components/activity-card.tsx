@@ -70,23 +70,29 @@ export function ActivityCard({ activity, isEnrolled, onJoin, onLeave }: Activity
           </div>
         </div>
 
-        <div className="mt-3 flex items-center justify-between border-t border-slate-100 pt-3 dark:border-slate-800">
+        <div className="mt-3 flex items-end justify-between gap-3 border-t border-slate-100 pt-3 dark:border-slate-800">
           {activity.creator ? (
-            <div className="flex items-center gap-2">
-              {activity.creator.photo_url ? (
-                <img
-                  src={activity.creator.photo_url}
-                  alt=""
-                  className="h-5 w-5 rounded-full object-cover"
-                />
-              ) : (
-                <div className="flex h-5 w-5 items-center justify-center rounded-full bg-slate-200 text-[9px] font-bold text-slate-600 dark:bg-slate-700 dark:text-slate-300">
-                  {(activity.creator.name || "V").charAt(0).toUpperCase()}
+            <div>
+              <p className="mb-2 text-xs font-medium text-slate-500 dark:text-slate-400">Publicado por</p>
+              <div className="flex items-center gap-3">
+                {activity.creator.photo_url ? (
+                  <img
+                    src={activity.creator.photo_url}
+                    alt={activity.creator.name || ""}
+                    className="h-10 w-10 rounded-full object-cover"
+                  />
+                ) : (
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-200 text-sm font-bold text-slate-600 dark:bg-slate-700 dark:text-slate-300">
+                    {(activity.creator.name || "V").charAt(0).toUpperCase()}
+                  </div>
+                )}
+                <div>
+                  <p className="text-sm font-medium text-slate-900 dark:text-slate-100">{activity.creator.name || "Voluntario"}</p>
+                  {activity.creator.phone && (
+                    <p className="text-xs text-slate-500 dark:text-slate-400">{activity.creator.phone}</p>
+                  )}
                 </div>
-              )}
-              <span className="text-xs text-slate-500 dark:text-slate-400">
-                {activity.creator.name || "Voluntario"}
-              </span>
+              </div>
             </div>
           ) : <div />}
 
