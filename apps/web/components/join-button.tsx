@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 type Activity = {
   id: string;
@@ -11,10 +11,28 @@ type Activity = {
 type User = { id: string } | null;
 
 export function JoinButton({ activity, user }: { activity: Activity; user: User }) {
-  const [status, setStatus] = useState<"idle" | "loading" | "done" | "left">("idle");
+  const [status, setStatus] = useState<"loading" | "idle" | "done" | "left">("loading");
   const [memberCount, setMemberCount] = useState(activity.member_count);
 
   const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+
+  useEffect(() => {
+    if (!user) {
+      setStatus("idle");
+      return;
+    }
+
+    fetch(`${API}/api/v1/activities/${activity.id}/membership`, {
+      credentials: "include",
+    })
+      .then((r) => (r.ok ? r.json() : { is_member: false }))
+      .then((data) => {
+        setStatus(data.is_member ? "done" : "idle");
+      })
+      .catch(() => {
+        setStatus("idle");
+      });
+  }, [activity.id, user, API]);
 
   const spotsLeft =
     activity.max_participants != null ? activity.max_participants - memberCount : null;
@@ -24,6 +42,14 @@ export function JoinButton({ activity, user }: { activity: Activity; user: User 
       <p className="text-sm text-slate-500">
         Inicia sesion para unirte a esta actividad.
       </p>
+    );
+  }
+
+  if (status === "loading") {
+    return (
+      <button disabled className="rounded-md bg-slate-200 px-4 py-2 text-sm font-semibold text-slate-500 dark:bg-slate-800">
+        Cargando...
+      </button>
     );
   }
 
@@ -89,12 +115,13 @@ export function JoinButton({ activity, user }: { activity: Activity; user: User 
         if (res.ok) {
           setMemberCount((c) => c + 1);
           setStatus("done");
+        } else {
+          setStatus("idle");
         }
       }}
-      disabled={status === "loading"}
-      className="rounded-md bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-700 disabled:opacity-50 dark:bg-slate-100 dark:text-slate-900"
+      className="rounded-md bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-700 dark:bg-slate-100 dark:text-slate-900"
     >
-      {status === "loading" ? "Uniendo..." : "Unirme"}
+      Unirme
     </button>
   );
 }

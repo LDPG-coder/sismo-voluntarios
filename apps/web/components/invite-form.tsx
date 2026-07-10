@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { csrfHeaders } from "@/lib/auth/csrf-client";
 
 export function InviteForm() {
   const [email, setEmail] = useState("");
@@ -18,7 +19,7 @@ export function InviteForm() {
       const res = await fetch(`${API}/api/v1/auth/invite`, {
         method: "POST",
         credentials: "include",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...csrfHeaders("POST") },
         body: JSON.stringify({ email: email.trim() }),
       });
 

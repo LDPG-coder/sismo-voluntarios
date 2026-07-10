@@ -117,7 +117,7 @@ export function MisActividadesClient() {
 
         {archived.length > 0 && (
           <section className="mb-8">
-            <h2 className="mb-3 text-sm font-semibold uppercase text-slate-400">Archivadas ({archived.length})</h2>
+            <h2 className="mb-3 text-sm font-semibold uppercase text-slate-400">Realizadas ({archived.length})</h2>
             <div className="space-y-3">
               {archived.map((a) => (
                 <ActivityCard key={a.id} activity={a} />
@@ -142,11 +142,11 @@ export function MisActividadesClient() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
           <div className="mx-4 w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl dark:bg-slate-800">
             <h3 className="mb-2 text-lg font-bold">
-              {confirmAction.action === "archive" ? "Archivar actividad" : "Cancelar actividad"}
+              {confirmAction.action === "archive" ? "Marcar como realizada" : "Cancelar actividad"}
             </h3>
             <p className="mb-4 text-sm text-slate-600 dark:text-slate-400">
               {confirmAction.action === "archive"
-                ? `"${confirmAction.title}" se movera a la seccion de archivadas. Los inscritos seran notificados.`
+                ? `"${confirmAction.title}" sera marcada como realizada. Los inscritos seran notificados.`
                 : `"${confirmAction.title}" sera cancelada. Los inscritos seran notificados.`}
             </p>
             <div className="flex gap-3">
@@ -165,7 +165,7 @@ export function MisActividadesClient() {
                     : "bg-rose-600 hover:bg-rose-700"
                 } disabled:opacity-50`}
               >
-                {processing ? "Procesando..." : confirmAction.action === "archive" ? "Archivar" : "Cancelar"}
+                {processing ? "Procesando..." : confirmAction.action === "archive" ? "Marcar realizada" : "Cancelar"}
               </button>
             </div>
           </div>
@@ -199,7 +199,7 @@ function ActivityCard({
         )}
         {!isActive && (
           <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-500 dark:bg-slate-800 dark:text-slate-400">
-            {a.status === "archived" ? "Archivada" : "Cancelada"}
+            {a.status === "archived" ? "Realizada" : "Cancelada"}
           </span>
         )}
       </div>
@@ -223,7 +223,7 @@ function ActivityCard({
               onClick={() => onArchive(a.id, a.title)}
               className="rounded-md border border-amber-200 px-3 py-1.5 text-xs font-medium text-amber-700 transition hover:bg-amber-50 dark:border-amber-800 dark:text-amber-400 dark:hover:bg-amber-900/20"
             >
-              Archivar
+              Realizada
             </button>
           )}
           {onCancel && (

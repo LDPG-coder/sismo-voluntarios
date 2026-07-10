@@ -18,6 +18,7 @@ class User(Base, IdMixin, TimestampMixin, TenantMixin):
     google_subject = Column(String(64), unique=True, nullable=True, index=True)
     name = Column(String(255), nullable=True)
     photo_url = Column(Text, nullable=True)
+    phone = Column(String(50), nullable=True)
     role = Column(String(20), nullable=False, default=UserRole.volunteer.value)
     status = Column(String(20), nullable=False, default=UserStatus.pending.value)
     referral_code = Column(String(20), unique=True, nullable=False, index=True)

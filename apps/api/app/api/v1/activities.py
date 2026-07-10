@@ -45,7 +45,7 @@ def _serialize_activity(a: Activity, member_count: int = 0, creator: User | None
             "id": str(creator.id),
             "name": creator.name,
             "photo_url": creator.photo_url,
-            "email": creator.email,
+            "phone": creator.phone,
         }
     return result
 
@@ -55,6 +55,7 @@ def _serialize_activity(a: Activity, member_count: int = 0, creator: User | None
 
 @router.get("")
 def list_activities(
+    user: Annotated[User, Depends(require_session)],
     db: Annotated[Session, Depends(get_db)],
     zone: str | None = None,
     status: str | None = "active",
@@ -77,7 +78,10 @@ def list_activities(
 
 
 @router.get("/zones")
-def list_zones(db: Annotated[Session, Depends(get_db)]) -> list[dict]:
+def list_zones(
+    user: Annotated[User, Depends(require_session)],
+    db: Annotated[Session, Depends(get_db)],
+) -> list[dict]:
     rows = db.execute(
         select(Activity.zone, func.count()).where(Activity.status == ActivityStatus.active.value).group_by(Activity.zone)
     ).all()
@@ -152,6 +156,7 @@ def mark_notification_read(
 @router.get("/{activity_id}")
 def get_activity(
     activity_id: str,
+    user: Annotated[User, Depends(require_session)],
     db: Annotated[Session, Depends(get_db)],
 ) -> dict:
     from uuid import UUID
@@ -163,6 +168,22 @@ def get_activity(
     ).scalar() or 0
     creator = db.get(User, a.creator_id)
     return _serialize_activity(a, member_count=count, creator=creator)
+
+
+@router.get("/{activity_id}/membership")
+def check_membership(
+    activity_id: str,
+    user: Annotated[User, Depends(require_session)],
+    db: Annotated[Session, Depends(get_db)],
+) -> dict:
+    from uuid import UUID
+    a = db.get(Activity, UUID(activity_id))
+    if not a:
+        raise ApiError(ErrorCode.activity_not_found, "activity not found")
+    member = db.execute(
+        select(ActivityMember).where(ActivityMember.activity_id == a.id, ActivityMember.user_id == user.id)
+    ).scalar_one_or_none()
+    return {"is_member": member is not None}
 
 
 # -- Authenticated endpoints ---------------------------------------
@@ -277,7 +298,7 @@ def cancel_activity(
         select(ActivityMember).where(ActivityMember.activity_id == a.id)
     ).scalars().all()
 
-    status_label = "archivada" if archive else "cancelada"
+    status_label = "realizada" if archive else "cancelada"
     for m in members:
         n = Notification(
             user_id=m.user_id,
@@ -367,8 +388,8 @@ def list_attendees(
     a = db.get(Activity, UUID(activity_id))
     if not a:
         raise ApiError(ErrorCode.activity_not_found, "activity not found")
-    if str(a.creator_id) != str(user.id):
-        raise ApiError(ErrorCode.activity_not_creator, "solo el creador puede ver asistentes")
+
+    is_creator = str(a.creator_id) == str(user.id)
 
     members = db.execute(
         select(ActivityMember, User).join(User, ActivityMember.user_id == User.id).where(ActivityMember.activity_id == a.id)
@@ -377,7 +398,8 @@ def list_attendees(
         {
             "user_id": str(m.user_id),
             "name": u.name or u.email,
-            "email": u.email,
+            "email": u.email if is_creator else None,
+            "photo_url": u.photo_url,
             "attended": m.attended,
             "joined_at": m.created_at.isoformat() if m.created_at else None,
         }
@@ -418,9 +440,14 @@ def mark_attendance(
     return {"ok": True}
 
 
+class _ExpandBody(BaseModel):
+    additional: int = 5
+
+
 @router.post("/{activity_id}/expand")
 def expand_capacity(
     activity_id: str,
+    body: _ExpandBody,
     user: Annotated[User, Depends(require_session)],
     db: Annotated[Session, Depends(get_db)],
 ) -> dict:
@@ -431,6 +458,6 @@ def expand_capacity(
     if str(a.creator_id) != str(user.id):
         raise ApiError(ErrorCode.activity_not_creator, "solo el creador puede ampliar cupos")
 
-    a.max_participants = (a.max_participants or 0) + 5
+    a.max_participants = (a.max_participants or 0) + body.additional
     db.commit()
     return {"ok": True, "max_participants": a.max_participants}

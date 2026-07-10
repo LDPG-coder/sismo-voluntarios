@@ -79,7 +79,7 @@ export default function VoluntariosPage() {
               onClick={() => setShowArchived(!showArchived)}
               className="mb-4 text-sm font-medium text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
             >
-              {showArchived ? "Ocultar archivadas" : `Ver actividades archivadas (${archived.length})`}
+              {showArchived ? "Ocultar realizadas" : `Ver actividades realizadas (${archived.length})`}
             </button>
             {showArchived && (
               <div className="grid gap-4 sm:grid-cols-2 opacity-70">

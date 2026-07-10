@@ -29,6 +29,8 @@ export function ActivityAdminClient() {
   const [attendees, setAttendees] = useState<Attendee[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [additionalCups, setAdditionalCups] = useState(0);
+  const [saving, setSaving] = useState(false);
 
   const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
@@ -68,17 +70,35 @@ export function ActivityAdminClient() {
   };
 
   const handleExpand = async () => {
-    await fetch(`${API}/api/v1/activities/${params.id}/expand`, {
-      method: "POST",
-      credentials: "include",
-    });
-    setActivity((prev) =>
-      prev ? { ...prev, max_participants: (prev.max_participants ?? 0) + 5 } : prev
-    );
+    if (additionalCups <= 0) return;
+    setSaving(true);
+    try {
+      const res = await fetch(`${API}/api/v1/activities/${params.id}/expand`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ additional: additionalCups }),
+      });
+      if (!res.ok) throw new Error("Error al guardar");
+      const data = await res.json();
+      setActivity((prev) =>
+        prev ? { ...prev, max_participants: data.max_participants } : prev
+      );
+      setAdditionalCups(0);
+    } catch (e: any) {
+      setError(e.message);
+    } finally {
+      setSaving(false);
+    }
   };
 
   if (loading) return <div className="py-12 text-center text-slate-500">Cargando...</div>;
   if (error) return <div className="py-12 text-center text-rose-500">{error}</div>;
+
+  const currentMax = activity?.max_participants ?? 0;
+  const currentInscribed = attendees.length;
+  const newMax = currentMax + additionalCups;
+  const availableAfter = newMax - currentInscribed;
 
   return (
     <div className="min-h-screen">
@@ -96,17 +116,59 @@ export function ActivityAdminClient() {
           </p>
         </div>
 
-        <div className="mb-4 flex items-center justify-between">
+        <div className="mb-6 rounded-lg border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <h2 className="mb-3 font-semibold">Cupos</h2>
+          <div className="mb-3 grid grid-cols-3 gap-4 text-center">
+            <div>
+              <p className="text-2xl font-bold">{currentInscribed}</p>
+              <p className="text-xs text-slate-500">Inscritos</p>
+            </div>
+            <div>
+              <p className="text-2xl font-bold">{currentMax}</p>
+              <p className="text-xs text-slate-500">Capacidad actual</p>
+            </div>
+            <div>
+              <p className={`text-2xl font-bold ${availableAfter < 0 ? "text-rose-600" : "text-green-600"}`}>
+                {additionalCups > 0 ? availableAfter : currentMax - currentInscribed}
+              </p>
+              <p className="text-xs text-slate-500">Disponibles</p>
+            </div>
+          </div>
+
+          <div className="flex items-end gap-3">
+            <div className="flex-1">
+              <label className="mb-1 block text-xs font-medium text-slate-500">
+                Agregar cupos
+              </label>
+              <input
+                type="number"
+                min={0}
+                max={999}
+                value={additionalCups}
+                onChange={(e) => setAdditionalCups(Math.max(0, parseInt(e.target.value) || 0))}
+                className="w-full rounded-md border border-slate-200 px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-800"
+              />
+            </div>
+            <button
+              onClick={handleExpand}
+              disabled={saving || additionalCups <= 0}
+              className="rounded-md bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-700 disabled:opacity-50 dark:bg-slate-100 dark:text-slate-900"
+            >
+              {saving ? "Guardando..." : "Guardar cambios"}
+            </button>
+          </div>
+          {additionalCups > 0 && (
+            <p className="mt-2 text-xs text-slate-500">
+              La capacidad pasaría de {currentMax} a {newMax} cupos
+            </p>
+          )}
+        </div>
+
+        <div className="mb-4">
           <h2 className="font-semibold">
             Inscritos ({attendees.length}
             {activity?.max_participants != null && ` / ${activity.max_participants}`})
           </h2>
-          <button
-            onClick={handleExpand}
-            className="rounded-md bg-slate-100 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-200"
-          >
-            +5 cupos
-          </button>
         </div>
 
         <AttendeeList attendees={attendees} onToggle={handleToggleAttendance} />

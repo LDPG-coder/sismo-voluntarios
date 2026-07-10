@@ -25,30 +25,44 @@ type Activity = {
     id: string;
     name: string | null;
     photo_url: string | null;
-    email: string;
+    phone: string | null;
   };
 };
 
 type User = { id: string; role: string; status: string } | null;
+
+type Attendee = {
+  user_id: string;
+  name: string;
+  email: string | null;
+  photo_url: string | null;
+  attended: boolean | null;
+  joined_at: string;
+};
 
 export default function ActivityDetailPage() {
   const params = useParams();
   const router = useRouter();
   const [activity, setActivity] = useState<Activity | null>(null);
   const [user, setUser] = useState<User>(null);
+  const [attendees, setAttendees] = useState<Attendee[]>([]);
   const [loading, setLoading] = useState(true);
 
   const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
   useEffect(() => {
     Promise.all([
-      fetch(`${API}/api/v1/activities/${params.id}`).then((r) => r.json()),
+      fetch(`${API}/api/v1/activities/${params.id}`, { credentials: "include" }).then((r) => r.json()),
       fetch(`${API}/api/v1/auth/me`, { credentials: "include" }).then((r) =>
         r.ok ? r.json() : null
       ),
-    ]).then(([act, u]) => {
+      fetch(`${API}/api/v1/activities/${params.id}/attendees`, {
+        credentials: "include",
+      }).then((r) => (r.ok ? r.json() : [])),
+    ]).then(([act, u, att]) => {
       setActivity(act);
       setUser(u);
+      setAttendees(att);
       setLoading(false);
     });
   }, [params.id, API]);
@@ -74,14 +88,6 @@ export default function ActivityDetailPage() {
               </span>
               <h1 className="mt-2 text-xl font-bold">{activity.title}</h1>
             </div>
-            {isCreator && (
-              <Link
-                href={`/voluntarios/${activity.id}/admin`}
-                className="rounded-md bg-slate-100 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300"
-              >
-                Administrar
-              </Link>
-            )}
           </div>
 
           <div className="mt-4 space-y-3 text-sm text-slate-600 dark:text-slate-400">
@@ -133,20 +139,56 @@ export default function ActivityDetailPage() {
                   />
                 ) : (
                   <div className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-200 text-sm font-bold text-slate-600 dark:bg-slate-700 dark:text-slate-300">
-                    {(activity.creator.name || activity.creator.email).charAt(0).toUpperCase()}
+                    {(activity.creator.name || "V").charAt(0).toUpperCase()}
                   </div>
                 )}
                 <div>
                   <p className="text-sm font-medium">{activity.creator.name || "Voluntario"}</p>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">{activity.creator.email}</p>
+                  {activity.creator.phone && (
+                    <p className="text-xs text-slate-500 dark:text-slate-400">{activity.creator.phone}</p>
+                  )}
                 </div>
               </div>
             </div>
           )}
 
           <div className="mt-6">
-            <JoinButton activity={activity} user={user} />
+            {!isCreator && <JoinButton activity={activity} user={user} />}
+            {isCreator && (
+              <Link
+                href={`/voluntarios/${activity.id}/admin`}
+                className="inline-block rounded-md bg-slate-100 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300"
+              >
+                Administrar
+              </Link>
+            )}
           </div>
+
+          {attendees.length > 0 && (
+            <div className="mt-6 border-t border-slate-200 pt-4 dark:border-slate-700">
+              <p className="mb-3 text-xs font-medium text-slate-500 dark:text-slate-400">
+                Inscritos ({attendees.length})
+              </p>
+              <div className="flex flex-wrap gap-3">
+                {attendees.map((a) => (
+                  <div key={a.user_id} className="flex items-center gap-2">
+                    {a.photo_url ? (
+                      <img
+                        src={a.photo_url}
+                        alt={a.name}
+                        className="h-8 w-8 rounded-full object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-200 text-xs font-bold text-slate-600 dark:bg-slate-700 dark:text-slate-300">
+                        {a.name.charAt(0).toUpperCase()}
+                      </div>
+                    )}
+                    <span className="text-sm">{a.name}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </main>
     </div>
