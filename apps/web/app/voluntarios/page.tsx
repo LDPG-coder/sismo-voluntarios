@@ -34,16 +34,17 @@ export default function VoluntariosPage() {
 
   useEffect(() => {
     const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+    const opts: RequestInit = { credentials: "include" };
     Promise.all([
-      fetch(`${API}/api/v1/activities/zones`).then((r) => r.json()),
-      fetch(`${API}/api/v1/activities${activeZone ? `?zone=${activeZone}` : ""}`).then((r) => r.json()),
-      fetch(`${API}/api/v1/activities?status=archived`).then((r) => r.json()),
+      fetch(`${API}/api/v1/activities/zones`, opts).then((r) => (r.ok ? r.json() : [])),
+      fetch(`${API}/api/v1/activities${activeZone ? `?zone=${activeZone}` : ""}`, opts).then((r) => (r.ok ? r.json() : [])),
+      fetch(`${API}/api/v1/activities?status=archived`, opts).then((r) => (r.ok ? r.json() : [])),
     ]).then(([zonesData, activitiesData, archivedData]) => {
-      setZones(zonesData);
-      setActivities(activitiesData);
-      setArchived(archivedData);
+      setZones(Array.isArray(zonesData) ? zonesData : []);
+      setActivities(Array.isArray(activitiesData) ? activitiesData : []);
+      setArchived(Array.isArray(archivedData) ? archivedData : []);
       setLoading(false);
-    });
+    }).catch(() => setLoading(false));
   }, [activeZone]);
 
   return (

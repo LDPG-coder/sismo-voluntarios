@@ -26,7 +26,7 @@ export function ZoneFilter({
       >
         Todas
       </button>
-      {zones.map((z) => (
+      {(Array.isArray(zones) ? zones : []).map((z) => (
         <button
           key={z.name}
           onClick={() => onChange(z.name)}
