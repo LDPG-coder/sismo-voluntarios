@@ -170,12 +170,13 @@ export function ActivityMonthView({
                     day.isCurrentMonth
                       ? "bg-white dark:bg-white/[0.05]"
                       : "bg-zinc-100/60 dark:bg-white/[0.02]",
-                    day.isToday &&
-                      "bg-emerald-500/10 ring-1 ring-inset ring-emerald-500 dark:bg-emerald-400/10 dark:ring-emerald-400",
                     isSelected && !day.isToday && "bg-emerald-50 dark:bg-emerald-950/30"
                   )}
                 >
-                  <div className="flex justify-end">
+                  {day.isToday && (
+                    <div className="pointer-events-none absolute inset-1 z-0 rounded-lg bg-emerald-500/15 ring-1 ring-emerald-500 dark:bg-emerald-400/15 dark:ring-emerald-400" />
+                  )}
+                  <div className="relative z-10 flex justify-end">
                     <span
                       className={cn(
                         "text-sm font-bold tabular-nums",
@@ -191,7 +192,7 @@ export function ActivityMonthView({
                   </div>
 
                   {day.activities.length > 0 && (
-                    <div className="mt-auto space-y-1">
+                    <div className="relative z-10 mt-auto space-y-1">
                       {day.activities.slice(0, 3).map((activity) => {
                         const isEnrolled =
                           enrolledIds?.has(activity.id) ?? false;
