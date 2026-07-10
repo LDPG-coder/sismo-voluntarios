@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { cn } from "@/lib/utils";
 import type { Activity } from "@/lib/types";
 
 type ActivityMonthViewProps = {
@@ -96,14 +97,14 @@ export function ActivityMonthView({
   const weekDays = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
 
   return (
-    <div className="rounded-lg border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
+    <div className="overflow-hidden rounded-xl border border-emerald-600 bg-[#f4f5f7] dark:border-emerald-500 dark:bg-[#0c0b0a]">
       <div className="overflow-x-auto">
-        <div className="min-w-[760px]">
-          <div className="grid grid-cols-7 border-b border-slate-200 dark:border-slate-800">
+        <div className="min-w-[720px]">
+          <div className="grid grid-cols-7 border-b border-slate-200 dark:border-white/10">
             {weekDays.map((day) => (
               <div
                 key={day}
-                className="px-2 py-3 text-center text-xs font-medium text-slate-500 dark:text-slate-400"
+                className="px-2 py-2.5 text-center text-[11px] font-bold text-slate-500 dark:text-white"
               >
                 {day}
               </div>
@@ -122,27 +123,32 @@ export function ActivityMonthView({
                     setSelectedDay(day);
                     onSelectDay(day.date, day.activities);
                   }}
-                  className={`min-h-[120px] cursor-pointer border-b border-r border-slate-100 p-2 transition hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-800/50 ${
-                    !day.isCurrentMonth
-                      ? "bg-slate-50/50 dark:bg-slate-900/50"
-                      : ""
-                  } ${isSelected ? "bg-emerald-50 dark:bg-emerald-950/30" : ""}`}
+                  className={cn(
+                    "relative flex min-h-[116px] flex-col border-b border-r border-slate-200 p-2 transition dark:border-white/[0.06]",
+                    !day.isCurrentMonth && "bg-slate-100/60 dark:bg-white/[0.02]",
+                    day.isToday &&
+                      "bg-emerald-500/10 ring-1 ring-inset ring-emerald-500 dark:bg-emerald-400/10 dark:ring-emerald-400",
+                    isSelected && !day.isToday && "bg-emerald-50 dark:bg-emerald-950/30"
+                  )}
                 >
-                  <span
-                    className={`inline-flex h-6 w-6 items-center justify-center rounded-full text-xs font-medium ${
-                      day.isToday
-                        ? "bg-emerald-600 text-white dark:bg-emerald-500 dark:text-white"
-                        : day.isCurrentMonth
-                        ? "text-slate-700 dark:text-slate-300"
-                        : "text-slate-400 dark:text-slate-600"
-                    } ${isSelected && !day.isToday ? "ring-2 ring-emerald-500" : ""}`}
-                  >
-                    {day.date.getDate()}
-                  </span>
+                  <div className="flex justify-end">
+                    <span
+                      className={cn(
+                        "text-xs tabular-nums",
+                        day.isToday
+                          ? "font-semibold text-slate-900 dark:text-white"
+                          : day.isCurrentMonth
+                          ? "font-medium text-slate-800 dark:text-white"
+                          : "text-slate-400 dark:text-slate-600"
+                      )}
+                    >
+                      {String(day.date.getDate()).padStart(2, "0")}
+                    </span>
+                  </div>
 
                   {day.activities.length > 0 && (
-                    <div className="mt-1 space-y-1">
-                      {day.activities.slice(0, 4).map((activity) => {
+                    <div className="mt-auto space-y-1">
+                      {day.activities.slice(0, 3).map((activity) => {
                         const isEnrolled =
                           enrolledIds?.has(activity.id) ?? false;
                         const time = new Date(
@@ -158,22 +164,22 @@ export function ActivityMonthView({
                               e.stopPropagation();
                               onSelectActivity(activity);
                             }}
-                            className={`cursor-pointer truncate rounded px-1.5 py-1 text-[11px] font-medium leading-tight transition ${
-                              isEnrolled
-                                ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-200 dark:bg-emerald-900 dark:text-emerald-300 dark:hover:bg-emerald-800"
-                                : "bg-[#eaebed] text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-emerald-700"
-                            }`}
                             title={activity.title}
+                            className={cn(
+                              "cursor-pointer truncate rounded-md px-1.5 py-1 text-[11px] leading-tight text-white transition",
+                              isEnrolled
+                                ? "bg-emerald-600 hover:bg-emerald-500 dark:bg-emerald-500 dark:hover:bg-emerald-400"
+                                : "bg-slate-600 hover:bg-slate-500 dark:bg-slate-700 dark:hover:bg-slate-600"
+                            )}
                           >
-                            {isEnrolled && "✓ "}
-                            <span className="tabular-nums opacity-70">{time}</span>{" "}
+                            <span className="opacity-80">{time}</span>{" "}
                             {activity.title}
                           </div>
                         );
                       })}
-                      {day.activities.length > 4 && (
+                      {day.activities.length > 3 && (
                         <span className="block text-[10px] text-slate-400 dark:text-slate-500">
-                          +{day.activities.length - 4} más
+                          +{day.activities.length - 3} más
                         </span>
                       )}
                     </div>
@@ -186,8 +192,8 @@ export function ActivityMonthView({
       </div>
 
       {selectedDay && selectedDay.activities.length > 0 && (
-        <div className="border-t border-slate-200 p-4 dark:border-slate-800">
-          <h4 className="mb-3 text-sm font-medium text-slate-700 dark:text-slate-300">
+        <div className="border-t border-slate-200 p-4 dark:border-white/10">
+          <h4 className="mb-3 text-sm font-medium text-slate-700 dark:text-slate-200">
             {selectedDay.date.toLocaleDateString("es-VE", {
               weekday: "long",
               day: "numeric",
@@ -202,11 +208,12 @@ export function ActivityMonthView({
                 <button
                   key={activity.id}
                   onClick={() => onSelectActivity(activity)}
-                  className={`flex w-full items-start gap-3 rounded-lg border p-3 text-left transition ${
+                  className={cn(
+                    "flex w-full items-start gap-3 rounded-lg border p-3 text-left transition",
                     isEnrolled
                       ? "border-emerald-200 bg-emerald-50 hover:bg-emerald-100 dark:border-emerald-800 dark:bg-emerald-950 dark:hover:bg-emerald-900"
                       : "border-slate-200 hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-800/50"
-                  }`}
+                  )}
                 >
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
@@ -218,11 +225,7 @@ export function ActivityMonthView({
                           Inscrito
                         </span>
                       )}
-                      <p className={`text-sm font-medium ${
-                        isEnrolled
-                          ? "text-emerald-700 dark:text-emerald-300"
-                          : "text-slate-700 dark:text-slate-300"
-                      }`}>
+                      <p className={cn("text-sm font-medium", isEnrolled ? "text-emerald-700 dark:text-emerald-300" : "text-slate-700 dark:text-slate-200")}>
                         {activity.title}
                       </p>
                     </div>
