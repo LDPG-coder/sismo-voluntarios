@@ -25,11 +25,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <div className="flex min-h-screen bg-[#f4f1ec] dark:bg-[#17120d]">
+    <div className="flex min-h-screen bg-[#f4f3f1] dark:bg-[#0f0d0a]">
       <Sidebar user={user} open={open} onClose={() => setOpen(false)} />
 
       <div className="flex min-w-0 flex-1 flex-col shadow-[-10px_0_24px_-12px_rgba(15,23,42,0.12)] dark:shadow-[-10px_0_24px_-12px_rgba(0,0,0,0.5)]">
-        <header className="sticky top-0 z-30 flex items-center justify-between border-b border-slate-200/70 bg-[#f4f1ec]/80 px-4 py-2 backdrop-blur dark:border-slate-800/70 dark:bg-[#17120d]/80 lg:hidden">
+        <header className="sticky top-0 z-30 flex items-center justify-between border-b border-slate-200/70 bg-[#f4f3f1]/80 px-4 py-2 backdrop-blur dark:border-slate-800/70 dark:bg-[#0f0d0a]/80 lg:hidden">
           <button
             type="button"
             onClick={() => setOpen(true)}
