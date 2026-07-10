@@ -291,7 +291,28 @@ def update_activity(
             setattr(a, field, body[field])
     if "date_time" in body:
         from dateutil.parser import parse as parse_dt
-        a.date_time = parse_dt(body["date_time"])
+        from datetime import timezone, timedelta
+        try:
+            dt = parse_dt(body["date_time"])
+            if dt.tzinfo is None:
+                dt = dt.replace(tzinfo=timezone(timedelta(hours=-4)))
+            a.date_time = dt
+        except (ValueError, TypeError):
+            raise ApiError(ErrorCode.validation_invalid_format, "invalid date_time format")
+    if "end_time" in body:
+        from dateutil.parser import parse as parse_dt
+        from datetime import timezone, timedelta
+        end_val = body["end_time"]
+        if end_val:
+            try:
+                et = parse_dt(end_val)
+                if et.tzinfo is None:
+                    et = et.replace(tzinfo=timezone(timedelta(hours=-4)))
+                a.end_time = et
+            except (ValueError, TypeError):
+                pass
+        else:
+            a.end_time = None
     if "max_participants" in body:
         a.max_participants = body["max_participants"]
 

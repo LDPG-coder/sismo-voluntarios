@@ -12,7 +12,7 @@ type ActivityGanttViewProps = {
 
 const START_HOUR = 6;
 const END_HOUR = 22;
-const HOUR_WIDTH = 60;
+const HOUR_WIDTH = 100;
 
 type ActivityBlock = {
   activity: Activity;
@@ -154,7 +154,7 @@ export function ActivityGanttView({
                 <div
                   key={block.activity.id}
                   className="flex items-center border-b border-slate-100 dark:border-slate-800/50"
-                  style={{ height: 64 }}
+                  style={{ height: 84 }}
                 >
                   <div
                     onClick={() => onSelectActivity(block.activity)}
@@ -168,7 +168,7 @@ export function ActivityGanttView({
                     style={{
                       left: `${left}px`,
                       width: `${width}px`,
-                      height: 52,
+                      height: 72,
                       top: 6,
                     }}
                   >
