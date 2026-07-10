@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
-import { NavBar } from "@/components/nav-bar";
 import { csrfHeaders } from "@/lib/auth/csrf-client";
 
 const ZONES = ["Caracas", "Guatire", "Guarenas", "La Guaira", "Altos Mirandinos", "Caucagua"];
@@ -110,7 +109,6 @@ export function EditarActivityClient() {
   if (loading) {
     return (
       <div className="min-h-screen">
-        <NavBar />
         <div className="py-12 text-center text-slate-500">Cargando...</div>
       </div>
     );
@@ -118,7 +116,6 @@ export function EditarActivityClient() {
 
   return (
     <div className="min-h-screen">
-      <NavBar />
       <main className="mx-auto max-w-lg px-4 py-8">
         <button
           onClick={() => router.back()}
@@ -237,7 +234,7 @@ export function EditarActivityClient() {
           <button
             type="submit"
             disabled={submitting}
-            className="w-full rounded-md bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-700 disabled:opacity-50 dark:bg-slate-100 dark:text-slate-900"
+            className="w-full rounded-md bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:opacity-50 dark:bg-emerald-500 dark:text-white"
           >
             {submitting ? "Guardando..." : "Guardar cambios"}
           </button>

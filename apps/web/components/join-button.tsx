@@ -53,7 +53,7 @@ export function JoinButton({ activity, user }: { activity: Activity; user: User 
   if (status === "done") {
     return (
       <div className="flex items-center gap-3">
-        <span className="text-sm font-medium text-green-700">Inscrito</span>
+        <span className="text-sm font-medium text-emerald-700">Inscrito</span>
         <button
           onClick={async () => {
             setStatus("loading");
@@ -86,7 +86,7 @@ export function JoinButton({ activity, user }: { activity: Activity; user: User 
             setStatus("done");
           }
         }}
-        className="rounded-md bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-700 dark:bg-slate-100 dark:text-slate-900"
+        className="rounded-md bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700 dark:bg-emerald-500 dark:text-white"
       >
         Unirme
       </button>
@@ -116,7 +116,7 @@ export function JoinButton({ activity, user }: { activity: Activity; user: User 
           setStatus("idle");
         }
       }}
-      className="rounded-md bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-700 dark:bg-slate-100 dark:text-slate-900"
+      className="rounded-md bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 dark:bg-emerald-500 dark:text-white"
     >
       Unirme
     </button>

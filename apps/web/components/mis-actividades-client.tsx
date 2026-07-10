@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { NavBar } from "@/components/nav-bar";
 import { MisActividadesSkeleton } from "@/components/skeletons";
 import { csrfHeaders } from "@/lib/auth/csrf-client";
 
@@ -91,13 +90,12 @@ export function MisActividadesClient() {
 
   return (
     <div className="min-h-screen">
-      <NavBar />
       <main className="mx-auto max-w-4xl px-4 py-8">
         <div className="mb-6 flex items-center justify-between">
           <h1 className="text-xl font-bold">Mis actividades</h1>
           <Link
             href="/voluntarios/crear"
-            className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700 dark:bg-slate-100 dark:text-slate-900"
+            className="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 dark:bg-emerald-500 dark:text-white"
           >
             + Nueva
           </Link>
@@ -175,7 +173,7 @@ export function MisActividadesClient() {
             <div className="flex gap-3">
               <button
                 onClick={() => setConfirmAction(null)}
-                className="flex-1 rounded-md border border-slate-300 px-4 py-2 text-sm font-medium transition hover:bg-slate-50 dark:border-slate-600 dark:hover:bg-slate-700"
+                className="flex-1 rounded-md border border-slate-300 px-4 py-2 text-sm font-medium transition hover:bg-slate-50 dark:border-slate-600 dark:hover:bg-emerald-700"
               >
                 Volver
               </button>
@@ -184,7 +182,7 @@ export function MisActividadesClient() {
                 disabled={processing}
                 className={`flex-1 rounded-md px-4 py-2 text-sm font-semibold text-white transition ${
                   confirmAction.action === "leave"
-                    ? "bg-slate-600 hover:bg-slate-700"
+                    ? "bg-slate-600 hover:bg-emerald-700"
                     : confirmAction.action === "archive"
                     ? "bg-amber-600 hover:bg-amber-700"
                     : "bg-rose-600 hover:bg-rose-700"
@@ -222,7 +220,7 @@ function TabButton({
       onClick={onClick}
       className={`relative flex-1 rounded-lg px-4 py-2 text-sm font-medium transition ${
         active
-          ? "bg-white text-slate-900 shadow-sm dark:bg-slate-900 dark:text-slate-100"
+          ? "bg-emerald-50 text-emerald-700 shadow-sm dark:bg-emerald-950/40 dark:text-emerald-400"
           : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
       }`}
     >
@@ -230,7 +228,7 @@ function TabButton({
       {count > 0 && (
         <span className={`ml-1.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-xs ${
           active
-            ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900"
+            ? "bg-emerald-600 text-white dark:bg-emerald-500 dark:text-white"
             : "bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-300"
         }`}>
           {count}
@@ -323,7 +321,7 @@ function ActivityCard({
             {isCreated ? "Creador" : "Inscrito"}
           </span>
           {isActive && (
-            <span className="rounded-full bg-green-100 px-2 py-0.5 text-[10px] font-medium text-green-700 dark:bg-green-900/30 dark:text-green-400">
+            <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-medium text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">
               Activa
             </span>
           )}

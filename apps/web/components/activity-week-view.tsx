@@ -167,14 +167,14 @@ export function ActivityWeekView({
               >
                 <div
                   className={`shrink-0 border-r border-slate-200 px-2 py-3 dark:border-slate-800 ${
-                    isToday ? "bg-blue-50 dark:bg-blue-950/30" : ""
+                    isToday ? "bg-emerald-50 dark:bg-emerald-950/30" : ""
                   }`}
                   style={{ width: DAY_LABEL_WIDTH }}
                 >
                   <span
                     className={`text-xs font-medium ${
                       isToday
-                        ? "text-blue-600 dark:text-blue-400"
+                        ? "text-emerald-600 dark:text-emerald-400"
                         : "text-slate-500 dark:text-slate-400"
                     }`}
                   >
@@ -183,7 +183,7 @@ export function ActivityWeekView({
                   <span
                     className={`ml-1.5 text-lg font-bold ${
                       isToday
-                        ? "text-blue-600 dark:text-blue-400"
+                        ? "text-emerald-600 dark:text-emerald-400"
                         : "text-slate-900 dark:text-slate-100"
                     }`}
                   >
@@ -193,7 +193,7 @@ export function ActivityWeekView({
 
                 <div
                   className={`relative ${
-                    isToday ? "bg-blue-50/40 dark:bg-blue-950/20" : ""
+                    isToday ? "bg-emerald-50/40 dark:bg-emerald-950/20" : ""
                   }`}
                   style={{ width: gridWidth, height: rowHeight }}
                 >
@@ -220,8 +220,8 @@ export function ActivityWeekView({
                         onClick={() => onSelectActivity(it.activity)}
                         className={`absolute cursor-pointer overflow-hidden rounded-md border px-2 py-1 text-xs leading-tight transition hover:shadow-md ${
                           isEnrolled
-                            ? "border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-800 dark:bg-blue-950 dark:text-blue-300"
-                            : "border-slate-200 bg-slate-100 text-slate-700 hover:bg-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+                            ? "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
+                            : "border-slate-200 bg-slate-100 text-slate-700 hover:bg-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-emerald-700"
                         }`}
                         style={{
                           left: `${left}px`,
@@ -232,7 +232,7 @@ export function ActivityWeekView({
                       >
                         <div className="flex items-center gap-1">
                           {isEnrolled && (
-                            <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-blue-500" />
+                            <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-500" />
                           )}
                           <p className="truncate font-medium">
                             {it.activity.title}

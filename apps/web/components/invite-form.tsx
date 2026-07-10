@@ -54,7 +54,7 @@ export function InviteForm() {
         <button
           type="submit"
           disabled={status === "loading"}
-          className="rounded-md bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-700 disabled:opacity-50 dark:bg-slate-100 dark:text-slate-900"
+          className="rounded-md bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:opacity-50 dark:bg-emerald-500 dark:text-white"
         >
           Invitar
         </button>
@@ -62,7 +62,7 @@ export function InviteForm() {
       {message && (
         <p
           className={`mt-2 text-xs ${
-            status === "success" ? "text-green-600" : "text-rose-600"
+            status === "success" ? "text-emerald-600" : "text-rose-600"
           }`}
         >
           {message}

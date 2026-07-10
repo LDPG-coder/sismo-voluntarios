@@ -8,7 +8,7 @@ export function ActivityCardSkeleton({ enrolled = false }: { enrolled?: boolean 
       className={
         "relative rounded-lg border bg-white p-4 shadow-sm dark:bg-slate-900 " +
         (enrolled
-          ? "border-blue-200 dark:border-blue-900"
+          ? "border-emerald-200 dark:border-emerald-900"
           : "border-slate-200 dark:border-slate-800")
       }
     >

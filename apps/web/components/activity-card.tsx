@@ -30,11 +30,11 @@ export function ActivityCard({ activity, isEnrolled, onJoin, onLeave }: Activity
     <Link href={`/voluntarios/${activity.id}`} className="block">
       <div className={`relative rounded-lg border bg-white p-4 shadow-sm transition hover:shadow-md dark:bg-slate-900 ${
         isEnrolled
-          ? "border-blue-200 dark:border-blue-900"
+          ? "border-emerald-200 dark:border-emerald-900"
           : "border-slate-200 dark:border-slate-800"
       }`}>
         {isEnrolled && (
-          <span className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-medium text-blue-600 dark:bg-blue-950 dark:text-blue-400">
+          <span className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-medium text-emerald-600 dark:bg-emerald-950 dark:text-emerald-400">
             <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
             </svg>
@@ -114,7 +114,7 @@ export function ActivityCard({ activity, isEnrolled, onJoin, onLeave }: Activity
                 e.stopPropagation();
                 onJoin?.(activity.id);
               }}
-              className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-700 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-slate-200"
+              className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-emerald-700 dark:bg-emerald-500 dark:text-white dark:hover:bg-emerald-600"
             >
               Unirme
             </button>

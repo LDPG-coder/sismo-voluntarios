@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { NavBar } from "@/components/nav-bar";
 import { UsuariosTableSkeleton } from "@/components/skeletons";
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
@@ -83,7 +82,6 @@ export function AdminUsuariosClient() {
 
   return (
     <div className="min-h-screen">
-      <NavBar />
       <main className="mx-auto max-w-4xl px-4 py-8">
         <div className="mb-6 flex items-center justify-between">
           <h1 className="text-xl font-bold">Gestionar Usuarios</h1>
@@ -149,7 +147,7 @@ export function AdminUsuariosClient() {
                       <span
                         className={`rounded-full px-2 py-0.5 text-xs font-medium ${
                           u.status === "active"
-                            ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+                            ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
                             : u.status === "pending"
                             ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
                             : "bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400"
@@ -250,14 +248,14 @@ export function AdminUsuariosClient() {
             <div className="mt-6 flex gap-3">
               <button
                 onClick={() => setEditingUser(null)}
-                className="flex-1 rounded-md border border-slate-300 px-4 py-2 text-sm font-medium transition hover:bg-slate-50 dark:border-slate-600 dark:hover:bg-slate-700"
+                className="flex-1 rounded-md border border-slate-300 px-4 py-2 text-sm font-medium transition hover:bg-slate-50 dark:border-slate-600 dark:hover:bg-emerald-700"
               >
                 Cancelar
               </button>
               <button
                 onClick={handleUpdate}
                 disabled={processing}
-                className="flex-1 rounded-md bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-700 disabled:opacity-50 dark:bg-slate-100 dark:text-slate-900"
+                className="flex-1 rounded-md bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:opacity-50 dark:bg-emerald-500 dark:text-white"
               >
                 {processing ? "Guardando..." : "Guardar"}
               </button>

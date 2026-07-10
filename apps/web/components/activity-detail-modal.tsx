@@ -90,7 +90,7 @@ export function ActivityDetailModal({
             onClick={onClose}
             className="group block mt-2"
           >
-            <h2 className="text-lg font-semibold text-slate-900 transition group-hover:text-blue-600 dark:text-slate-100 dark:group-hover:text-blue-400">
+            <h2 className="text-lg font-semibold text-slate-900 transition group-hover:text-emerald-600 dark:text-slate-100 dark:group-hover:text-emerald-400">
               {activity.title}
             </h2>
           </Link>
@@ -146,7 +146,7 @@ export function ActivityDetailModal({
             ) : (
               <button
                 onClick={() => onJoin?.(activity.id)}
-                className="flex-1 rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-slate-700 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-slate-200"
+                className="flex-1 rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-emerald-700 dark:bg-emerald-500 dark:text-white dark:hover:bg-emerald-600"
               >
                 Unirme
               </button>

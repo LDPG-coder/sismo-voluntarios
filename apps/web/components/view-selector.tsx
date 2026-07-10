@@ -59,7 +59,7 @@ export function ViewSelector({ active, onChange }: ViewSelectorProps) {
           className={cn(
             "flex h-8 w-8 items-center justify-center rounded-md transition-colors",
             active === view.type
-              ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900"
+              ? "bg-emerald-600 text-white dark:bg-emerald-500 dark:text-white"
               : "text-slate-500 hover:bg-slate-100 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
           )}
         >

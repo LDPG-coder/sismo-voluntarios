@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { NavBar } from "@/components/nav-bar";
 import { AttendeeList } from "@/components/attendee-list";
 import { ActivityAdminSkeleton } from "@/components/skeletons";
 
@@ -96,7 +95,6 @@ export function ActivityAdminClient() {
   if (loading) {
     return (
       <div className="min-h-screen">
-        <NavBar />
         <ActivityAdminSkeleton />
       </div>
     );
@@ -110,7 +108,6 @@ export function ActivityAdminClient() {
 
   return (
     <div className="min-h-screen">
-      <NavBar />
       <main className="mx-auto max-w-2xl px-4 py-8">
         <button onClick={() => router.back()} className="mb-4 text-sm text-slate-500 hover:text-slate-700">
           &larr; Volver
@@ -136,7 +133,7 @@ export function ActivityAdminClient() {
               <p className="text-xs text-slate-500">Capacidad actual</p>
             </div>
             <div>
-              <p className={`text-2xl font-bold ${availableAfter < 0 ? "text-rose-600" : "text-green-600"}`}>
+              <p className={`text-2xl font-bold ${availableAfter < 0 ? "text-rose-600" : "text-emerald-600"}`}>
                 {additionalCups > 0 ? availableAfter : currentMax - currentInscribed}
               </p>
               <p className="text-xs text-slate-500">Disponibles</p>
@@ -160,7 +157,7 @@ export function ActivityAdminClient() {
             <button
               onClick={handleExpand}
               disabled={saving || additionalCups <= 0}
-              className="rounded-md bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-700 disabled:opacity-50 dark:bg-slate-100 dark:text-slate-900"
+              className="rounded-md bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:opacity-50 dark:bg-emerald-500 dark:text-white"
             >
               {saving ? "Guardando..." : "Guardar cambios"}
             </button>

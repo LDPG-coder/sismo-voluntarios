@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { NavBar } from "@/components/nav-bar";
 import { JoinButton } from "@/components/join-button";
 import { ActivityDetailSkeleton } from "@/components/skeletons";
 
@@ -71,7 +70,6 @@ export default function ActivityDetailPage() {
   if (loading) {
     return (
       <div className="min-h-screen">
-        <NavBar />
         <main className="mx-auto max-w-2xl px-4 py-8">
           <ActivityDetailSkeleton />
         </main>
@@ -84,7 +82,6 @@ export default function ActivityDetailPage() {
 
   return (
     <div className="min-h-screen">
-      <NavBar />
       <main className="mx-auto max-w-2xl px-4 py-8">
         <button onClick={() => router.back()} className="mb-4 text-sm text-slate-500 hover:text-slate-700">
           &larr; Volver

@@ -59,7 +59,7 @@ export default function RegistroPage() {
             <button
               onClick={handleValidateCode}
               disabled={status === "loading"}
-              className="rounded-md bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-700 disabled:opacity-50 dark:bg-slate-100 dark:text-slate-900"
+              className="rounded-md bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:opacity-50 dark:bg-emerald-500 dark:text-white"
             >
               Validar
             </button>
@@ -70,7 +70,7 @@ export default function RegistroPage() {
           <p
             className={`rounded-md px-3 py-2 text-sm ${
               status === "success"
-                ? "bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-300"
+                ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300"
                 : "bg-rose-50 text-rose-700 dark:bg-rose-950 dark:text-rose-300"
             }`}
           >

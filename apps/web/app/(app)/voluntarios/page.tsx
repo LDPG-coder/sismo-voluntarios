@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
-import { NavBar } from "@/components/nav-bar";
 import { ViewSelector, type ViewType } from "@/components/view-selector";
 import { ActivityCard } from "@/components/activity-card";
 import { ActivityGanttView } from "@/components/activity-gantt-view";
@@ -199,7 +198,6 @@ export default function VoluntariosPage() {
 
   return (
     <div className="min-h-screen">
-      <NavBar />
       <main className="mx-auto max-w-6xl px-4 py-8">
         <div className="mb-6">
           <h1 className="text-2xl font-bold tracking-tight">

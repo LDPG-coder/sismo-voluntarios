@@ -20,7 +20,7 @@ export function ZoneFilter({
         className={cn(
           "rounded-full px-3 py-1 text-xs font-medium transition",
           active === null
-            ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900"
+            ? "bg-emerald-600 text-white dark:bg-emerald-500 dark:text-white"
             : "bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300"
         )}
       >
@@ -33,7 +33,7 @@ export function ZoneFilter({
           className={cn(
             "rounded-full px-3 py-1 text-xs font-medium transition",
             active === z.name
-              ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900"
+              ? "bg-emerald-600 text-white dark:bg-emerald-500 dark:text-white"
               : "bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300"
           )}
         >
