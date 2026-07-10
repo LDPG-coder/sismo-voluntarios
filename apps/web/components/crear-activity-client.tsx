@@ -23,7 +23,7 @@ export function CrearActivityClient() {
 
   const [description, setDescription] = useState("");
   const [title, setTitle] = useState("");
-  const [zone, setZone] = useState(ZONES[0]);
+  const [zone, setZone] = useState("");
   const [rawAddress, setRawAddress] = useState("");
   const [dateTime, setDateTime] = useState("");
   const [endDateTime, setEndDateTime] = useState("");
@@ -36,6 +36,7 @@ export function CrearActivityClient() {
   const [error, setError] = useState<string | null>(null);
   const [aiThinking, setAiThinking] = useState(false);
   const [aiEnabled, setAiEnabled] = useState(true);
+  const descriptionRef = useRef<HTMLTextAreaElement>(null);
 
   const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
@@ -200,8 +201,19 @@ export function CrearActivityClient() {
     }
     if (data.estimated_duration_min && !estimatedDuration) setEstimatedDuration(String(data.estimated_duration_min));
     if (data.max_participants && !maxParticipants) setMaxParticipants(String(data.max_participants));
+    if (data.contact_info && !contactInfo) {
+      const c = Array.isArray(data.contact_info) ? data.contact_info.join(", ") : String(data.contact_info);
+      setContactInfo(c);
+    }
     if (data.requirements?.length && requirements.length === 0) setRequirements(data.requirements);
   };
+
+  useEffect(() => {
+    const el = descriptionRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${el.scrollHeight}px`;
+  }, [description]);
 
   useEffect(() => {
     const t = setTimeout(() => callAi(description), 1500);
@@ -279,7 +291,7 @@ export function CrearActivityClient() {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <div className="mb-1 flex items-center justify-between">
-              <label className="text-sm font-medium">Descripcion *</label>
+              <label className="text-sm font-medium">Descripción *</label>
               <button
                 type="button"
                 onClick={() => setAiEnabled(!aiEnabled)}
@@ -292,12 +304,17 @@ export function CrearActivityClient() {
               </button>
             </div>
             <textarea
+              ref={descriptionRef}
               required
               rows={4}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder={aiEnabled ? "Describe la actividad y los campos se rellenan solos..." : "Describe la actividad de voluntariado..."}
-              className={aiThinking ? INPUT_LOADING_cls : INPUT_cls}
+              placeholder={
+                aiEnabled
+                  ? "Describe la actividad y los campos se rellenan solos..."
+                  : "Describe la actividad de voluntariado..."
+              }
+              className={`${aiThinking ? INPUT_LOADING_cls : INPUT_cls} resize-none overflow-hidden`}
             />
           </div>
 

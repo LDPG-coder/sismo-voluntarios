@@ -26,7 +26,9 @@ SYSTEM_PROMPT = (
     '{"title":"max 60 chars","zone":"Caracas|Guatire|Guarenas|La Guaira|Altos Mirandinos|Caucagua",'
     '"raw_address":"direccion en Venezuela","date_time_suggestion":"ISO 8601 o null",'
     '"end_time_suggestion":"ISO 8601 o null","estimated_duration_min":minutos o null,'
-    '"max_participants":num o null,"requirements":["item"]}'
+    '"max_participants":num o null,'
+    '"contact_info":"medio de contacto para coordinar: telefono, WhatsApp, Instagram u otro, o null",'
+    '"requirements":["item"]}'
 )
 
 
@@ -39,6 +41,7 @@ class ActivitySuggestion:
     end_time: str | None
     estimated_duration_min: int | None
     max_participants: int | None
+    contact_info: str | None
     requirements: list[str]
 
 
@@ -101,6 +104,7 @@ def suggest_activity(description: str) -> ActivitySuggestion | None:
             end_time=args.get("end_time_suggestion"),
             estimated_duration_min=args.get("estimated_duration_min"),
             max_participants=args.get("max_participants"),
+            contact_info=" ".join(args.get("contact_info", "")) if isinstance(args.get("contact_info"), list) else args.get("contact_info"),
             requirements=args.get("requirements", []),
         )
     except Exception as e:

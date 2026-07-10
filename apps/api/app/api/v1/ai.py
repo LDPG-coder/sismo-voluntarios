@@ -43,6 +43,7 @@ class SuggestResponse(BaseModel):
     end_time: str | None = None
     estimated_duration_min: int | None = None
     max_participants: int | None = None
+    contact_info: str | None = None
     requirements: list[str] = []
 
 
@@ -82,6 +83,7 @@ async def ai_suggest(
         end_time=result.end_time,
         estimated_duration_min=result.estimated_duration_min,
         max_participants=result.max_participants,
+        contact_info=result.contact_info,
         requirements=result.requirements,
     )
 
