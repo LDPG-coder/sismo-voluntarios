@@ -155,7 +155,7 @@ export function MisActividadesClient() {
 
       {confirmAction && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="mx-4 w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl dark:bg-slate-800">
+          <div className="mx-4 w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl dark:bg-[#18181b]">
             <h3 className="mb-2 text-lg font-bold">
               {confirmAction.action === "leave"
                 ? "Salir de la actividad"
@@ -302,8 +302,8 @@ function ActivityCard({
     <div
       className={`rounded-lg border p-4 ${
         isActive
-          ? "border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900"
-          : "border-slate-100 bg-slate-50 opacity-70 dark:border-slate-800 dark:bg-slate-900"
+          ? "border-slate-200 bg-white dark:border-slate-800 dark:bg-[#18181b]"
+          : "border-slate-100 bg-slate-50 opacity-70 dark:border-slate-800 dark:bg-[#18181b]"
       }`}
     >
       <div className="mb-2 flex items-start justify-between">

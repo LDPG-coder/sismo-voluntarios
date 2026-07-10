@@ -12,7 +12,7 @@ export function ReferralBox({ code }: { code: string }) {
   };
 
   return (
-    <div className="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+    <div className="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-[#18181b]">
       <p className="text-sm text-slate-500">Tu codigo de referido</p>
       <div className="mt-1 flex items-center gap-2">
         <code className="rounded bg-[#eaebed] px-3 py-1.5 font-mono text-lg font-bold tracking-wider dark:bg-slate-800">

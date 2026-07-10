@@ -87,7 +87,7 @@ export default function ActivityDetailPage() {
           &larr; Volver
         </button>
 
-        <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-[#18181b]">
           <div className="flex items-start justify-between">
             <div>
               <span className="inline-block rounded-full bg-[#eaebed] px-3 py-1 text-xs font-medium text-slate-700 dark:bg-slate-800 dark:text-slate-300">

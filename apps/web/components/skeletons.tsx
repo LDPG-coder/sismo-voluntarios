@@ -6,7 +6,7 @@ export function ActivityCardSkeleton({ enrolled = false }: { enrolled?: boolean 
   return (
     <div
       className={
-        "relative rounded-lg border bg-white p-4 shadow-sm dark:bg-slate-900 " +
+        "relative rounded-lg border bg-white p-4 shadow-sm dark:bg-[#18181b] " +
         (enrolled
           ? "border-emerald-200 dark:border-emerald-900"
           : "border-slate-200 dark:border-slate-800")
@@ -63,7 +63,7 @@ export function VoluntariosGanttSkeleton() {
     { left: 840, width: 180 },
   ];
   return (
-    <div className="rounded-lg border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
+    <div className="rounded-lg border border-slate-200 bg-white dark:border-slate-800 dark:bg-[#18181b]">
       <div className="overflow-x-auto">
         <div style={{ minWidth: totalWidth }}>
           <div className="flex border-b border-slate-200 dark:border-slate-800">
@@ -114,7 +114,7 @@ export function VoluntariosWeekSkeleton() {
     { day: 5, top: 30, height: 120 },
   ];
   return (
-    <div className="rounded-lg border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
+    <div className="rounded-lg border border-slate-200 bg-white dark:border-slate-800 dark:bg-[#18181b]">
       <div className="overflow-x-auto">
         <div className="min-w-[700px]">
           <div className="flex border-b border-slate-200 dark:border-slate-800">
@@ -188,7 +188,7 @@ export function VoluntariosMonthSkeleton() {
   const cells = Array.from({ length: 42 }, (_, i) => i);
   const chipDays = new Set([4, 9, 12, 15, 20, 23, 28, 31]);
   return (
-    <div className="rounded-lg border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
+    <div className="rounded-lg border border-slate-200 bg-white dark:border-slate-800 dark:bg-[#18181b]">
       <div className="grid grid-cols-7 border-b border-slate-200 dark:border-slate-800">
         {weekDays.map((d) => (
           <div
@@ -225,7 +225,7 @@ export function ActivityDetailSkeleton() {
   return (
     <>
       <Skeleton className="mb-4 h-4 w-16" />
-      <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+      <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-[#18181b]">
         <div className="flex items-start justify-between">
           <div className="flex-1">
             <Skeleton className="inline-block h-5 w-24 rounded-full" />
@@ -284,7 +284,7 @@ export function ActivityAdminSkeleton() {
         <Skeleton className="mt-2 h-4 w-40" />
       </div>
 
-      <div className="mb-6 rounded-lg border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+      <div className="mb-6 rounded-lg border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-[#18181b]">
         <Skeleton className="mb-3 h-4 w-20" />
         <div className="mb-3 grid grid-cols-3 gap-4 text-center">
           {[0, 1, 2].map((i) => (
@@ -307,7 +307,7 @@ export function ActivityAdminSkeleton() {
         <Skeleton className="h-5 w-40" />
       </div>
 
-      <div className="divide-y divide-slate-200 rounded-lg border border-slate-200 bg-white dark:divide-slate-800 dark:border-slate-800 dark:bg-slate-900">
+      <div className="divide-y divide-slate-200 rounded-lg border border-slate-200 bg-white dark:divide-slate-800 dark:border-slate-800 dark:bg-[#18181b]">
         {Array.from({ length: 5 }).map((_, i) => (
           <div key={i} className="flex items-center justify-between px-4 py-3">
             <div>
@@ -326,7 +326,7 @@ export function ActivityAdminSkeleton() {
 
 function MisActividadCardSkeleton() {
   return (
-    <div className="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+    <div className="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-[#18181b]">
       <div className="mb-3 flex items-start justify-between">
         <Skeleton className="h-5 w-2/3" />
         <div className="flex items-center gap-1.5">

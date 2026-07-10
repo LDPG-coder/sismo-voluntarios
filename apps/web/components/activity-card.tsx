@@ -28,7 +28,7 @@ export function ActivityCard({ activity, isEnrolled, onJoin, onLeave }: Activity
 
   return (
     <Link href={`/voluntarios/${activity.id}`} className="block">
-      <div className={`relative rounded-lg border bg-white p-4 shadow-sm transition hover:shadow-md dark:bg-slate-900 ${
+      <div className={`relative rounded-lg border bg-white p-4 shadow-sm transition hover:shadow-md dark:bg-[#18181b] ${
         isEnrolled
           ? "border-emerald-200 dark:border-emerald-900"
           : "border-slate-200 dark:border-slate-800"
@@ -103,7 +103,7 @@ export function ActivityCard({ activity, isEnrolled, onJoin, onLeave }: Activity
                 e.stopPropagation();
                 onLeave?.(activity.id);
               }}
-              className="rounded-lg border border-rose-200 bg-white px-3 py-1 text-xs font-medium text-rose-600 transition hover:bg-rose-50 dark:border-rose-800 dark:bg-slate-900 dark:text-rose-400 dark:hover:bg-rose-950"
+              className="rounded-lg border border-rose-200 bg-white px-3 py-1 text-xs font-medium text-rose-600 transition hover:bg-rose-50 dark:border-rose-800 dark:bg-[#18181b] dark:text-rose-400 dark:hover:bg-rose-950"
             >
               Abandonar
             </button>

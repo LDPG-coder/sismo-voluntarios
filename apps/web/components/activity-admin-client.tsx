@@ -121,7 +121,7 @@ export function ActivityAdminClient() {
           </p>
         </div>
 
-        <div className="mb-6 rounded-lg border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <div className="mb-6 rounded-lg border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-[#18181b]">
           <h2 className="mb-3 font-semibold">Cupos</h2>
           <div className="mb-3 grid grid-cols-3 gap-4 text-center">
             <div>

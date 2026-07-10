@@ -47,7 +47,7 @@ export function TabsList({
   return (
     <div
       className={cn(
-        "inline-flex h-10 items-center gap-1 rounded-lg bg-[#eaebed] p-1 dark:bg-slate-900",
+        "inline-flex h-10 items-center gap-1 rounded-lg bg-[#eaebed] p-1 dark:bg-[#18181b]",
         className,
       )}
       role="tablist"

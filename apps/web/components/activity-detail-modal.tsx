@@ -68,7 +68,7 @@ export function ActivityDetailModal({
         className="absolute inset-0 bg-black/40 backdrop-blur-sm"
         onClick={onClose}
       />
-      <div className="relative w-full max-w-md rounded-xl border border-slate-200 bg-white shadow-2xl dark:border-slate-800 dark:bg-slate-900">
+      <div className="relative w-full max-w-md rounded-xl border border-slate-200 bg-white shadow-2xl dark:border-slate-800 dark:bg-[#18181b]">
         <button
           onClick={onClose}
           className="absolute right-3 top-3 rounded-lg p-1 text-slate-400 transition hover:bg-[#eaebed] hover:text-slate-600 dark:hover:bg-slate-800 dark:hover:text-slate-300"

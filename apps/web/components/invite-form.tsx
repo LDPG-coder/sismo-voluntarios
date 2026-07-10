@@ -40,7 +40,7 @@ export function InviteForm() {
   };
 
   return (
-    <div className="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+    <div className="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-[#18181b]">
       <p className="text-sm font-medium">Invitar persona</p>
       <form onSubmit={handleInvite} className="mt-2 flex gap-2">
         <input

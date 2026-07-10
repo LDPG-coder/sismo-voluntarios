@@ -196,7 +196,7 @@ export function AdminUsuariosClient() {
 
       {editingUser && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="mx-4 w-full max-w-md rounded-2xl bg-white p-6 shadow-xl dark:bg-slate-800">
+          <div className="mx-4 w-full max-w-md rounded-2xl bg-white p-6 shadow-xl dark:bg-[#18181b]">
             <h3 className="mb-4 text-lg font-bold">Editar Usuario</h3>
             <div className="space-y-4">
               <div>

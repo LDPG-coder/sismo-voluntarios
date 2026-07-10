@@ -21,7 +21,7 @@ export default async function LoginPage({
 
       <ErrorBanner searchParams={searchParams} />
 
-      <div className="space-y-4 rounded-lg border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+      <div className="space-y-4 rounded-lg border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-[#18181b]">
         <p className="text-sm text-slate-700 dark:text-slate-200">
           Inicia sesion con tu cuenta de Google para participar.
         </p>
