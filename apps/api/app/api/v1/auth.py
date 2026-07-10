@@ -38,6 +38,7 @@ def _serialize(user: User) -> dict:
         "id": str(user.id),
         "email": user.email,
         "name": user.name,
+        "photo_url": user.photo_url,
         "role": user.role,
         "status": user.status,
         "referral_code": user.referral_code,
