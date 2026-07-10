@@ -11,6 +11,7 @@ export type CurrentUser = {
   id: string;
   email: string;
   name: string | null;
+  photo_url: string | null;
   role: "volunteer" | "admin";
   status: "pending" | "active" | "suspended";
   referral_code: string;
@@ -26,7 +27,16 @@ export async function fetchCurrentUser(): Promise<CurrentUser | null> {
       headers: { Cookie: `sismo_session=${cookie}` },
     });
     if (!res.ok) return null;
-    return (await res.json()) as CurrentUser;
+    const data = (await res.json()) as Record<string, unknown>;
+    return {
+      id: data.id as string,
+      email: data.email as string,
+      name: (data.name as string | null) ?? null,
+      photo_url: (data.photo_url as string | null) ?? null,
+      role: data.role as "volunteer" | "admin",
+      status: data.status as "pending" | "active" | "suspended",
+      referral_code: data.referral_code as string,
+    };
   } catch {
     return null;
   }

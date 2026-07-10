@@ -2,6 +2,7 @@ import { requireSession } from "@/lib/auth/require-session";
 import { fetchCurrentUser } from "@/lib/auth/me";
 import { ReferralBox } from "@/components/referral-box";
 import { InviteForm } from "@/components/invite-form";
+import { ProfilePhoto } from "@/components/profile-photo";
 
 export default async function PerfilPage() {
   await requireSession();
@@ -25,6 +26,7 @@ export default async function PerfilPage() {
           </div>
 
           <ReferralBox code={user.referral_code} />
+          <ProfilePhoto initialPhotoUrl={user.photo_url} />
           <InviteForm />
         </div>
       </main>

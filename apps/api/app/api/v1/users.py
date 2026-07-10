@@ -14,7 +14,7 @@ from app.core.logging import get_logger
 from app.db.base import get_db
 from app.db.enums import UserRole, UserStatus
 from app.db.models import User
-from app.pipeline.dependencies import require_admin_session
+from app.pipeline.dependencies import require_admin_session, require_session
 
 router = APIRouter(prefix="/users", tags=["users"])
 _log = get_logger("app.api.v1.users")
@@ -84,6 +84,10 @@ class _UpdateUserBody(BaseModel):
     name: str | None = None
 
 
+class _UpdatePhotoBody(BaseModel):
+    photo: str | None = None
+
+
 @router.put("/{user_id}")
 def update_user(
     user_id: str,
@@ -120,3 +124,37 @@ def update_user(
     db.refresh(u)
     _log.info("user.updated", user_id=str(u.id), admin_id=str(admin.id))
     return _serialize_user(u)
+
+
+_MAX_PHOTO_LEN = 3_500_000
+
+
+@router.put("/me/photo")
+def update_my_photo(
+    body: _UpdatePhotoBody,
+    user: Annotated[User, Depends(require_session)],
+    db: Annotated[Session, Depends(get_db)],
+) -> dict:
+    photo = body.photo
+    if photo is not None:
+        if not isinstance(photo, str) or not photo.startswith("data:image/"):
+            raise ApiError(ErrorCode.validation_invalid_format, "photo must be a data: image URL")
+        if len(photo) > _MAX_PHOTO_LEN:
+            raise ApiError(ErrorCode.validation_invalid_format, "photo is too large")
+    user.photo_url = photo
+    db.commit()
+    db.refresh(user)
+    _log.info("user.photo.updated", user_id=str(user.id))
+    return _serialize_user(user)
+
+
+@router.delete("/me/photo")
+def delete_my_photo(
+    user: Annotated[User, Depends(require_session)],
+    db: Annotated[Session, Depends(get_db)],
+) -> dict:
+    user.photo_url = None
+    db.commit()
+    db.refresh(user)
+    _log.info("user.photo.deleted", user_id=str(user.id))
+    return _serialize_user(user)
