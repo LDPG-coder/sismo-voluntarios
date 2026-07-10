@@ -14,7 +14,7 @@ export function Skeleton({
       )}
       {...props}
     >
-      <div className="absolute inset-0 animate-shimmer" />
+      <div className="absolute inset-0 skeleton-shimmer" />
     </div>
   );
 }
