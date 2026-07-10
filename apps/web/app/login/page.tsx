@@ -3,7 +3,7 @@ import Link from "next/link";
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string; ref?: string }>;
+  searchParams: Promise<{ error?: string }>;
 }) {
   const params = await searchParams;
 
@@ -51,16 +51,11 @@ export default async function LoginPage({
         </a>
       </div>
 
-      <div className="mt-6 space-y-3">
+      <div className="mt-6">
         <p className="text-center text-xs text-slate-500">
           ¿No tienes cuenta?{" "}
           <Link href="/registro" className="underline hover:text-slate-700">
             Registrate con un codigo de invitacion
-          </Link>
-        </p>
-        <p className="text-center text-xs text-slate-500">
-          <Link href="/" className="underline">
-            &larr; Volver al inicio
           </Link>
         </p>
       </div>

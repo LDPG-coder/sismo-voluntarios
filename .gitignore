@@ -46,3 +46,4 @@ Makefile
 dev.sh
 README.md
 docs/
+next-env.d.ts

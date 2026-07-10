@@ -15,7 +15,11 @@ export default function RegistroPage() {
     if (!code.trim()) return;
     setStatus("loading");
     try {
-      const res = await fetch(`${API}/api/v1/auth/referral/${code.trim()}`);
+      const res = await fetch(`${API}/api/v1/auth/referral`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: code.trim() }),
+      });
       if (res.ok) {
         setStatus("success");
         setMessage("Codigo valido. Ahora inicia sesion con Google y tu cuenta sera activada.");

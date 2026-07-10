@@ -134,7 +134,10 @@ def auth_exchange(
 
 
 @router.post("/logout", status_code=204, response_class=Response)
-def auth_logout(settings: Annotated[Settings, Depends(get_settings)]) -> Response:
+def auth_logout(
+    user: Annotated[User, Depends(require_session)],
+    settings: Annotated[Settings, Depends(get_settings)],
+) -> Response:
     response = Response(status_code=204)
     delete_kwargs: dict = dict(path="/")
     if settings.cookie_domain:
@@ -185,12 +188,16 @@ def invite_user(
     return {"id": str(new_user.id), "email": new_user.email, "referral_code": new_user.referral_code}
 
 
-@router.get("/referral/{code}")
+class _ReferralBody(BaseModel):
+    code: str
+
+
+@router.post("/referral")
 def validate_referral(
-    code: str,
+    body: _ReferralBody,
     db: Annotated[Session, Depends(get_db)],
 ) -> dict:
-    u = db.execute(select(User).where(User.referral_code == code.upper())).scalar_one_or_none()
+    u = db.execute(select(User).where(User.referral_code == body.code.upper())).scalar_one_or_none()
     if not u:
         raise ApiError(ErrorCode.referral_invalid, "código de referido inválido")
-    return {"valid": True, "email": u.email}
+    return {"valid": True}
