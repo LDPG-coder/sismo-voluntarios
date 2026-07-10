@@ -26,11 +26,9 @@ type Zone = { name: string; count: number };
 
 export default function VoluntariosPage() {
   const [activities, setActivities] = useState<Activity[]>([]);
-  const [archived, setArchived] = useState<Activity[]>([]);
   const [zones, setZones] = useState<Zone[]>([]);
   const [activeZone, setActiveZone] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [showArchived, setShowArchived] = useState(false);
 
   useEffect(() => {
     const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
@@ -38,11 +36,9 @@ export default function VoluntariosPage() {
     Promise.all([
       fetch(`${API}/api/v1/activities/zones`, opts).then((r) => (r.ok ? r.json() : [])),
       fetch(`${API}/api/v1/activities${activeZone ? `?zone=${activeZone}` : ""}`, opts).then((r) => (r.ok ? r.json() : [])),
-      fetch(`${API}/api/v1/activities?status=archived`, opts).then((r) => (r.ok ? r.json() : [])),
-    ]).then(([zonesData, activitiesData, archivedData]) => {
+    ]).then(([zonesData, activitiesData]) => {
       setZones(Array.isArray(zonesData) ? zonesData : []);
       setActivities(Array.isArray(activitiesData) ? activitiesData : []);
-      setArchived(Array.isArray(archivedData) ? archivedData : []);
       setLoading(false);
     }).catch(() => setLoading(false));
   }, [activeZone]);
@@ -74,23 +70,6 @@ export default function VoluntariosPage() {
           </div>
         )}
 
-        {archived.length > 0 && !activeZone && (
-          <div className="mt-10">
-            <button
-              onClick={() => setShowArchived(!showArchived)}
-              className="mb-4 text-sm font-medium text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
-            >
-              {showArchived ? "Ocultar realizadas" : `Ver actividades realizadas (${archived.length})`}
-            </button>
-            {showArchived && (
-              <div className="grid gap-4 sm:grid-cols-2 opacity-70">
-                {archived.map((a) => (
-                  <ActivityCard key={a.id} activity={a} />
-                ))}
-              </div>
-            )}
-          </div>
-        )}
       </main>
     </div>
   );
