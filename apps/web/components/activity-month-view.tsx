@@ -97,9 +97,10 @@ export function ActivityMonthView({
   const weekDays = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
 
   return (
-    <div className="overflow-hidden rounded-xl border border-emerald-600 bg-[#f4f5f7] dark:border-emerald-500 dark:bg-[#0c0b0a]">
-      <div className="overflow-x-auto">
-        <div className="min-w-[720px]">
+    <div className="rounded-xl bg-[#f4f5f7] p-3 shadow-[0_0_0_1px_rgba(23,163,74,0.35),0_10px_30px_-12px_rgba(23,163,74,0.25)] dark:bg-[#0c0b0a] dark:shadow-[0_0_0_1px_rgba(23,163,74,0.5),0_10px_30px_-12px_rgba(23,163,74,0.3)]">
+      <div className="overflow-hidden rounded-lg border border-slate-200 dark:border-white/10">
+        <div className="overflow-x-auto">
+          <div className="min-w-[720px]">
           <div className="grid grid-cols-7 border-b border-slate-200 dark:border-white/10">
             {weekDays.map((day) => (
               <div
@@ -190,9 +191,10 @@ export function ActivityMonthView({
           </div>
         </div>
       </div>
+      </div>
 
       {selectedDay && selectedDay.activities.length > 0 && (
-        <div className="border-t border-slate-200 p-4 dark:border-white/10">
+        <div className="mt-3 border-t border-slate-200 p-4 dark:border-white/10">
           <h4 className="mb-3 text-sm font-medium text-slate-700 dark:text-slate-200">
             {selectedDay.date.toLocaleDateString("es-VE", {
               weekday: "long",
