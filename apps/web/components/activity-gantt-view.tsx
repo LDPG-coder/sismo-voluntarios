@@ -125,8 +125,8 @@ export function ActivityGanttView({
   });
 
   const controls = (
-    <div className="mb-3 flex items-center justify-between">
-      <div className="flex items-center gap-1">
+    <div className="relative mb-3 flex items-center">
+      <div className="z-10 flex items-center gap-1">
         <button
           type="button"
           onClick={onPrevDay}
@@ -137,9 +137,13 @@ export function ActivityGanttView({
             <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
           </svg>
         </button>
-        <span className="px-1 text-sm font-bold capitalize text-slate-800 dark:text-white">
-          {dateLabel}
-        </span>
+        <button
+          type="button"
+          onClick={onToday}
+          className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-bold text-emerald-600 transition hover:bg-emerald-50 dark:border-slate-800 dark:text-emerald-400 dark:hover:bg-emerald-950"
+        >
+          Hoy
+        </button>
         <button
           type="button"
           onClick={onNextDay}
@@ -151,13 +155,9 @@ export function ActivityGanttView({
           </svg>
         </button>
       </div>
-      <button
-        type="button"
-        onClick={onToday}
-        className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-bold text-emerald-600 transition hover:bg-emerald-50 dark:border-slate-800 dark:text-emerald-400 dark:hover:bg-emerald-950"
-      >
-        Hoy
-      </button>
+      <span className="pointer-events-none absolute inset-x-0 text-center text-sm font-bold capitalize text-slate-800 dark:text-white">
+        {dateLabel}
+      </span>
     </div>
   );
 
