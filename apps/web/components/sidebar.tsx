@@ -22,7 +22,9 @@ export function Sidebar({ user, open, onClose }: { user: User; open: boolean; on
 
   const isActive = (href: string) =>
     href === "/voluntarios"
-      ? pathname === "/voluntarios" || /^\/voluntarios\/[^/]+$/.test(pathname)
+      ? pathname === "/voluntarios" ||
+        (pathname.startsWith("/voluntarios/") &&
+          !pathname.startsWith("/voluntarios/crear"))
       : pathname === href;
 
   const navContent = (
