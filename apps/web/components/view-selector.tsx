@@ -50,7 +50,7 @@ const views: { type: ViewType; icon: React.ReactNode; label: string }[] = [
 
 export function ViewSelector({ active, onChange }: ViewSelectorProps) {
   return (
-    <div className="inline-flex rounded-lg border border-slate-200 bg-white p-1 dark:border-slate-800 dark:bg-slate-900">
+    <div className="inline-flex rounded-lg bg-slate-200 p-1 dark:bg-slate-800">
       {views.map((view) => (
         <button
           key={view.type}
@@ -59,8 +59,8 @@ export function ViewSelector({ active, onChange }: ViewSelectorProps) {
           className={cn(
             "flex h-8 w-8 items-center justify-center rounded-md transition-colors",
             active === view.type
-              ? "bg-emerald-600 text-white dark:bg-emerald-500 dark:text-white"
-              : "text-slate-500 hover:bg-slate-100 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+              ? "bg-white text-emerald-600 shadow-sm dark:bg-slate-700 dark:text-emerald-400"
+              : "text-slate-500 hover:bg-slate-100 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-slate-200"
           )}
         >
           {view.icon}
