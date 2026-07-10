@@ -39,6 +39,7 @@ export function Sidebar({ user, open, onClose }: { user: User; open: boolean; on
       <nav className="flex-1 space-y-1 px-3 py-4">
         {navItems.map((item) => {
           const active = isActive(item.href);
+          const isCreate = item.href === "/voluntarios/crear";
           const Icon = item.icon;
           return (
             <Link
@@ -47,12 +48,26 @@ export function Sidebar({ user, open, onClose }: { user: User; open: boolean; on
               onClick={onClose}
               className={cn(
                 "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition",
-                active
+                isCreate
+                  ? "bg-emerald-600 text-white shadow-sm hover:bg-emerald-700 dark:bg-emerald-600 dark:hover:bg-emerald-700"
+                  : active
                   ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300"
                   : "text-slate-700 hover:bg-[#eaebed] hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-100"
               )}
             >
-              <Icon />
+              {item.href === "/perfil" ? (
+                user?.photo_url ? (
+                  <img
+                    src={user.photo_url}
+                    alt=""
+                    className="h-5 w-5 shrink-0 rounded-md object-cover"
+                  />
+                ) : (
+                  <Icon />
+                )
+              ) : (
+                <Icon />
+              )}
               {item.label}
             </Link>
           );

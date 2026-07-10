@@ -44,7 +44,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <div className="flex items-center gap-1">
             <NotificationsBell />
             <ThemeToggle />
-            <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-[#eaebed] dark:bg-slate-800">
+              <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-md bg-[#eaebed] dark:bg-slate-800">
               {user?.photo_url ? (
                 <img src={user.photo_url} alt="" className="h-full w-full object-cover" />
               ) : (
