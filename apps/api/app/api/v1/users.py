@@ -158,3 +158,15 @@ def delete_my_photo(
     db.refresh(user)
     _log.info("user.photo.deleted", user_id=str(user.id))
     return _serialize_user(user)
+
+
+@router.post("/me/photo/reset")
+def reset_my_photo(
+    user: Annotated[User, Depends(require_session)],
+    db: Annotated[Session, Depends(get_db)],
+) -> dict:
+    user.photo_url = user.google_photo_url
+    db.commit()
+    db.refresh(user)
+    _log.info("user.photo.reset", user_id=str(user.id))
+    return _serialize_user(user)

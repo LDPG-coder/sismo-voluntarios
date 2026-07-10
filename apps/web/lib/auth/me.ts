@@ -12,6 +12,7 @@ export type CurrentUser = {
   email: string;
   name: string | null;
   photo_url: string | null;
+  google_photo_url: string | null;
   role: "volunteer" | "admin";
   status: "pending" | "active" | "suspended";
   referral_code: string;
@@ -33,6 +34,7 @@ export async function fetchCurrentUser(): Promise<CurrentUser | null> {
       email: data.email as string,
       name: (data.name as string | null) ?? null,
       photo_url: (data.photo_url as string | null) ?? null,
+      google_photo_url: (data.google_photo_url as string | null) ?? null,
       role: data.role as "volunteer" | "admin",
       status: data.status as "pending" | "active" | "suspended",
       referral_code: data.referral_code as string,

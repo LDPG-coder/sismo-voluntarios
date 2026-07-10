@@ -198,10 +198,11 @@ def _resolve_or_create_user(
     # 1. Already has active account
     user = _find_by_google_subject(db, google_subject)
     if user is not None:
-        if photo_url and user.photo_url != photo_url:
+        user.google_photo_url = photo_url or None
+        if user.photo_url is None and photo_url:
             user.photo_url = photo_url
-            db.commit()
-            db.refresh(user)
+        db.commit()
+        db.refresh(user)
         return AuthenticatedUser(user=user, created=False)
 
     # 2. Pending user exists (invited by someone)
@@ -211,7 +212,8 @@ def _resolve_or_create_user(
             user.google_subject = google_subject
             if name:
                 user.name = name
-            if photo_url:
+            user.google_photo_url = photo_url or None
+            if user.photo_url is None and photo_url:
                 user.photo_url = photo_url
             user.status = UserStatus.active
             db.commit()
@@ -222,7 +224,8 @@ def _resolve_or_create_user(
         user.google_subject = google_subject
         if name and not user.name:
             user.name = name
-        if photo_url and user.photo_url != photo_url:
+        user.google_photo_url = photo_url or None
+        if user.photo_url is None and photo_url:
             user.photo_url = photo_url
         db.commit()
         db.refresh(user)

@@ -15,6 +15,8 @@ export default async function PerfilPage() {
         <h1 className="mb-6 text-xl font-bold">Mi perfil</h1>
 
         <div className="space-y-6">
+          <ProfilePhoto initialPhotoUrl={user.photo_url} defaultPhotoUrl={user.google_photo_url} />
+
           <div className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-[#18181b]">
             <p className="text-sm text-zinc-500">Nombre</p>
             <p className="font-medium">{user.name || "Sin nombre"}</p>
@@ -26,7 +28,6 @@ export default async function PerfilPage() {
           </div>
 
           <ReferralBox code={user.referral_code} />
-          <ProfilePhoto initialPhotoUrl={user.photo_url} />
           <InviteForm />
         </div>
       </main>

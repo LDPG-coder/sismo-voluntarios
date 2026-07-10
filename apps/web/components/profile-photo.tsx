@@ -8,7 +8,13 @@ const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 const VIEW = 260;
 const OUTPUT = 320;
 
-export function ProfilePhoto({ initialPhotoUrl }: { initialPhotoUrl: string | null }) {
+export function ProfilePhoto({
+  initialPhotoUrl,
+  defaultPhotoUrl,
+}: {
+  initialPhotoUrl: string | null;
+  defaultPhotoUrl: string | null;
+}) {
   const [photoUrl, setPhotoUrl] = useState<string | null>(initialPhotoUrl);
   const [pending, setPending] = useState<string | null>(null);
   const [natural, setNatural] = useState<{ w: number; h: number } | null>(null);
@@ -17,6 +23,7 @@ export function ProfilePhoto({ initialPhotoUrl }: { initialPhotoUrl: string | nu
   const [dragOver, setDragOver] = useState(false);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [resetting, setResetting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const fileRef = useRef<HTMLInputElement>(null);
@@ -151,6 +158,26 @@ export function ProfilePhoto({ initialPhotoUrl }: { initialPhotoUrl: string | nu
     }
   };
 
+  const reset = async () => {
+    setResetting(true);
+    setError(null);
+    try {
+      const res = await fetch(`${API}/api/v1/users/me/photo/reset`, {
+        method: "POST",
+        credentials: "include",
+        headers: csrfHeaders("POST"),
+      });
+      if (!res.ok) throw new Error("No se pudo restablecer la foto");
+      const data = await res.json();
+      setPhotoUrl(data.photo_url ?? defaultPhotoUrl);
+      setPending(null);
+    } catch (e: any) {
+      setError(e.message || "Error al restablecer");
+    } finally {
+      setResetting(false);
+    }
+  };
+
   return (
     <div className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-[#18181b]">
       <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Foto de perfil</h2>
@@ -210,7 +237,7 @@ export function ProfilePhoto({ initialPhotoUrl }: { initialPhotoUrl: string | nu
             onChange={(e) => loadFile(e.target.files?.[0])}
           />
 
-          <div className="mt-4 flex gap-2">
+          <div className="mt-4 flex flex-wrap gap-2">
             <button
               onClick={openPicker}
               className="rounded-md bg-emerald-600 px-4 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-emerald-700 disabled:opacity-50"
@@ -223,6 +250,13 @@ export function ProfilePhoto({ initialPhotoUrl }: { initialPhotoUrl: string | nu
               className="rounded-md bg-[#f7cdd9] px-4 py-1.5 text-xs font-semibold text-[#f42366] shadow-sm transition hover:brightness-95 disabled:opacity-50 dark:bg-[#f42366]/20 dark:text-[#f7cdd9]"
             >
               Eliminar
+            </button>
+            <button
+              onClick={reset}
+              disabled={resetting || !defaultPhotoUrl || photoUrl === defaultPhotoUrl}
+              className="rounded-md border border-zinc-200 px-4 py-1.5 text-xs font-medium text-zinc-600 transition hover:bg-zinc-50 disabled:opacity-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
+            >
+              Restablecer por defecto
             </button>
           </div>
         </>
