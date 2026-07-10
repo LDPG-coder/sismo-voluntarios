@@ -13,6 +13,7 @@ type User = {
 const navItems = [
   { href: "/voluntarios", label: "Actividades", icon: ActivitiesIcon },
   { href: "/mis-actividades", label: "Mis actividades", icon: MyActivitiesIcon },
+  { href: "/voluntarios/crear", label: "Crear", icon: CreateIcon },
   { href: "/perfil", label: "Mi perfil", icon: ProfileIcon },
 ];
 
@@ -35,15 +36,6 @@ export function Sidebar({ user, open, onClose }: { user: User; open: boolean; on
         </span>
       </div>
 
-      <Link
-        href="/voluntarios/crear"
-        onClick={onClose}
-        className="mx-3 mt-1 flex items-center justify-center gap-2 rounded-lg bg-emerald-600 px-3 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 dark:bg-emerald-600 dark:hover:bg-emerald-700"
-      >
-        <CreateIcon />
-        Crear
-      </Link>
-
       <nav className="flex-1 space-y-1 px-3 py-4">
         {navItems.map((item) => {
           const active = isActive(item.href);
@@ -60,19 +52,7 @@ export function Sidebar({ user, open, onClose }: { user: User; open: boolean; on
                   : "text-slate-700 hover:bg-[#eaebed] hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-100"
               )}
             >
-              {item.href === "/perfil" ? (
-                user?.photo_url ? (
-                  <img
-                    src={user.photo_url}
-                    alt=""
-                    className="h-5 w-5 shrink-0 rounded-md object-cover"
-                  />
-                ) : (
-                  <Icon />
-                )
-              ) : (
-                <Icon />
-              )}
+              <Icon />
               {item.label}
             </Link>
           );
