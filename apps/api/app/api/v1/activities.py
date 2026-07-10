@@ -73,7 +73,8 @@ def list_activities(
         count = db.execute(
             select(func.count()).select_from(ActivityMember).where(ActivityMember.activity_id == a.id)
         ).scalar() or 0
-        result.append(_serialize_activity(a, member_count=count))
+        creator = db.get(User, a.creator_id)
+        result.append(_serialize_activity(a, member_count=count, creator=creator))
     return result
 
 
@@ -104,7 +105,8 @@ def my_activities(
         count = db.execute(
             select(func.count()).select_from(ActivityMember).where(ActivityMember.activity_id == a.id)
         ).scalar() or 0
-        result.append(_serialize_activity(a, member_count=count))
+        creator = db.get(User, a.creator_id)
+        result.append(_serialize_activity(a, member_count=count, creator=creator))
     return result
 
 
@@ -129,7 +131,8 @@ def enrolled_activities(
         count = db.execute(
             select(func.count()).select_from(ActivityMember).where(ActivityMember.activity_id == a.id)
         ).scalar() or 0
-        result.append(_serialize_activity(a, member_count=count))
+        creator = db.get(User, a.creator_id)
+        result.append(_serialize_activity(a, member_count=count, creator=creator))
     return result
 
 
