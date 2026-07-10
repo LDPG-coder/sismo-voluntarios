@@ -75,14 +75,14 @@ export function Sidebar({ user, open, onClose }: { user: User; open: boolean; on
 
   return (
     <>
-      <aside className="hidden rounded-r-2xl border-r border-zinc-200 bg-white lg:sticky lg:top-0 lg:flex lg:h-screen lg:w-64 lg:flex-col dark:border-zinc-800 dark:bg-zinc-950">
+      <aside className="hidden rounded-r-lg border-r border-zinc-200 bg-white lg:sticky lg:top-0 lg:flex lg:h-screen lg:w-64 lg:flex-col dark:border-zinc-800 dark:bg-zinc-950">
         {navContent}
       </aside>
 
       {open && (
         <div className="lg:hidden">
           <div className="fixed inset-0 z-40 bg-black/50" onClick={onClose} />
-          <aside className="fixed inset-y-0 left-0 z-50 w-64 rounded-r-2xl border-r border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950">
+          <aside className="fixed inset-y-0 left-0 z-50 w-64 rounded-r-lg border-r border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950">
             {navContent}
           </aside>
         </div>
