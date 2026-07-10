@@ -40,3 +40,21 @@ body {
 button {
   font-weight: 600 !important;
 }
+
+/* Peso por defecto de la pagina: negrita, salvo info densa */
+body {
+  font-weight: 600 !important;
+}
+
+input,
+textarea,
+select {
+  font-weight: 400 !important;
+}
+
+/* Info densa (descripcion, direccion, telefono, etc.) en peso normal */
+@layer utilities {
+  .text-normal {
+    font-weight: 400 !important;
+  }
+}

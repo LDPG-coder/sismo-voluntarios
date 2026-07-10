@@ -115,21 +115,21 @@ export default function ActivityDetailPage() {
               </p>
             )}
             <p>
-              <strong>Direccion:</strong> {activity.raw_address}
+              <strong>Direccion:</strong> <span className="text-normal">{activity.raw_address}</span>
             </p>
             {activity.description && (
               <p>
-                <strong>Descripcion:</strong> {activity.description}
+                <strong>Descripcion:</strong> <span className="text-normal">{activity.description}</span>
               </p>
             )}
             {activity.requirements && (
               <p>
-                <strong>Requisitos:</strong> {activity.requirements}
+                <strong>Requisitos:</strong> <span className="text-normal">{activity.requirements}</span>
               </p>
             )}
             {activity.contact_info && (
               <p>
-                <strong>Contacto:</strong> {activity.contact_info}
+                <strong>Contacto:</strong> <span className="text-normal">{activity.contact_info}</span>
               </p>
             )}
           </div>
