@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { NavBar } from "@/components/nav-bar";
+import { UsuariosTableSkeleton } from "@/components/skeletons";
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
@@ -107,7 +108,7 @@ export function AdminUsuariosClient() {
           />
         </div>
 
-        {loading && <p className="text-sm text-slate-500">Cargando...</p>}
+        {loading && <UsuariosTableSkeleton />}
         {error && <p className="rounded-xl bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</p>}
 
         {!loading && users.length === 0 && (

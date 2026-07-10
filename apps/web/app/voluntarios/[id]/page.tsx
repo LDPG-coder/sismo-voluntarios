@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { NavBar } from "@/components/nav-bar";
 import { JoinButton } from "@/components/join-button";
+import { ActivityDetailSkeleton } from "@/components/skeletons";
 
 type Activity = {
   id: string;
@@ -67,7 +68,16 @@ export default function ActivityDetailPage() {
     });
   }, [params.id, API]);
 
-  if (loading) return <div className="py-12 text-center text-slate-500">Cargando...</div>;
+  if (loading) {
+    return (
+      <div className="min-h-screen">
+        <NavBar />
+        <main className="mx-auto max-w-2xl px-4 py-8">
+          <ActivityDetailSkeleton />
+        </main>
+      </div>
+    );
+  }
   if (!activity?.id) return <div className="py-12 text-center text-slate-500">Actividad no encontrada</div>;
 
   const isCreator = user?.id === activity.creator_id;

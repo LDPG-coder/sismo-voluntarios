@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 type Activity = {
   id: string;
@@ -46,11 +47,7 @@ export function JoinButton({ activity, user }: { activity: Activity; user: User 
   }
 
   if (status === "loading") {
-    return (
-      <button disabled className="rounded-md bg-slate-200 px-4 py-2 text-sm font-semibold text-slate-500 dark:bg-slate-800">
-        Cargando...
-      </button>
-    );
+    return <Skeleton className="h-9 w-24 rounded-md" />;
   }
 
   if (status === "done") {

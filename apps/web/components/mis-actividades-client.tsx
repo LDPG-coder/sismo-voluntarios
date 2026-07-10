@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { NavBar } from "@/components/nav-bar";
+import { MisActividadesSkeleton } from "@/components/skeletons";
 import { csrfHeaders } from "@/lib/auth/csrf-client";
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
@@ -124,11 +125,7 @@ export function MisActividadesClient() {
         )}
 
         {loading ? (
-          <div className="space-y-3">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="h-24 animate-pulse rounded-lg bg-slate-100 dark:bg-slate-800" />
-            ))}
-          </div>
+          <MisActividadesSkeleton />
         ) : activities.length === 0 ? (
           <EmptyState tab={tab} />
         ) : (

@@ -9,6 +9,12 @@ import { ActivityWeekView } from "@/components/activity-week-view";
 import { ActivityMonthView } from "@/components/activity-month-view";
 import { ActivityDetailModal } from "@/components/activity-detail-modal";
 import { ZoneFilter } from "@/components/zone-filter";
+import {
+  VoluntariosListSkeleton,
+  VoluntariosGanttSkeleton,
+  VoluntariosWeekSkeleton,
+  VoluntariosMonthSkeleton,
+} from "@/components/skeletons";
 import type { Activity } from "@/lib/types";
 
 type User = {
@@ -264,7 +270,15 @@ export default function VoluntariosPage() {
         )}
 
         {loading ? (
-          <div className="py-12 text-center text-slate-500">Cargando...</div>
+          activeView === "list" ? (
+            <VoluntariosListSkeleton />
+          ) : activeView === "gantt" ? (
+            <VoluntariosGanttSkeleton />
+          ) : activeView === "week" ? (
+            <VoluntariosWeekSkeleton />
+          ) : (
+            <VoluntariosMonthSkeleton />
+          )
         ) : activities.length === 0 ? (
           <div className="py-12 text-center text-slate-500">
             No hay actividades disponibles

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { NavBar } from "@/components/nav-bar";
 import { AttendeeList } from "@/components/attendee-list";
+import { ActivityAdminSkeleton } from "@/components/skeletons";
 
 type Activity = {
   id: string;
@@ -92,7 +93,14 @@ export function ActivityAdminClient() {
     }
   };
 
-  if (loading) return <div className="py-12 text-center text-slate-500">Cargando...</div>;
+  if (loading) {
+    return (
+      <div className="min-h-screen">
+        <NavBar />
+        <ActivityAdminSkeleton />
+      </div>
+    );
+  }
   if (error) return <div className="py-12 text-center text-rose-500">{error}</div>;
 
   const currentMax = activity?.max_participants ?? 0;
