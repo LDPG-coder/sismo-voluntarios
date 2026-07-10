@@ -332,15 +332,16 @@ function ActivityCard({
           )}
         </div>
       </div>
-      <div className="mb-3 flex flex-wrap gap-3 text-xs text-zinc-500 dark:text-zinc-400">
-        <span>{a.zone}</span>
-        {date && <span>{date}</span>}
-        {time && <span>{time}</span>}
-        <span>{a.member_count} inscritos</span>
-      </div>
-      {isActive && (
-        <div className="flex gap-2">
-          {isCreated ? (
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="flex flex-wrap gap-3 text-xs text-zinc-500 dark:text-zinc-400">
+          <span>{a.zone}</span>
+          {date && <span>{date}</span>}
+          {time && <span>{time}</span>}
+          <span>{a.member_count} inscritos</span>
+        </div>
+        {isActive && (
+          <div className="flex flex-wrap justify-end gap-2">
+            {isCreated ? (
             <>
               <Link
                 href={`/voluntarios/${a.id}/admin`}
@@ -382,7 +383,8 @@ function ActivityCard({
             )
           )}
         </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }
