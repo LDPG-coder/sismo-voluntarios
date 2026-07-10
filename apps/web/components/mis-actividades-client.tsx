@@ -344,20 +344,20 @@ function ActivityCard({
             <>
               <Link
                 href={`/voluntarios/${a.id}/admin`}
-                className="rounded-md border border-zinc-200 px-3 py-1.5 text-xs font-medium transition hover:bg-zinc-50 dark:border-zinc-700 dark:hover:bg-zinc-800"
+                className="rounded-md bg-[#eaebed] px-3 py-1.5 text-xs font-medium text-zinc-700 shadow-sm transition hover:brightness-95 dark:bg-zinc-700 dark:text-zinc-200"
               >
                 Administrar
               </Link>
               <Link
                 href={`/voluntarios/${a.id}/editar`}
-                className="rounded-md border border-zinc-200 px-3 py-1.5 text-xs font-medium transition hover:bg-zinc-50 dark:border-zinc-700 dark:hover:bg-zinc-800"
+                className="rounded-md bg-[#eaebed] px-3 py-1.5 text-xs font-medium text-zinc-700 shadow-sm transition hover:brightness-95 dark:bg-zinc-700 dark:text-zinc-200"
               >
                 Editar
               </Link>
               {onArchive && (
                 <button
                   onClick={() => onArchive(a.id, a.title)}
-                  className="rounded-md border border-amber-200 px-3 py-1.5 text-xs font-medium text-amber-700 transition hover:bg-amber-50 dark:border-amber-800 dark:text-amber-400 dark:hover:bg-amber-900/20"
+                  className="rounded-md bg-amber-100 px-3 py-1.5 text-xs font-medium text-amber-700 shadow-sm transition hover:brightness-95 dark:bg-amber-900/30 dark:text-amber-400"
                 >
                   Realizada
                 </button>
@@ -365,7 +365,7 @@ function ActivityCard({
               {onCancel && (
                 <button
                   onClick={() => onCancel(a.id, a.title)}
-                  className="rounded-md border border-rose-200 px-3 py-1.5 text-xs font-medium text-rose-700 transition hover:bg-rose-50 dark:border-rose-800 dark:text-rose-400 dark:hover:bg-rose-900/20"
+                  className="rounded-md bg-[#f7cdd9] px-3 py-1.5 text-xs font-medium text-[#f42366] shadow-sm transition hover:brightness-95 dark:bg-[#f42366]/20 dark:text-[#f7cdd9]"
                 >
                   Cancelar
                 </button>
@@ -375,7 +375,7 @@ function ActivityCard({
             onLeave && (
               <button
                 onClick={() => onLeave(a.id, a.title)}
-                className="rounded-md border border-zinc-200 px-3 py-1.5 text-xs font-medium text-zinc-600 transition hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-800"
+                className="rounded-md bg-[#eaebed] px-3 py-1.5 text-xs font-medium text-zinc-600 shadow-sm transition hover:brightness-95 dark:bg-zinc-700 dark:text-zinc-300"
               >
                 Salir
               </button>
