@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { ThemeSync } from "@/components/theme-sync";
 
 export const metadata: Metadata = {
   title: "Sismo Voluntarios",
@@ -21,6 +22,7 @@ export default function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
       <body className="min-h-screen bg-[#f4f5f7] text-zinc-900 antialiased dark:bg-[#0c0b0a] dark:text-zinc-100">
+        <ThemeSync />
         {children}
       </body>
     </html>
