@@ -48,7 +48,7 @@ export function Sidebar({ user, open, onClose }: { user: User; open: boolean; on
               className={cn(
                 "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition",
                 active
-                  ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400"
+                  ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300"
                   : "text-slate-700 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-100"
               )}
             >
@@ -73,14 +73,14 @@ export function Sidebar({ user, open, onClose }: { user: User; open: boolean; on
 
   return (
     <>
-      <aside className="hidden border-r border-slate-200 bg-white lg:sticky lg:top-0 lg:flex lg:h-screen lg:w-64 lg:flex-col dark:border-slate-800 dark:bg-slate-900">
+      <aside className="hidden border-r border-slate-200 bg-white lg:sticky lg:top-0 lg:flex lg:h-screen lg:w-64 lg:flex-col dark:border-slate-800 dark:bg-slate-950">
         {navContent}
       </aside>
 
       {open && (
         <div className="lg:hidden">
           <div className="fixed inset-0 z-40 bg-black/50" onClick={onClose} />
-          <aside className="fixed inset-y-0 left-0 z-50 w-64 border-r border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
+          <aside className="fixed inset-y-0 left-0 z-50 w-64 border-r border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950">
             {navContent}
           </aside>
         </div>
