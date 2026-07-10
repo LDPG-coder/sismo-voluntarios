@@ -157,25 +157,54 @@ export function CrearActivityClient() {
           console.error("[AI] stream error:", e);
         }
       } finally {
-        setAiThinking(false);
+        if (!abortRef.current?.signal.aborted) {
+          setAiThinking(false);
+        }
       }
     },
     [],
   );
 
   const applySuggestion = (data: any) => {
-    if (data.title) setTitle(data.title);
-    if (data.zone) setZone(data.zone);
-    if (data.raw_address) setRawAddress(data.raw_address);
-    if (data.date_time) setDateTime(String(data.date_time).slice(0, 16));
-    if (data.end_time) setEndDateTime(String(data.end_time).slice(0, 16));
-    if (data.estimated_duration_min) setEstimatedDuration(String(data.estimated_duration_min));
-    if (data.max_participants) setMaxParticipants(String(data.max_participants));
-    if (data.requirements?.length) setRequirements(data.requirements);
+    if (data.title && !title) setTitle(typeof data.title === "string" ? data.title : String(data.title));
+    if (data.zone && !zone) setZone(typeof data.zone === "string" ? data.zone : String(data.zone));
+    if (data.raw_address && !rawAddress) {
+      const addr = Array.isArray(data.raw_address) ? data.raw_address.join(", ") : String(data.raw_address);
+      setRawAddress(addr);
+    }
+    if (data.date_time && !dateTime) {
+      const d = new Date(data.date_time);
+      if (!isNaN(d.getTime())) {
+        const utc = d.getTime() + d.getTimezoneOffset() * 60000;
+        const local = new Date(utc - 4 * 3600000);
+        const yyyy = local.getFullYear();
+        const mm = String(local.getMonth() + 1).padStart(2, "0");
+        const dd = String(local.getDate()).padStart(2, "0");
+        const hh = String(local.getHours()).padStart(2, "0");
+        const mi = String(local.getMinutes()).padStart(2, "0");
+        setDateTime(`${yyyy}-${mm}-${dd}T${hh}:${mi}`);
+      }
+    }
+    if (data.end_time && !endDateTime) {
+      const d = new Date(data.end_time);
+      if (!isNaN(d.getTime())) {
+        const utc = d.getTime() + d.getTimezoneOffset() * 60000;
+        const local = new Date(utc - 4 * 3600000);
+        const yyyy = local.getFullYear();
+        const mm = String(local.getMonth() + 1).padStart(2, "0");
+        const dd = String(local.getDate()).padStart(2, "0");
+        const hh = String(local.getHours()).padStart(2, "0");
+        const mi = String(local.getMinutes()).padStart(2, "0");
+        setEndDateTime(`${yyyy}-${mm}-${dd}T${hh}:${mi}`);
+      }
+    }
+    if (data.estimated_duration_min && !estimatedDuration) setEstimatedDuration(String(data.estimated_duration_min));
+    if (data.max_participants && !maxParticipants) setMaxParticipants(String(data.max_participants));
+    if (data.requirements?.length && requirements.length === 0) setRequirements(data.requirements);
   };
 
   useEffect(() => {
-    const t = setTimeout(() => callAi(description), 500);
+    const t = setTimeout(() => callAi(description), 1500);
     return () => clearTimeout(t);
   }, [description, callAi, aiEnabled]);
 
@@ -315,41 +344,83 @@ export function CrearActivityClient() {
             />
           </div>
 
-          <div>
-            <label className="mb-1 block text-sm font-medium">Fecha y hora *</label>
-            <input
-              type="datetime-local"
-              required
-              value={dateTime}
-              onChange={(e) => setDateTime(e.target.value)}
-              disabled={aiThinking}
-              className={aiThinking ? INPUT_LOADING_cls : INPUT_cls}
-            />
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="mb-1 block text-sm font-medium">Fecha *</label>
+              <input
+                type="date"
+                required
+                value={dateTime.split("T")[0]}
+                onChange={(e) => {
+                  const time = dateTime.split("T")[1] || "08:00";
+                  setDateTime(`${e.target.value}T${time}`);
+                }}
+                disabled={aiThinking}
+                className={aiThinking ? INPUT_LOADING_cls : INPUT_cls}
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-sm font-medium">Hora inicio *</label>
+              <input
+                type="time"
+                required
+                value={dateTime.split("T")[1] || ""}
+                onChange={(e) => {
+                  const date = dateTime.split("T")[0] || new Date().toISOString().split("T")[0];
+                  setDateTime(`${date}T${e.target.value}`);
+                }}
+                disabled={aiThinking}
+                className={aiThinking ? INPUT_LOADING_cls : INPUT_cls}
+              />
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="mb-1 block text-sm font-medium">Hora fin</label>
+              <label className="mb-1 block text-sm font-medium">Fecha fin</label>
               <input
-                type="datetime-local"
-                value={endDateTime}
-                onChange={(e) => setEndDateTime(e.target.value)}
+                type="date"
+                value={endDateTime.split("T")[0]}
+                onChange={(e) => {
+                  const time = endDateTime.split("T")[1] || "17:00";
+                  if (e.target.value) {
+                    setEndDateTime(`${e.target.value}T${time}`);
+                  } else {
+                    setEndDateTime("");
+                  }
+                }}
                 disabled={aiThinking}
                 className={aiThinking ? INPUT_LOADING_cls : INPUT_cls}
               />
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium">Duracion (min)</label>
+              <label className="mb-1 block text-sm font-medium">Hora fin</label>
               <input
-                type="number"
-                min="1"
-                value={estimatedDuration}
-                onChange={(e) => setEstimatedDuration(e.target.value)}
-                placeholder="Ej: 120"
+                type="time"
+                value={endDateTime.split("T")[1] || ""}
+                onChange={(e) => {
+                  const date = endDateTime.split("T")[0] || dateTime.split("T")[0];
+                  if (date) {
+                    setEndDateTime(`${date}T${e.target.value}`);
+                  }
+                }}
                 disabled={aiThinking}
                 className={aiThinking ? INPUT_LOADING_cls : INPUT_cls}
               />
             </div>
+          </div>
+
+          <div>
+            <label className="mb-1 block text-sm font-medium">Duracion (minutos)</label>
+            <input
+              type="number"
+              min="1"
+              value={estimatedDuration}
+              onChange={(e) => setEstimatedDuration(e.target.value)}
+              placeholder="Ej: 120"
+              disabled={aiThinking}
+              className={aiThinking ? INPUT_LOADING_cls : INPUT_cls}
+            />
           </div>
 
           <div>
