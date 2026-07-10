@@ -8,6 +8,9 @@ type ActivityWeekViewProps = {
   weekStart: Date;
   enrolledIds?: Set<string>;
   currentUserId?: string | null;
+  onPrevWeek?: () => void;
+  onNextWeek?: () => void;
+  onToday?: () => void;
   onSelectActivity: (activity: Activity) => void;
 };
 
@@ -126,6 +129,9 @@ export function ActivityWeekView({
   weekStart,
   enrolledIds,
   currentUserId,
+  onPrevWeek,
+  onNextWeek,
+  onToday,
   onSelectActivity,
 }: ActivityWeekViewProps) {
   const { rows, hours, startHour } = useMemo(() => {
@@ -181,9 +187,56 @@ export function ActivityWeekView({
   const gridWidth = (hours.length - 1 > 0 ? hours.length : 1) * HOUR_WIDTH;
   const totalWidth = DAY_LABEL_WIDTH + gridWidth;
 
+  const weekEnd = new Date(weekStart);
+  weekEnd.setDate(weekEnd.getDate() + 6);
+  const weekRangeLabel = `${weekStart.toLocaleDateString("es-VE", {
+    day: "numeric",
+    month: "short",
+  })} - ${weekEnd.toLocaleDateString("es-VE", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  })}`;
+
   return (
-    <div className="rounded-lg border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
-      <div className="overflow-x-auto">
+    <div className="rounded-xl bg-[#f4f5f7] p-3 shadow-[0_0_0_1px_rgba(23,163,74,0.35),0_10px_30px_-12px_rgba(23,163,74,0.25)] dark:bg-[#0c0b0a] dark:shadow-[0_0_0_1px_rgba(23,163,74,0.5),0_10px_30px_-12px_rgba(23,163,74,0.3)]">
+      <div className="mb-3 flex items-center justify-between">
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={onPrevWeek}
+            aria-label="Semana anterior"
+            className="rounded-lg border border-slate-200 p-2 text-slate-600 transition hover:bg-slate-100 dark:border-slate-800 dark:text-slate-400 dark:hover:bg-slate-800"
+          >
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+            </svg>
+          </button>
+          <span className="px-1 text-sm font-bold text-slate-800 dark:text-white">
+            {weekRangeLabel}
+          </span>
+          <button
+            type="button"
+            onClick={onNextWeek}
+            aria-label="Semana siguiente"
+            className="rounded-lg border border-slate-200 p-2 text-slate-600 transition hover:bg-slate-100 dark:border-slate-800 dark:text-slate-400 dark:hover:bg-slate-800"
+          >
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+            </svg>
+          </button>
+        </div>
+        <button
+          type="button"
+          onClick={onToday}
+          className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-bold text-emerald-600 transition hover:bg-emerald-50 dark:border-slate-800 dark:text-emerald-400 dark:hover:bg-emerald-950"
+        >
+          Hoy
+        </button>
+      </div>
+
+      <div className="overflow-hidden rounded-lg border border-slate-200 dark:border-white/10">
+        <div className="overflow-x-auto">
         <div style={{ minWidth: totalWidth }}>
           <div className="flex border-b border-slate-200 dark:border-slate-800">
             <div
@@ -326,6 +379,7 @@ export function ActivityWeekView({
           })}
         </div>
       </div>
+    </div>
     </div>
   );
 }

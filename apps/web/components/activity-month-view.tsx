@@ -10,6 +10,9 @@ type ActivityMonthViewProps = {
   enrolledIds?: Set<string>;
   onSelectActivity: (activity: Activity) => void;
   onSelectDay: (date: Date, activities: Activity[]) => void;
+  onPrevMonth?: () => void;
+  onNextMonth?: () => void;
+  onToday?: () => void;
 };
 
 type CalendarDay = {
@@ -47,6 +50,9 @@ export function ActivityMonthView({
   enrolledIds,
   onSelectActivity,
   onSelectDay,
+  onPrevMonth,
+  onNextMonth,
+  onToday,
 }: ActivityMonthViewProps) {
   const [selectedDay, setSelectedDay] = useState<CalendarDay | null>(null);
 
@@ -98,6 +104,41 @@ export function ActivityMonthView({
 
   return (
     <div className="rounded-xl bg-[#f4f5f7] p-3 shadow-[0_0_0_1px_rgba(23,163,74,0.35),0_10px_30px_-12px_rgba(23,163,74,0.25)] dark:bg-[#0c0b0a] dark:shadow-[0_0_0_1px_rgba(23,163,74,0.5),0_10px_30px_-12px_rgba(23,163,74,0.3)]">
+      <div className="mb-3 flex items-center justify-between">
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={onPrevMonth}
+            aria-label="Mes anterior"
+            className="rounded-lg border border-slate-200 p-2 text-slate-600 transition hover:bg-slate-100 dark:border-slate-800 dark:text-slate-400 dark:hover:bg-slate-800"
+          >
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+            </svg>
+          </button>
+          <span className="px-1 text-sm font-bold capitalize text-slate-800 dark:text-white">
+            {currentMonth.toLocaleDateString("es-VE", { month: "long", year: "numeric" })}
+          </span>
+          <button
+            type="button"
+            onClick={onNextMonth}
+            aria-label="Mes siguiente"
+            className="rounded-lg border border-slate-200 p-2 text-slate-600 transition hover:bg-slate-100 dark:border-slate-800 dark:text-slate-400 dark:hover:bg-slate-800"
+          >
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+            </svg>
+          </button>
+        </div>
+        <button
+          type="button"
+          onClick={onToday}
+          className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-bold text-emerald-600 transition hover:bg-emerald-50 dark:border-slate-800 dark:text-emerald-400 dark:hover:bg-emerald-950"
+        >
+          Hoy
+        </button>
+      </div>
+
       <div className="overflow-hidden rounded-lg border border-slate-200 dark:border-white/10">
         <div className="overflow-x-auto">
           <div className="min-w-[720px]">

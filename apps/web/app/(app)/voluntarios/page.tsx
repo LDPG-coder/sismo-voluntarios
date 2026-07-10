@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState } from "react";
 import { ViewSelector, type ViewType } from "@/components/view-selector";
 import { ActivityCard } from "@/components/activity-card";
 import { ActivityGanttView } from "@/components/activity-gantt-view";
@@ -185,17 +185,6 @@ export default function VoluntariosPage() {
     setCurrentMonth(next);
   };
 
-  const weekEnd = useMemo(() => {
-    const end = new Date(weekStart);
-    end.setDate(end.getDate() + 6);
-    return end;
-  }, [weekStart]);
-
-  const monthLabel = currentMonth.toLocaleDateString("es-VE", {
-    month: "long",
-    year: "numeric",
-  });
-
   return (
     <div className="min-h-screen">
       <main className="mx-auto max-w-6xl px-4 py-8">
@@ -212,60 +201,6 @@ export default function VoluntariosPage() {
           <ZoneFilter zones={zones} active={activeZone} onChange={setActiveZone} />
           <ViewSelector active={activeView} onChange={setActiveView} />
         </div>
-
-        {activeView !== "list" && (
-          <div className="mb-4 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <button
-                onClick={
-                  activeView === "gantt"
-                    ? handlePrevDay
-                    : activeView === "week"
-                    ? handlePrevWeek
-                    : handlePrevMonth
-                }
-                className="rounded-lg border border-slate-200 p-2 text-slate-600 transition hover:bg-slate-50 dark:border-slate-800 dark:text-slate-400 dark:hover:bg-slate-800"
-              >
-                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
-                </svg>
-              </button>
-              <button
-                onClick={handleToday}
-                className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 transition hover:bg-slate-50 dark:border-slate-800 dark:text-slate-400 dark:hover:bg-slate-800"
-              >
-                Hoy
-              </button>
-              <button
-                onClick={
-                  activeView === "gantt"
-                    ? handleNextDay
-                    : activeView === "week"
-                    ? handleNextWeek
-                    : handleNextMonth
-                }
-                className="rounded-lg border border-slate-200 p-2 text-slate-600 transition hover:bg-slate-50 dark:border-slate-800 dark:text-slate-400 dark:hover:bg-slate-800"
-              >
-                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-                </svg>
-              </button>
-            </div>
-
-            <h2 className="text-sm font-medium text-slate-700 dark:text-slate-300">
-              {activeView === "gantt" &&
-                selectedDate.toLocaleDateString("es-VE", {
-                  weekday: "long",
-                  day: "numeric",
-                  month: "long",
-                  year: "numeric",
-                })}
-              {activeView === "week" &&
-                `${weekStart.toLocaleDateString("es-VE", { day: "numeric", month: "short" })} - ${weekEnd.toLocaleDateString("es-VE", { day: "numeric", month: "short", year: "numeric" })}`}
-              {activeView === "month" && monthLabel}
-            </h2>
-          </div>
-        )}
 
         {loading ? (
           activeView === "list" ? (
@@ -303,6 +238,9 @@ export default function VoluntariosPage() {
                 activities={activities}
                 selectedDate={selectedDate}
                 enrolledIds={enrolledIds}
+                onPrevDay={handlePrevDay}
+                onNextDay={handleNextDay}
+                onToday={handleToday}
                 onSelectActivity={handleSelectActivity}
               />
             )}
@@ -313,6 +251,9 @@ export default function VoluntariosPage() {
                 weekStart={weekStart}
                 enrolledIds={enrolledIds}
                 currentUserId={user?.id ?? null}
+                onPrevWeek={handlePrevWeek}
+                onNextWeek={handleNextWeek}
+                onToday={handleToday}
                 onSelectActivity={handleSelectActivity}
               />
             )}
@@ -323,6 +264,9 @@ export default function VoluntariosPage() {
                 currentMonth={currentMonth}
                 enrolledIds={enrolledIds}
                 onSelectActivity={handleSelectActivity}
+                onPrevMonth={handlePrevMonth}
+                onNextMonth={handleNextMonth}
+                onToday={handleToday}
                 onSelectDay={(date, dayActivities) => {
                   if (dayActivities.length === 1) {
                     handleSelectActivity(dayActivities[0]);
