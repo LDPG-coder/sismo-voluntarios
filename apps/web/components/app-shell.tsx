@@ -28,7 +28,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     <div className="flex min-h-screen bg-slate-50 dark:bg-slate-950">
       <Sidebar user={user} open={open} onClose={() => setOpen(false)} />
 
-      <div className="flex min-w-0 flex-1 flex-col">
+      <div className="flex min-w-0 flex-1 flex-col shadow-[-10px_0_24px_-12px_rgba(15,23,42,0.12)] dark:shadow-[-10px_0_24px_-12px_rgba(0,0,0,0.5)]">
         <header className="sticky top-0 z-30 flex items-center justify-between border-b border-slate-200 bg-white/80 px-4 py-2 backdrop-blur dark:border-slate-800 dark:bg-slate-900/80 lg:hidden">
           <button
             type="button"
