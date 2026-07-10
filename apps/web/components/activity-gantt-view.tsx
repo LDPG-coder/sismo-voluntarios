@@ -163,7 +163,7 @@ export function ActivityGanttView({
 
   if (blocks.length === 0) {
     return (
-      <div className="rounded-xl bg-[#f4f5f7] p-3 shadow-[0_0_0_1px_rgba(23,163,74,0.35),0_10px_30px_-12px_rgba(23,163,74,0.25)] dark:bg-[#0c0b0a] dark:shadow-[0_0_0_1px_rgba(23,163,74,0.5),0_10px_30px_-12px_rgba(23,163,74,0.3)]">
+      <div className="rounded-xl bg-[#f4f5f7] p-3 shadow-[0_0_0_1px_rgba(23,163,74,0.35),0_10px_30px_-12px_rgba(23,163,74,0.25)] dark:bg-[#15120e] dark:shadow-[0_0_0_1px_rgba(23,163,74,0.5),0_10px_30px_-12px_rgba(23,163,74,0.3)]">
         {controls}
         <div className="rounded-lg border border-slate-200 bg-white p-8 text-center dark:border-slate-800 dark:bg-slate-900">
           <p className="text-slate-500 dark:text-slate-400">
@@ -175,7 +175,7 @@ export function ActivityGanttView({
   }
 
   return (
-    <div className="rounded-xl bg-[#f4f5f7] p-3 shadow-[0_0_0_1px_rgba(23,163,74,0.35),0_10px_30px_-12px_rgba(23,163,74,0.25)] dark:bg-[#0c0b0a] dark:shadow-[0_0_0_1px_rgba(23,163,74,0.5),0_10px_30px_-12px_rgba(23,163,74,0.3)]">
+    <div className="rounded-xl bg-[#f4f5f7] p-3 shadow-[0_0_0_1px_rgba(23,163,74,0.35),0_10px_30px_-12px_rgba(23,163,74,0.25)] dark:bg-[#15120e] dark:shadow-[0_0_0_1px_rgba(23,163,74,0.5),0_10px_30px_-12px_rgba(23,163,74,0.3)]">
       {controls}
       <div className="overflow-hidden rounded-lg border border-slate-200 dark:border-white/10">
         <div className="overflow-x-auto">
