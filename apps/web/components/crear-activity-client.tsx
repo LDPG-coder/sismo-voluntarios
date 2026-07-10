@@ -5,6 +5,9 @@ import { useRouter } from "next/navigation";
 import { NavBar } from "@/components/nav-bar";
 import { csrfHeaders } from "@/lib/auth/csrf-client";
 
+const DRAFT_KEY = "sismo-activity-draft";
+const DRAFT_DEBOUNCE_MS = 800;
+
 const ZONES = ["Caracas", "Guatire", "Guarenas", "La Guaira", "Altos Mirandinos", "Caucagua"];
 
 const INPUT_cls =
@@ -35,6 +38,64 @@ export function CrearActivityClient() {
   const [aiEnabled, setAiEnabled] = useState(true);
 
   const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+
+  const mountedRef = useRef(false);
+  const draftTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(DRAFT_KEY);
+      if (raw) {
+        const saved = JSON.parse(raw);
+        if (saved.description) setDescription(saved.description);
+        if (saved.title) setTitle(saved.title);
+        if (saved.zone) setZone(saved.zone);
+        if (saved.rawAddress) setRawAddress(saved.rawAddress);
+        if (saved.dateTime) setDateTime(saved.dateTime);
+        if (saved.endDateTime) setEndDateTime(saved.endDateTime);
+        if (saved.estimatedDuration) setEstimatedDuration(saved.estimatedDuration);
+        if (saved.maxParticipants) setMaxParticipants(saved.maxParticipants);
+        if (saved.contactInfo) setContactInfo(saved.contactInfo);
+        if (saved.requirements?.length) setRequirements(saved.requirements);
+        if (typeof saved.aiEnabled === "boolean") setAiEnabled(saved.aiEnabled);
+      }
+    } catch {}
+    mountedRef.current = true;
+  }, []);
+
+  useEffect(() => {
+    if (!mountedRef.current) return;
+    if (draftTimerRef.current) clearTimeout(draftTimerRef.current);
+    draftTimerRef.current = setTimeout(() => {
+      try {
+        localStorage.setItem(
+          DRAFT_KEY,
+          JSON.stringify({
+            description,
+            title,
+            zone,
+            rawAddress,
+            dateTime,
+            endDateTime,
+            estimatedDuration,
+            maxParticipants,
+            contactInfo,
+            requirements,
+            aiEnabled,
+          }),
+        );
+      } catch {}
+    }, DRAFT_DEBOUNCE_MS);
+    return () => {
+      if (draftTimerRef.current) clearTimeout(draftTimerRef.current);
+    };
+  }, [description, title, zone, rawAddress, dateTime, endDateTime, estimatedDuration, maxParticipants, contactInfo, requirements, aiEnabled]);
+
+  const clearDraft = () => {
+    try {
+      localStorage.removeItem(DRAFT_KEY);
+    } catch {}
+  };
 
   const callAi = useCallback(
     async (desc: string) => {
@@ -173,6 +234,7 @@ export function CrearActivityClient() {
     }
 
     const data = await res.json();
+    clearDraft();
     router.push(`/voluntarios/${data.id}`);
   };
 
