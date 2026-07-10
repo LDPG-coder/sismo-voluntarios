@@ -80,7 +80,7 @@ def suggest_activity_stream(description: str) -> Generator[dict, None, None]:
     )
 
     now_venezuela = datetime.now(timezone(timedelta(hours=-4)))
-    now_str = now_venezuela.strftime("%A %d/%m/%Y %H:%M (hora de Venezuela, UTC-4)")
+    now_str = now_venezuela.strftime("%A %d de %B de %Y, %H:%M (hora de Venezuela, UTC-4)")
 
     try:
         stream = client.chat.completions.create(
@@ -125,7 +125,7 @@ def suggest_activity_stream(description: str) -> Generator[dict, None, None]:
             result = ActivitySuggestion(
                 title=args.get("title", ""),
                 zone=args.get("zone", ZONES[0]),
-                raw_address=args.get("raw_address", ""),
+                raw_address=" ".join(args.get("raw_address", "")) if isinstance(args.get("raw_address"), list) else args.get("raw_address", ""),
                 date_time=args.get("date_time_suggestion"),
                 end_time=args.get("end_time_suggestion"),
                 estimated_duration_min=args.get("estimated_duration_min"),

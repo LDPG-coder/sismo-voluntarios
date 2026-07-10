@@ -231,8 +231,11 @@ def create_activity(
         raise ApiError(ErrorCode.validation_missing_field, "date_time is required")
 
     from dateutil.parser import parse as parse_dt
+    from datetime import timezone, timedelta
     try:
         date_time = parse_dt(date_time_str)
+        if date_time.tzinfo is None:
+            date_time = date_time.replace(tzinfo=timezone(timedelta(hours=-4)))
     except (ValueError, TypeError):
         raise ApiError(ErrorCode.validation_invalid_format, "invalid date_time format")
 
@@ -241,6 +244,8 @@ def create_activity(
     if end_time_str:
         try:
             end_time = parse_dt(end_time_str)
+            if end_time.tzinfo is None:
+                end_time = end_time.replace(tzinfo=timezone(timedelta(hours=-4)))
         except (ValueError, TypeError):
             pass
 
