@@ -7,6 +7,7 @@ type ActivityWeekViewProps = {
   activities: Activity[];
   weekStart: Date;
   enrolledIds?: Set<string>;
+  currentUserId?: string | null;
   onSelectActivity: (activity: Activity) => void;
 };
 
@@ -28,6 +29,7 @@ type LaneActivity = {
   startHour: number;
   duration: number;
   lane: number;
+  conflict?: "emergency" | "warning";
 };
 
 type DayRow = {
@@ -78,10 +80,52 @@ function packLanes(items: Omit<LaneActivity, "lane">[]): {
   return { laned, lanes: Math.max(laneEnds.length, 1) };
 }
 
+function computeConflicts(
+  items: LaneActivity[],
+  isUser: (a: Activity) => boolean
+): Map<string, "emergency" | "warning"> {
+  const n = items.length;
+  if (n < 2) return new Map();
+
+  const parent = Array.from({ length: n }, (_, i) => i);
+  const find = (x: number): number =>
+    parent[x] === x ? x : (parent[x] = find(parent[x]));
+
+  for (let i = 0; i < n; i++) {
+    for (let j = i + 1; j < n; j++) {
+      const a = items[i];
+      const b = items[j];
+      const aEnd = a.startHour + a.duration;
+      const bEnd = b.startHour + b.duration;
+      if (a.startHour < bEnd - 1e-6 && b.startHour < aEnd - 1e-6) {
+        parent[find(i)] = find(j);
+      }
+    }
+  }
+
+  const size = new Map<number, number>();
+  const hasUser = new Map<number, boolean>();
+  for (let i = 0; i < n; i++) {
+    const r = find(i);
+    size.set(r, (size.get(r) ?? 0) + 1);
+    hasUser.set(r, (hasUser.get(r) ?? false) || isUser(items[i].activity));
+  }
+
+  const result = new Map<string, "emergency" | "warning">();
+  for (let i = 0; i < n; i++) {
+    const r = find(i);
+    if ((size.get(r) ?? 0) > 1) {
+      result.set(items[i].activity.id, hasUser.get(r) ? "emergency" : "warning");
+    }
+  }
+  return result;
+}
+
 export function ActivityWeekView({
   activities,
   weekStart,
   enrolledIds,
+  currentUserId,
   onSelectActivity,
 }: ActivityWeekViewProps) {
   const { rows, hours, startHour } = useMemo(() => {
@@ -120,11 +164,19 @@ export function ActivityWeekView({
 
     const dayRows: DayRow[] = daysList.map((day, i) => {
       const { laned, lanes } = packLanes(rawByDay[i]);
-      return { day, items: laned, lanes };
+      const conflictMap = computeConflicts(laned, (a) =>
+        (enrolledIds?.has(a.id) ?? false) ||
+        (currentUserId != null && a.creator_id === currentUserId)
+      );
+      const items = laned.map((it) => ({
+        ...it,
+        conflict: conflictMap.get(it.activity.id),
+      }));
+      return { day, items, lanes };
     });
 
     return { rows: dayRows, hours: hoursList, startHour: dynStart };
-  }, [activities, weekStart]);
+  }, [activities, weekStart, enrolledIds, currentUserId]);
 
   const gridWidth = (hours.length - 1 > 0 ? hours.length : 1) * HOUR_WIDTH;
   const totalWidth = DAY_LABEL_WIDTH + gridWidth;
@@ -214,15 +266,30 @@ export function ActivityWeekView({
                     const top = it.lane * LANE_HEIGHT + ROW_PADDING / 2;
                     const isEnrolled =
                       enrolledIds?.has(it.activity.id) ?? false;
+
+                    const tone = (() => {
+                      if (it.conflict === "emergency")
+                        return "border-rose-300 bg-rose-50 text-rose-700 dark:border-rose-700 dark:bg-rose-950 dark:text-rose-300";
+                      if (it.conflict === "warning")
+                        return "border-amber-300 bg-amber-50 text-amber-700 dark:border-amber-700 dark:bg-amber-950 dark:text-amber-300";
+                      if (isEnrolled)
+                        return "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-300";
+                      return "border-slate-200 bg-[#eaebed] text-slate-700 hover:bg-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-emerald-700";
+                    })();
+
+                    const title =
+                      it.conflict === "emergency"
+                        ? "Conflicto de horario con tu inscripcion o creacion"
+                        : it.conflict === "warning"
+                        ? "Conflicto de horario"
+                        : undefined;
+
                     return (
                       <div
                         key={it.activity.id}
                         onClick={() => onSelectActivity(it.activity)}
-                        className={`absolute cursor-pointer overflow-hidden rounded-md border px-2 py-1 text-xs leading-tight transition hover:shadow-md ${
-                          isEnrolled
-                            ? "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
-                            : "border-slate-200 bg-[#eaebed] text-slate-700 hover:bg-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-emerald-700"
-                        }`}
+                        title={title}
+                        className={`absolute cursor-pointer overflow-hidden rounded-md border px-2 py-1 text-xs leading-tight transition hover:shadow-md ${tone}`}
                         style={{
                           left: `${left}px`,
                           width: `${Math.max(width - 4, 24)}px`,
@@ -231,7 +298,13 @@ export function ActivityWeekView({
                         }}
                       >
                         <div className="flex items-center gap-1">
-                          {isEnrolled && (
+                          {it.conflict === "emergency" && (
+                            <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-rose-500" />
+                          )}
+                          {it.conflict === "warning" && (
+                            <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-amber-500" />
+                          )}
+                          {!it.conflict && isEnrolled && (
                             <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-500" />
                           )}
                           <p className="truncate font-medium">

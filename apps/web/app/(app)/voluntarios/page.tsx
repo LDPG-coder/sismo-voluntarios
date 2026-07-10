@@ -312,6 +312,7 @@ export default function VoluntariosPage() {
                 activities={activities}
                 weekStart={weekStart}
                 enrolledIds={enrolledIds}
+                currentUserId={user?.id ?? null}
                 onSelectActivity={handleSelectActivity}
               />
             )}
