@@ -114,9 +114,9 @@ export function ActivityCard({ activity, isEnrolled, onJoin, onLeave }: Activity
                 e.stopPropagation();
                 onJoin?.(activity.id);
               }}
-              className="rounded-lg bg-blue-600 px-3 py-1 text-xs font-medium text-white transition hover:bg-blue-700"
+              className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-700 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-slate-200"
             >
-              Sumarse
+              Unirme
             </button>
           )}
         </div>
