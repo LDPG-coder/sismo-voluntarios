@@ -125,13 +125,13 @@ export function ActivityGanttView({
   });
 
   const controls = (
-    <div className="relative mb-3 flex items-center">
-      <div className="z-10 flex items-center gap-1">
+    <div className="mb-3 flex items-center gap-2">
+      <div className="inline-flex items-stretch overflow-hidden rounded-lg border border-zinc-200 dark:border-zinc-800">
         <button
           type="button"
           onClick={onPrevDay}
           aria-label="Día anterior"
-          className="rounded-lg border border-zinc-200 p-2 text-zinc-600 transition hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-800"
+          className="flex items-center justify-center border-r border-zinc-200 px-2 py-1.5 text-zinc-600 transition hover:bg-zinc-100 dark:border-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-800"
         >
           <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
@@ -140,7 +140,7 @@ export function ActivityGanttView({
         <button
           type="button"
           onClick={onToday}
-          className="rounded-lg border border-zinc-200 px-3 py-1.5 text-xs font-bold text-emerald-600 transition hover:bg-emerald-50 dark:border-zinc-700 dark:text-emerald-400 dark:hover:bg-emerald-950"
+          className="border-r border-zinc-200 px-3 py-1.5 text-xs font-bold text-emerald-600 transition hover:bg-emerald-50 dark:border-zinc-800 dark:text-emerald-400 dark:hover:bg-emerald-950"
         >
           Hoy
         </button>
@@ -148,14 +148,14 @@ export function ActivityGanttView({
           type="button"
           onClick={onNextDay}
           aria-label="Día siguiente"
-          className="rounded-lg border border-zinc-200 p-2 text-zinc-600 transition hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-800"
+          className="flex items-center justify-center px-2 py-1.5 text-zinc-600 transition hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800"
         >
           <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
           </svg>
         </button>
       </div>
-      <span className="pointer-events-none absolute inset-x-0 text-center text-sm font-bold capitalize text-zinc-800 dark:text-white">
+      <span className="min-w-0 flex-1 text-center text-sm font-bold capitalize text-zinc-800 dark:text-white">
         {dateLabel}
       </span>
     </div>
