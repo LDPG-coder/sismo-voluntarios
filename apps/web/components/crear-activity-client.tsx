@@ -35,6 +35,7 @@ export function CrearActivityClient() {
   const [error, setError] = useState<string | null>(null);
   const [aiThinking, setAiThinking] = useState(false);
   const [aiEnabled, setAiEnabled] = useState(true);
+  const [textShimmer, setTextShimmer] = useState(false);
   const descriptionRef = useRef<HTMLTextAreaElement>(null);
 
   const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
@@ -90,6 +91,13 @@ export function CrearActivityClient() {
       if (draftTimerRef.current) clearTimeout(draftTimerRef.current);
     };
   }, [description, title, zone, rawAddress, dateTime, endDateTime, estimatedDuration, maxParticipants, contactInfo, requirements, aiEnabled]);
+
+  useEffect(() => {
+    if (!aiEnabled) return;
+    setTextShimmer(true);
+    const t = setTimeout(() => setTextShimmer(false), 1300);
+    return () => clearTimeout(t);
+  }, []);
 
   const clearDraft = () => {
     try {
@@ -292,15 +300,18 @@ export function CrearActivityClient() {
               <label className="text-sm font-medium">Descripción *</label>
               <button
                 type="button"
-                onClick={() => setAiEnabled(!aiEnabled)}
-                className={`flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold transition ${
-                  aiEnabled
-                    ? "bg-emerald-600 text-white hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-600"
-                    : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
-                }`}
+                onClick={() => {
+                  const next = !aiEnabled;
+                  setAiEnabled(next);
+                  if (next) {
+                    setTextShimmer(true);
+                    setTimeout(() => setTextShimmer(false), 1300);
+                  }
+                }}
+                className="flex items-center gap-2 text-xs text-zinc-500 transition hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200"
               >
-                <span className={aiEnabled ? "animate-shimmer bg-clip-text text-transparent [-webkit-background-clip:text]" : ""}>Autocompletar con IA</span>
-                <div className={`relative h-5 w-9 rounded-full transition-colors ${aiEnabled ? "bg-white/40" : "bg-zinc-300 dark:bg-zinc-600"}`}>
+                <span className={textShimmer ? "text-shimmer" : ""}>Autocompletar con IA</span>
+                <div className={`relative h-5 w-9 rounded-full transition-colors ${aiEnabled ? "bg-emerald-500 dark:bg-emerald-400" : "bg-zinc-300 dark:bg-zinc-600"}`}>
                   <div className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform ${aiEnabled ? "translate-x-4" : "translate-x-0.5"}`} />
                 </div>
               </button>
