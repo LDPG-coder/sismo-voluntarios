@@ -318,10 +318,15 @@ def update_activity(
             a.end_time = None
     if "max_participants" in body:
         a.max_participants = body["max_participants"]
+    if "estimated_duration_min" in body:
+        a.estimated_duration_min = body["estimated_duration_min"]
+    if "contact_info" in body:
+        a.contact_info = body["contact_info"]
 
     db.commit()
     db.refresh(a)
-    return _serialize_activity(a)
+    creator = db.get(User, a.creator_id)
+    return _serialize_activity(a, creator=creator)
 
 
 @router.delete("/{activity_id}")

@@ -342,7 +342,6 @@ function ActivityCard({
         {date && <span>{date}</span>}
         {time && <span>{time}</span>}
         <span>{a.member_count} inscritos</span>
-        {a.max_participants && <span>Max: {a.max_participants}</span>}
       </div>
       {isActive && (
         <div className="flex gap-2">
@@ -353,6 +352,12 @@ function ActivityCard({
                 className="rounded-md border border-slate-200 px-3 py-1.5 text-xs font-medium transition hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800"
               >
                 Administrar
+              </Link>
+              <Link
+                href={`/voluntarios/${a.id}/editar`}
+                className="rounded-md border border-slate-200 px-3 py-1.5 text-xs font-medium transition hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800"
+              >
+                Editar
               </Link>
               {onArchive && (
                 <button
