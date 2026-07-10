@@ -10,19 +10,19 @@ export default async function LoginPage({
   return (
     <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-6 py-12">
       <header className="mb-8">
-        <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+        <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500">
           Sismo Voluntarios
         </p>
         <h1 className="mt-1 text-2xl font-bold tracking-tight">Iniciar sesion</h1>
-        <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
+        <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
           Accede para unirte a actividades de voluntariado en tu zona.
         </p>
       </header>
 
       <ErrorBanner searchParams={searchParams} />
 
-      <div className="space-y-4 rounded-lg border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-[#18181b]">
-        <p className="text-sm text-slate-700 dark:text-slate-200">
+      <div className="space-y-4 rounded-lg border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-[#18181b]">
+        <p className="text-sm text-zinc-700 dark:text-zinc-200">
           Inicia sesion con tu cuenta de Google para participar.
         </p>
         <a
@@ -52,9 +52,9 @@ export default async function LoginPage({
       </div>
 
       <div className="mt-6">
-        <p className="text-center text-xs text-slate-500">
+        <p className="text-center text-xs text-zinc-500">
           ¿No tienes cuenta?{" "}
-          <Link href="/registro" className="underline hover:text-slate-700">
+          <Link href="/registro" className="underline hover:text-zinc-700">
             Registrate con un codigo de invitacion
           </Link>
         </p>

@@ -61,7 +61,7 @@ export function NotificationsBell() {
     <div className="relative">
       <button
         onClick={() => setOpen(!open)}
-        className="relative rounded-md p-2 text-slate-500 transition hover:bg-[#eaebed] hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+        className="relative rounded-md p-2 text-zinc-500 transition hover:bg-[#eaebed] hover:text-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
       >
         <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0" />
@@ -76,9 +76,9 @@ export function NotificationsBell() {
       {open && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-          <div className="absolute right-0 top-full z-50 mt-2 w-80 rounded-lg border border-slate-200 bg-white shadow-lg dark:border-slate-800 dark:bg-[#18181b]">
-            <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3 dark:border-slate-800">
-              <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">Notificaciones</span>
+          <div className="absolute right-0 top-full z-50 mt-2 w-80 rounded-lg border border-zinc-200 bg-white shadow-lg dark:border-zinc-800 dark:bg-[#18181b]">
+            <div className="flex items-center justify-between border-b border-zinc-200 px-4 py-3 dark:border-zinc-800">
+              <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Notificaciones</span>
               {unread > 0 && (
                 <button onClick={markAllRead} className="text-xs text-indigo-500 hover:text-indigo-600">
                   Marcar todas leidas
@@ -87,7 +87,7 @@ export function NotificationsBell() {
             </div>
             <div className="max-h-80 overflow-y-auto">
               {notifications.length === 0 && (
-                <p className="px-4 py-8 text-center text-sm text-slate-500">Sin notificaciones</p>
+                <p className="px-4 py-8 text-center text-sm text-zinc-500">Sin notificaciones</p>
               )}
               {notifications.map((n) => (
                 <button
@@ -98,13 +98,13 @@ export function NotificationsBell() {
                       window.location.href = `/voluntarios/${n.activity_id}`;
                     }
                   }}
-                  className={`w-full border-b border-slate-100 px-4 py-3 text-left transition hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-800/50 ${
-                    !n.read ? "bg-slate-50 dark:bg-slate-800/30" : ""
+                  className={`w-full border-b border-zinc-100 px-4 py-3 text-left transition hover:bg-zinc-50 dark:border-zinc-800 dark:hover:bg-zinc-800/50 ${
+                    !n.read ? "bg-zinc-50 dark:bg-zinc-800/30" : ""
                   }`}
                 >
-                  <p className="text-sm font-medium text-slate-900 dark:text-slate-100">{n.title}</p>
-                  <p className="mt-0.5 text-xs text-slate-500">{n.message}</p>
-                  <p className="mt-1 text-[10px] text-slate-400">
+                  <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">{n.title}</p>
+                  <p className="mt-0.5 text-xs text-zinc-500">{n.message}</p>
+                  <p className="mt-1 text-[10px] text-zinc-400">
                     {n.created_at ? new Date(n.created_at).toLocaleString("es-VE") : ""}
                   </p>
                 </button>

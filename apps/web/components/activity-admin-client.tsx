@@ -109,40 +109,40 @@ export function ActivityAdminClient() {
   return (
     <div className="min-h-screen">
       <main className="mx-auto max-w-2xl px-4 py-8">
-        <button onClick={() => router.back()} className="mb-4 text-sm text-slate-500 hover:text-slate-700">
+        <button onClick={() => router.back()} className="mb-4 text-sm text-zinc-500 hover:text-zinc-700">
           &larr; Volver
         </button>
 
         <div className="mb-6">
           <h1 className="text-xl font-bold">{activity?.title}</h1>
-          <p className="text-sm text-slate-500">
+          <p className="text-sm text-zinc-500">
             {activity?.zone} &middot;{" "}
             {activity && new Date(activity.date_time).toLocaleDateString("es-VE")}
           </p>
         </div>
 
-        <div className="mb-6 rounded-lg border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-[#18181b]">
+        <div className="mb-6 rounded-lg border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-[#18181b]">
           <h2 className="mb-3 font-semibold">Cupos</h2>
           <div className="mb-3 grid grid-cols-3 gap-4 text-center">
             <div>
               <p className="text-2xl font-bold">{currentInscribed}</p>
-              <p className="text-xs text-slate-500">Inscritos</p>
+              <p className="text-xs text-zinc-500">Inscritos</p>
             </div>
             <div>
               <p className="text-2xl font-bold">{currentMax}</p>
-              <p className="text-xs text-slate-500">Capacidad actual</p>
+              <p className="text-xs text-zinc-500">Capacidad actual</p>
             </div>
             <div>
               <p className={`text-2xl font-bold ${availableAfter < 0 ? "text-rose-600" : "text-emerald-600"}`}>
                 {additionalCups > 0 ? availableAfter : currentMax - currentInscribed}
               </p>
-              <p className="text-xs text-slate-500">Disponibles</p>
+              <p className="text-xs text-zinc-500">Disponibles</p>
             </div>
           </div>
 
           <div className="flex items-end gap-3">
             <div className="flex-1">
-              <label className="mb-1 block text-xs font-medium text-slate-500">
+              <label className="mb-1 block text-xs font-medium text-zinc-500">
                 Agregar cupos
               </label>
               <input
@@ -151,7 +151,7 @@ export function ActivityAdminClient() {
                 max={999}
                 value={additionalCups}
                 onChange={(e) => setAdditionalCups(Math.max(0, parseInt(e.target.value) || 0))}
-                className="w-full rounded-md border border-slate-200 px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-800"
+                className="w-full rounded-md border border-zinc-200 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800"
               />
             </div>
             <button
@@ -163,7 +163,7 @@ export function ActivityAdminClient() {
             </button>
           </div>
           {additionalCups > 0 && (
-            <p className="mt-2 text-xs text-slate-500">
+            <p className="mt-2 text-xs text-zinc-500">
               La capacidad pasaría de {currentMax} a {newMax} cupos
             </p>
           )}

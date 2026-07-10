@@ -131,7 +131,7 @@ export function ActivityGanttView({
           type="button"
           onClick={onPrevDay}
           aria-label="Día anterior"
-          className="rounded-lg border border-slate-200 p-2 text-slate-600 transition hover:bg-slate-100 dark:border-slate-800 dark:text-slate-400 dark:hover:bg-slate-800"
+          className="rounded-lg border border-zinc-200 p-2 text-zinc-600 transition hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-800"
         >
           <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
@@ -140,7 +140,7 @@ export function ActivityGanttView({
         <button
           type="button"
           onClick={onToday}
-          className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-bold text-emerald-600 transition hover:bg-emerald-50 dark:border-slate-800 dark:text-emerald-400 dark:hover:bg-emerald-950"
+          className="rounded-lg border border-zinc-200 px-3 py-1.5 text-xs font-bold text-emerald-600 transition hover:bg-emerald-50 dark:border-zinc-700 dark:text-emerald-400 dark:hover:bg-emerald-950"
         >
           Hoy
         </button>
@@ -148,14 +148,14 @@ export function ActivityGanttView({
           type="button"
           onClick={onNextDay}
           aria-label="Día siguiente"
-          className="rounded-lg border border-slate-200 p-2 text-slate-600 transition hover:bg-slate-100 dark:border-slate-800 dark:text-slate-400 dark:hover:bg-slate-800"
+          className="rounded-lg border border-zinc-200 p-2 text-zinc-600 transition hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-800"
         >
           <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
           </svg>
         </button>
       </div>
-      <span className="pointer-events-none absolute inset-x-0 text-center text-sm font-bold capitalize text-slate-800 dark:text-white">
+      <span className="pointer-events-none absolute inset-x-0 text-center text-sm font-bold capitalize text-zinc-800 dark:text-white">
         {dateLabel}
       </span>
     </div>
@@ -165,8 +165,8 @@ export function ActivityGanttView({
     return (
       <div className="rounded-xl bg-[#f4f5f7] p-3 shadow-[0_0_0_1px_rgba(23,163,74,0.35),0_10px_30px_-12px_rgba(23,163,74,0.25)] dark:bg-[#15120e] dark:shadow-[0_0_0_1px_rgba(23,163,74,0.5),0_10px_30px_-12px_rgba(23,163,74,0.3)]">
         {controls}
-        <div className="rounded-lg border border-slate-200 bg-white p-8 text-center dark:border-slate-800 dark:bg-[#18181b]">
-          <p className="text-slate-500 dark:text-slate-400">
+        <div className="rounded-lg border border-zinc-200 bg-white p-8 text-center dark:border-zinc-700 dark:bg-[#18181b]">
+          <p className="text-zinc-500 dark:text-zinc-400">
             No hay actividades este día
           </p>
         </div>
@@ -177,14 +177,14 @@ export function ActivityGanttView({
   return (
     <div className="rounded-xl bg-[#f4f5f7] p-3 shadow-[0_0_0_1px_rgba(23,163,74,0.35),0_10px_30px_-12px_rgba(23,163,74,0.25)] dark:bg-[#15120e] dark:shadow-[0_0_0_1px_rgba(23,163,74,0.5),0_10px_30px_-12px_rgba(23,163,74,0.3)]">
       {controls}
-      <div className="overflow-hidden rounded-lg border border-slate-200 dark:border-white/10">
+      <div className="overflow-hidden rounded-lg border border-zinc-200 dark:border-white/10">
         <div className="overflow-x-auto">
         <div style={{ minWidth: totalWidth }}>
-          <div className="flex border-b border-slate-200 dark:border-slate-800">
+          <div className="flex border-b border-zinc-200 dark:border-zinc-700">
             {hours.map((hour) => (
               <div
                 key={hour}
-                className="border-r border-slate-100 px-1 py-2 text-center text-xs text-slate-400 dark:border-slate-800 dark:text-slate-500"
+                className="border-r border-zinc-100 px-1 py-2 text-center text-xs text-zinc-400 dark:border-zinc-700 dark:text-zinc-500"
                 style={{ width: HOUR_WIDTH }}
               >
                 {hour === 0
@@ -206,7 +206,7 @@ export function ActivityGanttView({
               return (
                 <div
                   key={hour}
-                  className="absolute top-0 bottom-0 w-px bg-[#eaebed] dark:bg-slate-800"
+                  className="absolute top-0 bottom-0 w-px bg-[#eaebed] dark:bg-zinc-700"
                   style={{ left: `${left}px` }}
                 />
               );
@@ -221,7 +221,7 @@ export function ActivityGanttView({
               return (
                 <div
                   key={block.activity.id}
-                  className="flex items-center border-b border-slate-100 dark:border-slate-800/50"
+                  className="flex items-center border-b border-zinc-100 dark:border-zinc-700/50"
                   style={{ height: 84 }}
                 >
                   <div
@@ -231,7 +231,7 @@ export function ActivityGanttView({
                         ? "border border-rose-300 bg-rose-50 text-rose-700 dark:border-rose-700 dark:bg-rose-950 dark:text-rose-300"
                         : isEnrolled
                         ? "border border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
-                        : "border border-slate-200 bg-[#eaebed] text-slate-700 hover:bg-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-emerald-700"
+                        : "border border-zinc-200 bg-[#eaebed] text-zinc-700 hover:bg-zinc-200 dark:border-zinc-700 dark:bg-zinc-700 dark:text-zinc-300 dark:hover:bg-emerald-700"
                     }`}
                     style={{
                       left: `${left}px`,

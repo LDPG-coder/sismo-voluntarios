@@ -10,10 +10,10 @@ const DRAFT_DEBOUNCE_MS = 800;
 const ZONES = ["Caracas", "Guatire", "Guarenas", "La Guaira", "Altos Mirandinos", "Caucagua"];
 
 const INPUT_cls =
-  "w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm placeholder:text-slate-400 focus:border-slate-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:bg-slate-800 dark:placeholder:text-slate-500";
+  "w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm placeholder:text-zinc-400 focus:border-zinc-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-700 dark:bg-zinc-800 dark:placeholder:text-zinc-500";
 
 const INPUT_LOADING_cls =
-  "w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm animate-shimmer relative overflow-hidden disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:bg-slate-800";
+  "w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm animate-shimmer relative overflow-hidden disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-700 dark:bg-zinc-800";
 
 export function CrearActivityClient() {
   const router = useRouter();
@@ -282,7 +282,7 @@ export function CrearActivityClient() {
     <div className="min-h-screen">
       <main className="mx-auto max-w-lg px-4 py-8">
         <h1 className="mb-2 text-xl font-bold">Crear actividad</h1>
-        <p className="mb-6 text-sm text-slate-500">
+        <p className="mb-6 text-sm text-zinc-500">
           Escribe la descripcion y los campos se rellenan solos.
         </p>
 
@@ -293,11 +293,11 @@ export function CrearActivityClient() {
               <button
                 type="button"
                 onClick={() => setAiEnabled(!aiEnabled)}
-                className="flex items-center gap-2 text-xs text-slate-500 transition hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
+                className="flex items-center gap-2 text-xs text-zinc-500 transition hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200"
               >
                 <span>Autocompletar con IA</span>
-                <div className={`relative h-5 w-9 rounded-full transition-colors ${aiEnabled ? "bg-indigo-500" : "bg-slate-300 dark:bg-slate-600"}`}>
-                  <div className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform ${aiEnabled ? "translate-x-4" : "translate-x-0.5"}`} />
+                <div className={`relative h-5 w-9 rounded-full transition-colors ${aiEnabled ? "bg-indigo-500" : "bg-zinc-300 dark:bg-zinc-600"}`}>
+                  <div className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform ${aiEnabled ? "tranzinc-x-4" : "tranzinc-x-0.5"}`} />
                 </div>
               </button>
             </div>
@@ -461,7 +461,7 @@ export function CrearActivityClient() {
               placeholder="Ej: @usuarioTelegram, +58 412 1234567, grupo de WhatsApp"
               className={INPUT_cls}
             />
-            <p className="mt-1 text-xs text-slate-400">Numero de telefono, usuario de Telegram/WhatsApp, o enlace al grupo</p>
+            <p className="mt-1 text-xs text-zinc-400">Numero de telefono, usuario de Telegram/WhatsApp, o enlace al grupo</p>
           </div>
 
           <div>
@@ -470,13 +470,13 @@ export function CrearActivityClient() {
               {requirements.map((req, i) => (
                 <span
                   key={i}
-                  className="inline-flex items-center gap-1 rounded-full bg-[#eaebed] px-3 py-1 text-xs font-medium text-slate-700 dark:bg-slate-800 dark:text-slate-300"
+                  className="inline-flex items-center gap-1 rounded-full bg-[#eaebed] px-3 py-1 text-xs font-medium text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300"
                 >
                   {req}
                   <button
                     type="button"
                     onClick={() => removeRequirement(i)}
-                    className="ml-0.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-100"
+                    className="ml-0.5 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-100"
                   >
                     &times;
                   </button>

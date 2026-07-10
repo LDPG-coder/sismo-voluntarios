@@ -31,7 +31,7 @@ export function Sidebar({ user, open, onClose }: { user: User; open: boolean; on
         <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-600 text-sm font-bold text-white">
           SV
         </span>
-        <span className="text-sm font-semibold tracking-tight text-slate-900 dark:text-slate-100">
+        <span className="text-sm font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">
           Sismo Voluntarios
         </span>
       </div>
@@ -49,7 +49,7 @@ export function Sidebar({ user, open, onClose }: { user: User; open: boolean; on
                 "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition",
                 active
                   ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300"
-                  : "text-slate-700 hover:bg-[#eaebed] hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-100"
+                  : "text-zinc-700 hover:bg-[#eaebed] hover:text-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
               )}
             >
               <Icon />
@@ -59,7 +59,7 @@ export function Sidebar({ user, open, onClose }: { user: User; open: boolean; on
         })}
       </nav>
 
-      <div className="border-t border-slate-200 p-3 dark:border-slate-800">
+      <div className="border-t border-zinc-200 p-3 dark:border-zinc-800">
         <a
           href="/auth/logout"
           className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-rose-600 transition hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-900/20"
@@ -73,14 +73,14 @@ export function Sidebar({ user, open, onClose }: { user: User; open: boolean; on
 
   return (
     <>
-      <aside className="hidden border-r border-slate-200 bg-white lg:sticky lg:top-0 lg:flex lg:h-screen lg:w-64 lg:flex-col dark:border-slate-800 dark:bg-slate-950">
+      <aside className="hidden border-r border-zinc-200 bg-white lg:sticky lg:top-0 lg:flex lg:h-screen lg:w-64 lg:flex-col dark:border-zinc-800 dark:bg-zinc-950">
         {navContent}
       </aside>
 
       {open && (
         <div className="lg:hidden">
           <div className="fixed inset-0 z-40 bg-black/50" onClick={onClose} />
-          <aside className="fixed inset-y-0 left-0 z-50 w-64 border-r border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950">
+          <aside className="fixed inset-y-0 left-0 z-50 w-64 border-r border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950">
             {navContent}
           </aside>
         </div>

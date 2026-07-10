@@ -36,16 +36,16 @@ export default function RegistroPage() {
   return (
     <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-6 py-12">
       <header className="mb-8">
-        <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+        <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500">
           Sismo Voluntarios
         </p>
         <h1 className="mt-1 text-2xl font-bold tracking-tight">Registro</h1>
-        <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
+        <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
           Necesitas un codigo de invitacion para unirte.
         </p>
       </header>
 
-      <div className="space-y-4 rounded-lg border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-[#18181b]">
+      <div className="space-y-4 rounded-lg border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-[#18181b]">
         <div>
           <label className="mb-1 block text-sm font-medium">Codigo de invitacion</label>
           <div className="flex gap-2">
@@ -54,7 +54,7 @@ export default function RegistroPage() {
               value={code}
               onChange={(e) => setCode(e.target.value.toUpperCase())}
               placeholder="Ej: AVAA-7J2K"
-              className="flex-1 rounded-md border border-slate-300 px-3 py-2 text-sm uppercase focus:border-slate-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800"
+              className="flex-1 rounded-md border border-zinc-300 px-3 py-2 text-sm uppercase focus:border-zinc-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800"
             />
             <button
               onClick={handleValidateCode}
@@ -88,7 +88,7 @@ export default function RegistroPage() {
         )}
       </div>
 
-      <div className="mt-6 text-center text-xs text-slate-500">
+      <div className="mt-6 text-center text-xs text-zinc-500">
         <Link href="/login" className="underline">
           &larr; Volver al login
         </Link>

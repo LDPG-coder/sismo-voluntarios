@@ -87,7 +87,7 @@ export function AdminUsuariosClient() {
           <h1 className="text-xl font-bold">Gestionar Usuarios</h1>
           <Link
             href="/voluntarios"
-            className="text-sm text-slate-500 hover:text-slate-700"
+            className="text-sm text-zinc-500 hover:text-zinc-700"
           >
             &larr; Volver
           </Link>
@@ -102,7 +102,7 @@ export function AdminUsuariosClient() {
               setSearch(e.target.value);
               setPage(1);
             }}
-            className="w-full rounded-md border border-slate-200 px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-800"
+            className="w-full rounded-md border border-zinc-200 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800"
           />
         </div>
 
@@ -110,14 +110,14 @@ export function AdminUsuariosClient() {
         {error && <p className="rounded-xl bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</p>}
 
         {!loading && users.length === 0 && (
-          <p className="text-sm text-slate-500">No se encontraron usuarios.</p>
+          <p className="text-sm text-zinc-500">No se encontraron usuarios.</p>
         )}
 
         {users.length > 0 && (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
               <thead>
-                <tr className="border-b border-slate-200 text-slate-500 dark:border-slate-700">
+                <tr className="border-b border-zinc-200 text-zinc-500 dark:border-zinc-700">
                   <th className="pb-2 font-medium">Email</th>
                   <th className="pb-2 font-medium">Nombre</th>
                   <th className="pb-2 font-medium">Telefono</th>
@@ -128,7 +128,7 @@ export function AdminUsuariosClient() {
               </thead>
               <tbody>
                 {users.map((u) => (
-                  <tr key={u.id} className="border-b border-slate-100 dark:border-slate-800">
+                  <tr key={u.id} className="border-b border-zinc-100 dark:border-zinc-800">
                     <td className="py-2">{u.email}</td>
                     <td className="py-2">{u.name || "-"}</td>
                     <td className="py-2">{u.phone || "-"}</td>
@@ -137,7 +137,7 @@ export function AdminUsuariosClient() {
                         className={`rounded-full px-2 py-0.5 text-xs font-medium ${
                           u.role === "admin"
                             ? "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400"
-                            : "bg-[#eaebed] text-slate-600 dark:bg-slate-800 dark:text-slate-400"
+                            : "bg-[#eaebed] text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400"
                         }`}
                       >
                         {u.role}
@@ -159,7 +159,7 @@ export function AdminUsuariosClient() {
                     <td className="py-2">
                       <button
                         onClick={() => setEditingUser(u)}
-                        className="text-xs text-slate-500 underline hover:text-slate-700"
+                        className="text-xs text-zinc-500 underline hover:text-zinc-700"
                       >
                         Editar
                       </button>
@@ -176,17 +176,17 @@ export function AdminUsuariosClient() {
             <button
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page === 1}
-              className="rounded-md border border-slate-200 px-3 py-1 text-sm disabled:opacity-50 dark:border-slate-700"
+              className="rounded-md border border-zinc-200 px-3 py-1 text-sm disabled:opacity-50 dark:border-zinc-700"
             >
               Anterior
             </button>
-            <span className="text-sm text-slate-500">
+            <span className="text-sm text-zinc-500">
               Pagina {page} de {totalPages}
             </span>
             <button
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
               disabled={page === totalPages}
-              className="rounded-md border border-slate-200 px-3 py-1 text-sm disabled:opacity-50 dark:border-slate-700"
+              className="rounded-md border border-zinc-200 px-3 py-1 text-sm disabled:opacity-50 dark:border-zinc-700"
             >
               Siguiente
             </button>
@@ -200,44 +200,44 @@ export function AdminUsuariosClient() {
             <h3 className="mb-4 text-lg font-bold">Editar Usuario</h3>
             <div className="space-y-4">
               <div>
-                <label className="mb-1 block text-xs font-medium text-slate-500">Email</label>
+                <label className="mb-1 block text-xs font-medium text-zinc-500">Email</label>
                 <p className="text-sm">{editingUser.email}</p>
               </div>
               <div>
-                <label className="mb-1 block text-xs font-medium text-slate-500">Nombre</label>
+                <label className="mb-1 block text-xs font-medium text-zinc-500">Nombre</label>
                 <input
                   type="text"
                   value={editingUser.name || ""}
                   onChange={(e) => setEditingUser({ ...editingUser, name: e.target.value })}
-                  className="w-full rounded-md border border-slate-200 px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-900"
+                  className="w-full rounded-md border border-zinc-200 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-950"
                 />
               </div>
               <div>
-                <label className="mb-1 block text-xs font-medium text-slate-500">Telefono</label>
+                <label className="mb-1 block text-xs font-medium text-zinc-500">Telefono</label>
                 <input
                   type="text"
                   value={editingUser.phone || ""}
                   onChange={(e) => setEditingUser({ ...editingUser, phone: e.target.value })}
-                  className="w-full rounded-md border border-slate-200 px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-900"
+                  className="w-full rounded-md border border-zinc-200 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-950"
                 />
               </div>
               <div>
-                <label className="mb-1 block text-xs font-medium text-slate-500">Rol</label>
+                <label className="mb-1 block text-xs font-medium text-zinc-500">Rol</label>
                 <select
                   value={editingUser.role}
                   onChange={(e) => setEditingUser({ ...editingUser, role: e.target.value })}
-                  className="w-full rounded-md border border-slate-200 px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-900"
+                  className="w-full rounded-md border border-zinc-200 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-950"
                 >
                   <option value="volunteer">Voluntario</option>
                   <option value="admin">Admin</option>
                 </select>
               </div>
               <div>
-                <label className="mb-1 block text-xs font-medium text-slate-500">Estado</label>
+                <label className="mb-1 block text-xs font-medium text-zinc-500">Estado</label>
                 <select
                   value={editingUser.status}
                   onChange={(e) => setEditingUser({ ...editingUser, status: e.target.value })}
-                  className="w-full rounded-md border border-slate-200 px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-900"
+                  className="w-full rounded-md border border-zinc-200 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-950"
                 >
                   <option value="active">Activo</option>
                   <option value="pending">Pendiente</option>
@@ -248,7 +248,7 @@ export function AdminUsuariosClient() {
             <div className="mt-6 flex gap-3">
               <button
                 onClick={() => setEditingUser(null)}
-                className="flex-1 rounded-md border border-slate-300 px-4 py-2 text-sm font-medium transition hover:bg-slate-50 dark:border-slate-600 dark:hover:bg-emerald-700"
+                className="flex-1 rounded-md border border-zinc-300 px-4 py-2 text-sm font-medium transition hover:bg-zinc-50 dark:border-zinc-600 dark:hover:bg-emerald-700"
               >
                 Cancelar
               </button>

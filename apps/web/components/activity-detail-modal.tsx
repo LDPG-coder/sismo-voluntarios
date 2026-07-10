@@ -68,10 +68,10 @@ export function ActivityDetailModal({
         className="absolute inset-0 bg-black/40 backdrop-blur-sm"
         onClick={onClose}
       />
-      <div className="relative w-full max-w-md rounded-xl border border-slate-200 bg-white shadow-2xl dark:border-slate-800 dark:bg-[#18181b]">
+      <div className="relative w-full max-w-md rounded-xl border border-zinc-200 bg-white shadow-2xl dark:border-zinc-800 dark:bg-[#18181b]">
         <button
           onClick={onClose}
-          className="absolute right-3 top-3 rounded-lg p-1 text-slate-400 transition hover:bg-[#eaebed] hover:text-slate-600 dark:hover:bg-slate-800 dark:hover:text-slate-300"
+          className="absolute right-3 top-3 rounded-lg p-1 text-zinc-400 transition hover:bg-[#eaebed] hover:text-zinc-600 dark:hover:bg-zinc-800 dark:hover:text-zinc-300"
         >
           <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -80,7 +80,7 @@ export function ActivityDetailModal({
 
         <div className="p-6">
           <div className="mb-1">
-            <span className="inline-block rounded-full bg-[#eaebed] px-2.5 py-0.5 text-xs font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-400">
+            <span className="inline-block rounded-full bg-[#eaebed] px-2.5 py-0.5 text-xs font-medium text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400">
               {activity.zone}
             </span>
           </div>
@@ -90,14 +90,14 @@ export function ActivityDetailModal({
             onClick={onClose}
             className="group block mt-2"
           >
-            <h2 className="text-lg font-semibold text-slate-900 transition group-hover:text-emerald-600 dark:text-slate-100 dark:group-hover:text-emerald-400">
+            <h2 className="text-lg font-semibold text-zinc-900 transition group-hover:text-emerald-600 dark:text-zinc-100 dark:group-hover:text-emerald-400">
               {activity.title}
             </h2>
           </Link>
 
-          <div className="mt-4 space-y-2.5 text-sm text-slate-600 dark:text-slate-400">
+          <div className="mt-4 space-y-2.5 text-sm text-zinc-600 dark:text-zinc-400">
             <div className="flex items-start gap-2.5">
-              <svg className="mt-0.5 h-4 w-4 shrink-0 text-slate-400" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+              <svg className="mt-0.5 h-4 w-4 shrink-0 text-zinc-400" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
               </svg>
               <span>
@@ -106,7 +106,7 @@ export function ActivityDetailModal({
             </div>
 
             <div className="flex items-start gap-2.5">
-              <svg className="mt-0.5 h-4 w-4 shrink-0 text-slate-400" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+              <svg className="mt-0.5 h-4 w-4 shrink-0 text-zinc-400" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
                 <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
               </svg>
@@ -115,7 +115,7 @@ export function ActivityDetailModal({
           </div>
 
           {activity.creator && (
-            <div className="mt-5 flex items-center gap-3 border-t border-slate-100 pt-4 dark:border-slate-800">
+            <div className="mt-5 flex items-center gap-3 border-t border-zinc-100 pt-4 dark:border-zinc-800">
               {activity.creator.photo_url ? (
                 <img
                   src={activity.creator.photo_url}
@@ -123,23 +123,23 @@ export function ActivityDetailModal({
                   className="h-8 w-8 rounded-full object-cover"
                 />
               ) : (
-                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-200 text-xs font-bold text-slate-600 dark:bg-slate-700 dark:text-slate-300">
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-zinc-200 text-xs font-bold text-zinc-600 dark:bg-zinc-700 dark:text-zinc-300">
                   {(activity.creator.name || "V").charAt(0).toUpperCase()}
                 </div>
               )}
-              <span className="text-sm text-slate-600 dark:text-slate-400">
+              <span className="text-sm text-zinc-600 dark:text-zinc-400">
                 {activity.creator.name || "Voluntario"}
               </span>
             </div>
           )}
         </div>
 
-        <div className="border-t border-slate-100 px-6 py-4 dark:border-slate-800">
+        <div className="border-t border-zinc-100 px-6 py-4 dark:border-zinc-800">
           <div className="flex items-center gap-3">
             {isEnrolled ? (
               <button
                 onClick={() => onLeave?.(activity.id)}
-                className="flex-1 rounded-lg border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+                className="flex-1 rounded-lg border border-zinc-200 px-4 py-2.5 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
               >
                 Abandonar
               </button>
@@ -154,7 +154,7 @@ export function ActivityDetailModal({
             <Link
               href={`/voluntarios/${activity.id}`}
               onClick={onClose}
-              className="rounded-lg border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+              className="rounded-lg border border-zinc-200 px-4 py-2.5 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
             >
               Ver más
             </Link>

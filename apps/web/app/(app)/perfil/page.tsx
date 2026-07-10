@@ -14,13 +14,13 @@ export default async function PerfilPage() {
         <h1 className="mb-6 text-xl font-bold">Mi perfil</h1>
 
         <div className="space-y-6">
-          <div className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-[#18181b]">
-            <p className="text-sm text-slate-500">Nombre</p>
+          <div className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-[#18181b]">
+            <p className="text-sm text-zinc-500">Nombre</p>
             <p className="font-medium">{user.name || "Sin nombre"}</p>
           </div>
 
-          <div className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-[#18181b]">
-            <p className="text-sm text-slate-500">Email</p>
+          <div className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-[#18181b]">
+            <p className="text-sm text-zinc-500">Email</p>
             <p className="font-medium">{user.email}</p>
           </div>
 

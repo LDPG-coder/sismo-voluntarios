@@ -40,7 +40,7 @@ export function JoinButton({ activity, user }: { activity: Activity; user: User 
 
   if (!user) {
     return (
-      <p className="text-sm text-slate-500">
+      <p className="text-sm text-zinc-500">
         Inicia sesion para unirte a esta actividad.
       </p>
     );
@@ -64,7 +64,7 @@ export function JoinButton({ activity, user }: { activity: Activity; user: User 
             setMemberCount((c) => c - 1);
             setStatus("left");
           }}
-          className="text-xs text-slate-500 underline hover:text-slate-700"
+          className="text-xs text-zinc-500 underline hover:text-zinc-700"
         >
           Abandonar
         </button>
@@ -95,7 +95,7 @@ export function JoinButton({ activity, user }: { activity: Activity; user: User 
 
   if (spotsLeft != null && spotsLeft <= 0) {
     return (
-      <button disabled className="rounded-md bg-slate-200 px-4 py-2 text-sm font-semibold text-slate-500 dark:bg-slate-800">
+      <button disabled className="rounded-md bg-zinc-200 px-4 py-2 text-sm font-semibold text-zinc-500 dark:bg-zinc-800">
         Cupos agotados
       </button>
     );

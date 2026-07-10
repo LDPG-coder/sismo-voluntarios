@@ -7,7 +7,7 @@ import { csrfHeaders } from "@/lib/auth/csrf-client";
 const ZONES = ["Caracas", "Guatire", "Guarenas", "La Guaira", "Altos Mirandinos", "Caucagua"];
 
 const INPUT_cls =
-  "w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm placeholder:text-slate-400 focus:border-slate-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:bg-slate-800 dark:placeholder:text-slate-500";
+  "w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm placeholder:text-zinc-400 focus:border-zinc-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-700 dark:bg-zinc-800 dark:placeholder:text-zinc-500";
 
 function toVenezuelaParts(iso: string | null): { date: string; time: string } {
   if (!iso) return { date: "", time: "" };
@@ -109,7 +109,7 @@ export function EditarActivityClient() {
   if (loading) {
     return (
       <div className="min-h-screen">
-        <div className="py-12 text-center text-slate-500">Cargando...</div>
+        <div className="py-12 text-center text-zinc-500">Cargando...</div>
       </div>
     );
   }
@@ -119,7 +119,7 @@ export function EditarActivityClient() {
       <main className="mx-auto max-w-lg px-4 py-8">
         <button
           onClick={() => router.back()}
-          className="mb-4 text-sm text-slate-500 hover:text-slate-700"
+          className="mb-4 text-sm text-zinc-500 hover:text-zinc-700"
         >
           &larr; Volver
         </button>

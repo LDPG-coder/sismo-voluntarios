@@ -76,28 +76,28 @@ export default function ActivityDetailPage() {
       </div>
     );
   }
-  if (!activity?.id) return <div className="py-12 text-center text-slate-500">Actividad no encontrada</div>;
+  if (!activity?.id) return <div className="py-12 text-center text-zinc-500">Actividad no encontrada</div>;
 
   const isCreator = user?.id === activity.creator_id;
 
   return (
     <div className="min-h-screen">
       <main className="mx-auto max-w-2xl px-4 py-8">
-        <button onClick={() => router.back()} className="mb-4 text-sm text-slate-500 hover:text-slate-700">
+        <button onClick={() => router.back()} className="mb-4 text-sm text-zinc-500 hover:text-zinc-700">
           &larr; Volver
         </button>
 
-        <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-[#18181b]">
+        <div className="rounded-lg border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-[#18181b]">
           <div className="flex items-start justify-between">
             <div>
-              <span className="inline-block rounded-full bg-[#eaebed] px-3 py-1 text-xs font-medium text-slate-700 dark:bg-slate-800 dark:text-slate-300">
+              <span className="inline-block rounded-full bg-[#eaebed] px-3 py-1 text-xs font-medium text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
                 {activity.zone}
               </span>
               <h1 className="mt-2 text-xl font-bold">{activity.title}</h1>
             </div>
           </div>
 
-          <div className="mt-4 space-y-3 text-sm text-slate-600 dark:text-slate-400">
+          <div className="mt-4 space-y-3 text-sm text-zinc-600 dark:text-zinc-400">
             <p>
               <strong>Fecha:</strong>{" "}
               {new Date(activity.date_time).toLocaleDateString("es-VE", {
@@ -135,8 +135,8 @@ export default function ActivityDetailPage() {
           </div>
 
           {activity.creator && (
-            <div className="mt-6 border-t border-slate-200 pt-4 dark:border-slate-700">
-              <p className="mb-2 text-xs font-medium text-slate-500 dark:text-slate-400">Publicado por</p>
+            <div className="mt-6 border-t border-zinc-200 pt-4 dark:border-zinc-700">
+              <p className="mb-2 text-xs font-medium text-zinc-500 dark:text-zinc-400">Publicado por</p>
               <div className="flex items-center gap-3">
                 {activity.creator.photo_url ? (
                   <img
@@ -145,14 +145,14 @@ export default function ActivityDetailPage() {
                     className="h-10 w-10 rounded-full object-cover"
                   />
                 ) : (
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-200 text-sm font-bold text-slate-600 dark:bg-slate-700 dark:text-slate-300">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-zinc-200 text-sm font-bold text-zinc-600 dark:bg-zinc-700 dark:text-zinc-300">
                     {(activity.creator.name || "V").charAt(0).toUpperCase()}
                   </div>
                 )}
                 <div>
                   <p className="text-sm font-medium">{activity.creator.name || "Voluntario"}</p>
                   {activity.creator.phone && (
-                    <p className="text-xs text-slate-500 dark:text-slate-400">{activity.creator.phone}</p>
+                    <p className="text-xs text-zinc-500 dark:text-zinc-400">{activity.creator.phone}</p>
                   )}
                 </div>
               </div>
@@ -165,13 +165,13 @@ export default function ActivityDetailPage() {
               <div className="flex gap-2">
                 <Link
                   href={`/voluntarios/${activity.id}/admin`}
-                  className="inline-block rounded-md bg-[#eaebed] px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300"
+                  className="inline-block rounded-md bg-[#eaebed] px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-300"
                 >
                   Administrar
                 </Link>
                 <Link
                   href={`/voluntarios/${activity.id}/editar`}
-                  className="inline-block rounded-md bg-[#eaebed] px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300"
+                  className="inline-block rounded-md bg-[#eaebed] px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-300"
                 >
                   Editar
                 </Link>
@@ -180,8 +180,8 @@ export default function ActivityDetailPage() {
           </div>
 
           {attendees.length > 0 && (
-            <div className="mt-6 border-t border-slate-200 pt-4 dark:border-slate-700">
-              <p className="mb-3 text-xs font-medium text-slate-500 dark:text-slate-400">
+            <div className="mt-6 border-t border-zinc-200 pt-4 dark:border-zinc-700">
+              <p className="mb-3 text-xs font-medium text-zinc-500 dark:text-zinc-400">
                 Inscritos ({attendees.length})
               </p>
               <div className="flex flex-wrap gap-3">
@@ -194,7 +194,7 @@ export default function ActivityDetailPage() {
                         className="h-8 w-8 rounded-full object-cover"
                       />
                     ) : (
-                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-200 text-xs font-bold text-slate-600 dark:bg-slate-700 dark:text-slate-300">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-zinc-200 text-xs font-bold text-zinc-600 dark:bg-zinc-700 dark:text-zinc-300">
                         {a.name.charAt(0).toUpperCase()}
                       </div>
                     )}

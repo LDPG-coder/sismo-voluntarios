@@ -31,7 +31,7 @@ export function ActivityCard({ activity, isEnrolled, onJoin, onLeave }: Activity
       <div className={`relative rounded-lg border bg-white p-4 shadow-sm transition hover:shadow-md dark:bg-[#18181b] ${
         isEnrolled
           ? "border-emerald-200 dark:border-emerald-900"
-          : "border-slate-200 dark:border-slate-800"
+          : "border-zinc-200 dark:border-zinc-800"
       }`}>
         {isEnrolled && (
           <span className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-medium text-emerald-600 dark:bg-emerald-950 dark:text-emerald-400">
@@ -42,18 +42,18 @@ export function ActivityCard({ activity, isEnrolled, onJoin, onLeave }: Activity
           </span>
         )}
         <div className="mb-2">
-          <span className="inline-block rounded-full bg-[#eaebed] px-2.5 py-0.5 text-xs font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-400">
+          <span className="inline-block rounded-full bg-[#eaebed] px-2.5 py-0.5 text-xs font-medium text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400">
             {activity.zone}
           </span>
         </div>
 
-        <h3 className="font-semibold text-slate-900 dark:text-slate-100">
+        <h3 className="font-semibold text-zinc-900 dark:text-zinc-100">
           {activity.title}
         </h3>
 
-        <div className="mt-2 space-y-1.5 text-sm text-slate-500 dark:text-slate-400">
+        <div className="mt-2 space-y-1.5 text-sm text-zinc-500 dark:text-zinc-400">
           <div className="flex items-center gap-2">
-            <svg className="h-3.5 w-3.5 shrink-0 text-slate-400" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+            <svg className="h-3.5 w-3.5 shrink-0 text-zinc-400" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
             </svg>
             <span>
@@ -62,7 +62,7 @@ export function ActivityCard({ activity, isEnrolled, onJoin, onLeave }: Activity
           </div>
 
           <div className="flex items-start gap-2">
-            <svg className="mt-0.5 h-3.5 w-3.5 shrink-0 text-slate-400" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+            <svg className="mt-0.5 h-3.5 w-3.5 shrink-0 text-zinc-400" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
               <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
             </svg>
@@ -70,10 +70,10 @@ export function ActivityCard({ activity, isEnrolled, onJoin, onLeave }: Activity
           </div>
         </div>
 
-        <div className="mt-3 flex items-end justify-between gap-3 border-t border-slate-100 pt-3 dark:border-slate-800">
+        <div className="mt-3 flex items-end justify-between gap-3 border-t border-zinc-100 pt-3 dark:border-zinc-800">
           {activity.creator ? (
             <div>
-              <p className="mb-2 text-xs font-medium text-slate-500 dark:text-slate-400">Publicado por</p>
+              <p className="mb-2 text-xs font-medium text-zinc-500 dark:text-zinc-400">Publicado por</p>
               <div className="flex items-center gap-3">
                 {activity.creator.photo_url ? (
                   <img
@@ -82,14 +82,14 @@ export function ActivityCard({ activity, isEnrolled, onJoin, onLeave }: Activity
                     className="h-10 w-10 rounded-full object-cover"
                   />
                 ) : (
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-200 text-sm font-bold text-slate-600 dark:bg-slate-700 dark:text-slate-300">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-zinc-200 text-sm font-bold text-zinc-600 dark:bg-zinc-700 dark:text-zinc-300">
                     {(activity.creator.name || "V").charAt(0).toUpperCase()}
                   </div>
                 )}
                 <div>
-                  <p className="text-sm font-medium text-slate-900 dark:text-slate-100">{activity.creator.name || "Voluntario"}</p>
+                  <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">{activity.creator.name || "Voluntario"}</p>
                   {activity.creator.phone && (
-                    <p className="text-xs text-slate-500 dark:text-slate-400">{activity.creator.phone}</p>
+                    <p className="text-xs text-zinc-500 dark:text-zinc-400">{activity.creator.phone}</p>
                   )}
                 </div>
               </div>

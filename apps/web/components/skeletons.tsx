@@ -9,7 +9,7 @@ export function ActivityCardSkeleton({ enrolled = false }: { enrolled?: boolean 
         "relative rounded-lg border bg-white p-4 shadow-sm dark:bg-[#18181b] " +
         (enrolled
           ? "border-emerald-200 dark:border-emerald-900"
-          : "border-slate-200 dark:border-slate-800")
+          : "border-zinc-200 dark:border-zinc-800")
       }
     >
       {enrolled && <Skeleton className="absolute right-3 top-3 h-4 w-16 rounded-full" />}
@@ -25,7 +25,7 @@ export function ActivityCardSkeleton({ enrolled = false }: { enrolled?: boolean 
           <Skeleton className="h-3 w-40" />
         </div>
       </div>
-      <div className="mt-3 flex items-center justify-between border-t border-slate-100 pt-3 dark:border-slate-800">
+      <div className="mt-3 flex items-center justify-between border-t border-zinc-100 pt-3 dark:border-zinc-800">
         <div className="flex items-center gap-2">
           <Skeleton className="h-5 w-5 rounded-full" />
           <Skeleton className="h-3 w-20" />
@@ -63,14 +63,14 @@ export function VoluntariosGanttSkeleton() {
     { left: 840, width: 180 },
   ];
   return (
-    <div className="rounded-lg border border-slate-200 bg-white dark:border-slate-800 dark:bg-[#18181b]">
+    <div className="rounded-lg border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-[#18181b]">
       <div className="overflow-x-auto">
         <div style={{ minWidth: totalWidth }}>
-          <div className="flex border-b border-slate-200 dark:border-slate-800">
+          <div className="flex border-b border-zinc-200 dark:border-zinc-800">
             {hours.map((h) => (
               <div
                 key={h}
-                className="border-r border-slate-100 px-1 py-2 text-center text-xs text-slate-400 dark:border-slate-800 dark:text-slate-500"
+                className="border-r border-zinc-100 px-1 py-2 text-center text-xs text-zinc-400 dark:border-zinc-800 dark:text-zinc-500"
                 style={{ width: HOUR_WIDTH }}
               >
                 {h === 12 ? "12 PM" : h > 12 ? `${h - 12} PM` : `${h} AM`}
@@ -81,7 +81,7 @@ export function VoluntariosGanttSkeleton() {
             {hours.map((h) => (
               <div
                 key={h}
-                className="absolute top-0 bottom-0 w-px bg-[#eaebed] dark:bg-slate-800"
+                className="absolute top-0 bottom-0 w-px bg-[#eaebed] dark:bg-zinc-800"
                 style={{ left: `${(h - 6) * HOUR_WIDTH}px` }}
               />
             ))}
@@ -114,15 +114,15 @@ export function VoluntariosWeekSkeleton() {
     { day: 5, top: 30, height: 120 },
   ];
   return (
-    <div className="rounded-lg border border-slate-200 bg-white dark:border-slate-800 dark:bg-[#18181b]">
+    <div className="rounded-lg border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-[#18181b]">
       <div className="overflow-x-auto">
         <div className="min-w-[700px]">
-          <div className="flex border-b border-slate-200 dark:border-slate-800">
-            <div className="w-12 shrink-0 border-r border-slate-200 dark:border-slate-800" />
+          <div className="flex border-b border-zinc-200 dark:border-zinc-800">
+            <div className="w-12 shrink-0 border-r border-zinc-200 dark:border-zinc-800" />
             {days.map((d, i) => (
               <div
                 key={i}
-                className="flex-1 border-r border-slate-100 px-2 py-3 text-center dark:border-slate-800"
+                className="flex-1 border-r border-zinc-100 px-2 py-3 text-center dark:border-zinc-800"
               >
                 <Skeleton className="mx-auto h-3 w-8" />
                 <Skeleton className="mx-auto mt-1.5 h-6 w-6 rounded-full" />
@@ -130,11 +130,11 @@ export function VoluntariosWeekSkeleton() {
             ))}
           </div>
           <div className="relative flex">
-            <div className="w-12 shrink-0 border-r border-slate-200 dark:border-slate-800">
+            <div className="w-12 shrink-0 border-r border-zinc-200 dark:border-zinc-800">
               {hours.map((h) => (
                 <div
                   key={h}
-                  className="border-b border-slate-100 dark:border-slate-800/50"
+                  className="border-b border-zinc-100 dark:border-zinc-800/50"
                   style={{ height: WEEK_HOUR_HEIGHT }}
                 />
               ))}
@@ -146,14 +146,14 @@ export function VoluntariosWeekSkeleton() {
               {days.map((_, dayIdx) => (
                 <div
                   key={dayIdx}
-                  className="absolute top-0 bottom-0 border-r border-slate-100 dark:border-slate-800/50"
+                  className="absolute top-0 bottom-0 border-r border-zinc-100 dark:border-zinc-800/50"
                   style={{ left: `${(dayIdx / 7) * 100}%`, width: `${100 / 7}%` }}
                 />
               ))}
               {hours.map((h) => (
                 <div
                   key={h}
-                  className="absolute left-0 right-0 border-b border-slate-100 dark:border-slate-800/50"
+                  className="absolute left-0 right-0 border-b border-zinc-100 dark:border-zinc-800/50"
                   style={{ top: `${(h - 6) * WEEK_HOUR_HEIGHT}px` }}
                 />
               ))}
@@ -188,12 +188,12 @@ export function VoluntariosMonthSkeleton() {
   const cells = Array.from({ length: 42 }, (_, i) => i);
   const chipDays = new Set([4, 9, 12, 15, 20, 23, 28, 31]);
   return (
-    <div className="rounded-lg border border-slate-200 bg-white dark:border-slate-800 dark:bg-[#18181b]">
-      <div className="grid grid-cols-7 border-b border-slate-200 dark:border-slate-800">
+    <div className="rounded-lg border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-[#18181b]">
+      <div className="grid grid-cols-7 border-b border-zinc-200 dark:border-zinc-800">
         {weekDays.map((d) => (
           <div
             key={d}
-            className="px-2 py-3 text-center text-xs font-medium text-slate-500 dark:text-slate-400"
+            className="px-2 py-3 text-center text-xs font-medium text-zinc-500 dark:text-zinc-400"
           >
             {d}
           </div>
@@ -203,7 +203,7 @@ export function VoluntariosMonthSkeleton() {
         {cells.map((i) => (
           <div
             key={i}
-            className="min-h-[80px] border-b border-r border-slate-100 p-1.5 dark:border-slate-800"
+            className="min-h-[80px] border-b border-r border-zinc-100 p-1.5 dark:border-zinc-800"
           >
             <Skeleton className={"h-6 w-6 rounded-full " + (i < 5 ? "opacity-40" : "")} />
             {chipDays.has(i) && (
@@ -225,7 +225,7 @@ export function ActivityDetailSkeleton() {
   return (
     <>
       <Skeleton className="mb-4 h-4 w-16" />
-      <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-[#18181b]">
+      <div className="rounded-lg border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-[#18181b]">
         <div className="flex items-start justify-between">
           <div className="flex-1">
             <Skeleton className="inline-block h-5 w-24 rounded-full" />
@@ -242,7 +242,7 @@ export function ActivityDetailSkeleton() {
           ))}
         </div>
 
-        <div className="mt-6 border-t border-slate-200 pt-4 dark:border-slate-700">
+        <div className="mt-6 border-t border-zinc-200 pt-4 dark:border-zinc-700">
           <Skeleton className="mb-2 h-3 w-24" />
           <div className="flex items-center gap-3">
             <Skeleton className="h-10 w-10 rounded-full" />
@@ -257,7 +257,7 @@ export function ActivityDetailSkeleton() {
           <Skeleton className="h-9 w-32 rounded-md" />
         </div>
 
-        <div className="mt-6 border-t border-slate-200 pt-4 dark:border-slate-700">
+        <div className="mt-6 border-t border-zinc-200 pt-4 dark:border-zinc-700">
           <Skeleton className="mb-3 h-3 w-28" />
           <div className="flex flex-wrap gap-3">
             {Array.from({ length: 6 }).map((_, i) => (
@@ -284,7 +284,7 @@ export function ActivityAdminSkeleton() {
         <Skeleton className="mt-2 h-4 w-40" />
       </div>
 
-      <div className="mb-6 rounded-lg border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-[#18181b]">
+      <div className="mb-6 rounded-lg border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-[#18181b]">
         <Skeleton className="mb-3 h-4 w-20" />
         <div className="mb-3 grid grid-cols-3 gap-4 text-center">
           {[0, 1, 2].map((i) => (
@@ -307,7 +307,7 @@ export function ActivityAdminSkeleton() {
         <Skeleton className="h-5 w-40" />
       </div>
 
-      <div className="divide-y divide-slate-200 rounded-lg border border-slate-200 bg-white dark:divide-slate-800 dark:border-slate-800 dark:bg-[#18181b]">
+      <div className="divide-y divide-zinc-200 rounded-lg border border-zinc-200 bg-white dark:divide-zinc-800 dark:border-zinc-800 dark:bg-[#18181b]">
         {Array.from({ length: 5 }).map((_, i) => (
           <div key={i} className="flex items-center justify-between px-4 py-3">
             <div>
@@ -326,7 +326,7 @@ export function ActivityAdminSkeleton() {
 
 function MisActividadCardSkeleton() {
   return (
-    <div className="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-[#18181b]">
+    <div className="rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-[#18181b]">
       <div className="mb-3 flex items-start justify-between">
         <Skeleton className="h-5 w-2/3" />
         <div className="flex items-center gap-1.5">
@@ -366,7 +366,7 @@ export function UsuariosTableSkeleton() {
     <div className="overflow-x-auto">
       <table className="w-full text-left text-sm">
         <thead>
-          <tr className="border-b border-slate-200 text-slate-500 dark:border-slate-700">
+          <tr className="border-b border-zinc-200 text-zinc-500 dark:border-zinc-700">
             {headers.map((h) => (
               <th key={h} className="pb-2 font-medium">
                 {h}
@@ -376,7 +376,7 @@ export function UsuariosTableSkeleton() {
         </thead>
         <tbody>
           {Array.from({ length: 8 }).map((_, i) => (
-            <tr key={i} className="border-b border-slate-100 dark:border-slate-800">
+            <tr key={i} className="border-b border-zinc-100 dark:border-zinc-800">
               <td className="py-2">
                 <Skeleton className="h-4 w-40" />
               </td>

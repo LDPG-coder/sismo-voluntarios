@@ -192,7 +192,7 @@ export default function VoluntariosPage() {
           <h1 className="text-2xl font-bold tracking-tight">
             Actividades de voluntariado
           </h1>
-          <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
+          <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
             Encuentra una actividad en tu zona y unete.
           </p>
         </div>
@@ -213,7 +213,7 @@ export default function VoluntariosPage() {
             <VoluntariosMonthSkeleton />
           )
         ) : activities.length === 0 ? (
-          <div className="py-12 text-center text-slate-500">
+          <div className="py-12 text-center text-zinc-500">
             No hay actividades disponibles
             {activeZone ? ` en ${activeZone}` : ""}.
           </div>

@@ -206,7 +206,7 @@ export function ActivityWeekView({
             type="button"
             onClick={onPrevWeek}
             aria-label="Semana anterior"
-            className="rounded-lg border border-slate-200 p-2 text-slate-600 transition hover:bg-slate-100 dark:border-slate-800 dark:text-slate-400 dark:hover:bg-slate-800"
+            className="rounded-lg border border-zinc-200 p-2 text-zinc-600 transition hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-800"
           >
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
@@ -215,7 +215,7 @@ export function ActivityWeekView({
           <button
             type="button"
             onClick={onToday}
-            className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-bold text-emerald-600 transition hover:bg-emerald-50 dark:border-slate-800 dark:text-emerald-400 dark:hover:bg-emerald-950"
+            className="rounded-lg border border-zinc-200 px-3 py-1.5 text-xs font-bold text-emerald-600 transition hover:bg-emerald-50 dark:border-zinc-700 dark:text-emerald-400 dark:hover:bg-emerald-950"
           >
             Hoy
           </button>
@@ -223,30 +223,30 @@ export function ActivityWeekView({
             type="button"
             onClick={onNextWeek}
             aria-label="Semana siguiente"
-            className="rounded-lg border border-slate-200 p-2 text-slate-600 transition hover:bg-slate-100 dark:border-slate-800 dark:text-slate-400 dark:hover:bg-slate-800"
+            className="rounded-lg border border-zinc-200 p-2 text-zinc-600 transition hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-800"
           >
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
             </svg>
           </button>
         </div>
-        <span className="pointer-events-none absolute inset-x-0 text-center text-sm font-bold text-slate-800 dark:text-white">
+        <span className="pointer-events-none absolute inset-x-0 text-center text-sm font-bold text-zinc-800 dark:text-white">
           {weekRangeLabel}
         </span>
       </div>
 
-      <div className="overflow-hidden rounded-lg border border-slate-200 dark:border-white/10">
+      <div className="overflow-hidden rounded-lg border border-zinc-200 dark:border-white/10">
         <div className="overflow-x-auto">
         <div style={{ minWidth: totalWidth }}>
-          <div className="flex border-b border-slate-200 dark:border-slate-800">
+          <div className="flex border-b border-zinc-200 dark:border-zinc-700">
             <div
-              className="shrink-0 border-r border-slate-200 dark:border-slate-800"
+              className="shrink-0 border-r border-zinc-200 dark:border-zinc-700"
               style={{ width: DAY_LABEL_WIDTH }}
             />
             {hours.map((hour) => (
               <div
                 key={hour}
-                className="border-r border-slate-100 px-1 py-2 text-center text-xs text-slate-400 dark:border-slate-800 dark:text-slate-500"
+                className="border-r border-zinc-100 px-1 py-2 text-center text-xs text-zinc-400 dark:border-zinc-700 dark:text-zinc-500"
                 style={{ width: HOUR_WIDTH }}
               >
                 {hour === 0
@@ -268,10 +268,10 @@ export function ActivityWeekView({
             return (
               <div
                 key={i}
-                className="flex border-b border-slate-100 dark:border-slate-800/50"
+                className="flex border-b border-zinc-100 dark:border-zinc-700/50"
               >
                 <div
-                  className={`shrink-0 border-r border-slate-200 px-2 py-3 dark:border-slate-800 ${
+                  className={`shrink-0 border-r border-zinc-200 px-2 py-3 dark:border-zinc-700 ${
                     isToday ? "bg-emerald-50 dark:bg-emerald-950/30" : ""
                   }`}
                   style={{ width: DAY_LABEL_WIDTH }}
@@ -280,7 +280,7 @@ export function ActivityWeekView({
                     className={`text-xs font-medium ${
                       isToday
                         ? "text-emerald-600 dark:text-emerald-400"
-                        : "text-slate-500 dark:text-slate-400"
+                        : "text-zinc-500 dark:text-zinc-400"
                     }`}
                   >
                     {row.day.label}
@@ -289,7 +289,7 @@ export function ActivityWeekView({
                     className={`ml-1.5 text-lg font-bold ${
                       isToday
                         ? "text-emerald-600 dark:text-emerald-400"
-                        : "text-slate-900 dark:text-slate-100"
+                        : "text-zinc-900 dark:text-zinc-100"
                     }`}
                   >
                     {row.day.date.getDate()}
@@ -307,7 +307,7 @@ export function ActivityWeekView({
                     return (
                       <div
                         key={hour}
-                        className="absolute top-0 bottom-0 w-px bg-[#eaebed] dark:bg-slate-800"
+                        className="absolute top-0 bottom-0 w-px bg-[#eaebed] dark:bg-zinc-700"
                         style={{ left: `${left}px` }}
                       />
                     );
@@ -327,7 +327,7 @@ export function ActivityWeekView({
                         return "border-amber-300 bg-amber-50 text-amber-700 dark:border-amber-700 dark:bg-amber-950 dark:text-amber-300";
                       if (isEnrolled)
                         return "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-300";
-                      return "border-slate-200 bg-[#eaebed] text-slate-700 hover:bg-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-emerald-700";
+                      return "border-zinc-200 bg-[#eaebed] text-zinc-700 hover:bg-zinc-200 dark:border-zinc-700 dark:bg-zinc-700 dark:text-zinc-300 dark:hover:bg-emerald-700";
                     })();
 
                     const title =
@@ -364,7 +364,7 @@ export function ActivityWeekView({
                             {it.activity.title}
                           </p>
                         </div>
-                        <p className="truncate text-[10px] text-slate-400 dark:text-slate-500">
+                        <p className="truncate text-[10px] text-zinc-400 dark:text-zinc-500">
                           {new Date(it.activity.date_time).toLocaleTimeString(
                             "es-VE",
                             { hour: "2-digit", minute: "2-digit" }

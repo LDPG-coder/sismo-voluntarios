@@ -110,7 +110,7 @@ export function ActivityMonthView({
             type="button"
             onClick={onPrevMonth}
             aria-label="Mes anterior"
-            className="rounded-lg border border-slate-200 p-2 text-slate-600 transition hover:bg-slate-100 dark:border-slate-800 dark:text-slate-400 dark:hover:bg-slate-800"
+            className="rounded-lg border border-zinc-200 p-2 text-zinc-600 transition hover:bg-zinc-100 dark:border-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-800"
           >
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
@@ -119,7 +119,7 @@ export function ActivityMonthView({
           <button
             type="button"
             onClick={onToday}
-            className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-bold text-emerald-600 transition hover:bg-emerald-50 dark:border-slate-800 dark:text-emerald-400 dark:hover:bg-emerald-950"
+            className="rounded-lg border border-zinc-200 px-3 py-1.5 text-xs font-bold text-emerald-600 transition hover:bg-emerald-50 dark:border-zinc-800 dark:text-emerald-400 dark:hover:bg-emerald-950"
           >
             Hoy
           </button>
@@ -127,26 +127,26 @@ export function ActivityMonthView({
             type="button"
             onClick={onNextMonth}
             aria-label="Mes siguiente"
-            className="rounded-lg border border-slate-200 p-2 text-slate-600 transition hover:bg-slate-100 dark:border-slate-800 dark:text-slate-400 dark:hover:bg-slate-800"
+            className="rounded-lg border border-zinc-200 p-2 text-zinc-600 transition hover:bg-zinc-100 dark:border-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-800"
           >
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
             </svg>
           </button>
         </div>
-        <span className="pointer-events-none absolute inset-x-0 text-center text-sm font-bold capitalize text-slate-800 dark:text-white">
+        <span className="pointer-events-none absolute inset-x-0 text-center text-sm font-bold capitalize text-zinc-800 dark:text-white">
           {currentMonth.toLocaleDateString("es-VE", { month: "long", year: "numeric" })}
         </span>
       </div>
 
-      <div className="overflow-hidden rounded-lg border border-slate-200 dark:border-white/10">
+      <div className="overflow-hidden rounded-lg border border-zinc-200 dark:border-white/10">
         <div className="overflow-x-auto">
           <div className="min-w-[720px]">
-          <div className="grid grid-cols-7 border-b border-slate-200 dark:border-white/10">
+          <div className="grid grid-cols-7 border-b border-zinc-200 dark:border-white/10">
             {weekDays.map((day) => (
               <div
                 key={day}
-                className="px-2 py-2.5 text-center text-[11px] font-bold text-slate-500 dark:text-white"
+                className="px-2 py-2.5 text-center text-[11px] font-bold text-zinc-500 dark:text-white"
               >
                 {day}
               </div>
@@ -166,8 +166,8 @@ export function ActivityMonthView({
                     onSelectDay(day.date, day.activities);
                   }}
                   className={cn(
-                    "relative flex min-h-[116px] flex-col border-b border-r border-slate-200 p-2 transition dark:border-white/[0.06]",
-                    !day.isCurrentMonth && "bg-slate-100/60 dark:bg-white/[0.02]",
+                    "relative flex min-h-[116px] flex-col border-b border-r border-zinc-200 p-2 transition dark:border-white/[0.06]",
+                    !day.isCurrentMonth && "bg-zinc-100/60 dark:bg-white/[0.02]",
                     day.isToday &&
                       "bg-emerald-500/10 ring-1 ring-inset ring-emerald-500 dark:bg-emerald-400/10 dark:ring-emerald-400",
                     isSelected && !day.isToday && "bg-emerald-50 dark:bg-emerald-950/30"
@@ -178,10 +178,10 @@ export function ActivityMonthView({
                       className={cn(
                         "text-xs tabular-nums",
                         day.isToday
-                          ? "font-semibold text-slate-900 dark:text-white"
+                          ? "font-semibold text-zinc-900 dark:text-white"
                           : day.isCurrentMonth
-                          ? "font-medium text-slate-800 dark:text-white"
-                          : "text-slate-400 dark:text-slate-600"
+                          ? "font-medium text-zinc-800 dark:text-white"
+                          : "text-zinc-400 dark:text-zinc-600"
                       )}
                     >
                       {String(day.date.getDate()).padStart(2, "0")}
@@ -211,7 +211,7 @@ export function ActivityMonthView({
                               "cursor-pointer truncate rounded-md px-1.5 py-1 text-[11px] leading-tight text-white transition",
                               isEnrolled
                                 ? "bg-emerald-600 hover:bg-emerald-500 dark:bg-emerald-500 dark:hover:bg-emerald-400"
-                                : "bg-slate-600 hover:bg-slate-500 dark:bg-slate-700 dark:hover:bg-slate-600"
+                                : "bg-zinc-600 hover:bg-zinc-500 dark:bg-zinc-700 dark:hover:bg-zinc-600"
                             )}
                           >
                             <span className="opacity-80">{time}</span>{" "}
@@ -220,7 +220,7 @@ export function ActivityMonthView({
                         );
                       })}
                       {day.activities.length > 3 && (
-                        <span className="block text-[10px] text-slate-400 dark:text-slate-500">
+                        <span className="block text-[10px] text-zinc-400 dark:text-zinc-500">
                           +{day.activities.length - 3} más
                         </span>
                       )}
@@ -235,8 +235,8 @@ export function ActivityMonthView({
       </div>
 
       {selectedDay && selectedDay.activities.length > 0 && (
-        <div className="mt-3 border-t border-slate-200 p-4 dark:border-white/10">
-          <h4 className="mb-3 text-sm font-medium text-slate-700 dark:text-slate-200">
+        <div className="mt-3 border-t border-zinc-200 p-4 dark:border-white/10">
+          <h4 className="mb-3 text-sm font-medium text-zinc-700 dark:text-zinc-200">
             {selectedDay.date.toLocaleDateString("es-VE", {
               weekday: "long",
               day: "numeric",
@@ -255,7 +255,7 @@ export function ActivityMonthView({
                     "flex w-full items-start gap-3 rounded-lg border p-3 text-left transition",
                     isEnrolled
                       ? "border-emerald-200 bg-emerald-50 hover:bg-emerald-100 dark:border-emerald-800 dark:bg-emerald-950 dark:hover:bg-emerald-900"
-                      : "border-slate-200 hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-800/50"
+                      : "border-zinc-200 hover:bg-zinc-50 dark:border-zinc-800 dark:hover:bg-zinc-800/50"
                   )}
                 >
                   <div className="flex-1">
@@ -268,11 +268,11 @@ export function ActivityMonthView({
                           Inscrito
                         </span>
                       )}
-                      <p className={cn("text-sm font-medium", isEnrolled ? "text-emerald-700 dark:text-emerald-300" : "text-slate-700 dark:text-slate-200")}>
+                      <p className={cn("text-sm font-medium", isEnrolled ? "text-emerald-700 dark:text-emerald-300" : "text-zinc-700 dark:text-zinc-200")}>
                         {activity.title}
                       </p>
                     </div>
-                    <p className="mt-0.5 text-xs text-slate-400 dark:text-slate-500">
+                    <p className="mt-0.5 text-xs text-zinc-400 dark:text-zinc-500">
                       {actDate.toLocaleTimeString("es-VE", {
                         hour: "2-digit",
                         minute: "2-digit",
@@ -280,7 +280,7 @@ export function ActivityMonthView({
                       · {activity.zone}
                     </p>
                   </div>
-                  <span className="text-xs text-slate-400 dark:text-slate-500">
+                  <span className="text-xs text-zinc-400 dark:text-zinc-500">
                     {activity.member_count} inscritos
                   </span>
                 </button>

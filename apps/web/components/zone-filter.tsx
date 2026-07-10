@@ -21,7 +21,7 @@ export function ZoneFilter({
           "rounded-full px-3 py-1 text-xs font-medium transition",
           active === null
             ? "bg-emerald-600 text-white dark:bg-emerald-500 dark:text-white"
-            : "bg-[#eaebed] text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300"
+            : "bg-[#eaebed] text-zinc-700 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-300"
         )}
       >
         Todas
@@ -34,7 +34,7 @@ export function ZoneFilter({
             "rounded-full px-3 py-1 text-xs font-medium transition",
             active === z.name
               ? "bg-emerald-600 text-white dark:bg-emerald-500 dark:text-white"
-              : "bg-[#eaebed] text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300"
+              : "bg-[#eaebed] text-zinc-700 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-300"
           )}
         >
           {z.name} ({z.count})

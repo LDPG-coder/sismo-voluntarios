@@ -40,7 +40,7 @@ export function InviteForm() {
   };
 
   return (
-    <div className="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-[#18181b]">
+    <div className="rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-[#18181b]">
       <p className="text-sm font-medium">Invitar persona</p>
       <form onSubmit={handleInvite} className="mt-2 flex gap-2">
         <input
@@ -49,7 +49,7 @@ export function InviteForm() {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           placeholder="email@ejemplo.com"
-          className="flex-1 rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-slate-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800"
+          className="flex-1 rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800"
         />
         <button
           type="submit"

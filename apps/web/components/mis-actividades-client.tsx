@@ -101,7 +101,7 @@ export function MisActividadesClient() {
           </Link>
         </div>
 
-        <div className="mb-6 flex gap-1 rounded-xl bg-[#eaebed] p-1 dark:bg-slate-800">
+        <div className="mb-6 flex gap-1 rounded-xl bg-[#eaebed] p-1 dark:bg-zinc-800">
           <TabButton
             active={tab === "created"}
             onClick={() => setTab("created")}
@@ -163,7 +163,7 @@ export function MisActividadesClient() {
                 ? "Marcar como realizada"
                 : "Cancelar actividad"}
             </h3>
-            <p className="mb-4 text-sm text-slate-600 dark:text-slate-400">
+            <p className="mb-4 text-sm text-zinc-600 dark:text-zinc-400">
               {confirmAction.action === "leave"
                 ? `¿Seguro que quieres salir de "${confirmAction.title}"?`
                 : confirmAction.action === "archive"
@@ -173,7 +173,7 @@ export function MisActividadesClient() {
             <div className="flex gap-3">
               <button
                 onClick={() => setConfirmAction(null)}
-                className="flex-1 rounded-md border border-slate-300 px-4 py-2 text-sm font-medium transition hover:bg-slate-50 dark:border-slate-600 dark:hover:bg-emerald-700"
+                className="flex-1 rounded-md border border-zinc-300 px-4 py-2 text-sm font-medium transition hover:bg-zinc-50 dark:border-zinc-600 dark:hover:bg-emerald-700"
               >
                 Volver
               </button>
@@ -182,7 +182,7 @@ export function MisActividadesClient() {
                 disabled={processing}
                 className={`flex-1 rounded-md px-4 py-2 text-sm font-semibold text-white transition ${
                   confirmAction.action === "leave"
-                    ? "bg-slate-600 hover:bg-emerald-700"
+                    ? "bg-zinc-600 hover:bg-emerald-700"
                     : confirmAction.action === "archive"
                     ? "bg-amber-600 hover:bg-amber-700"
                     : "bg-rose-600 hover:bg-rose-700"
@@ -220,8 +220,8 @@ function TabButton({
       onClick={onClick}
       className={`relative flex-1 rounded-lg px-4 py-2 text-sm font-medium transition ${
         active
-          ? "bg-white text-emerald-600 shadow-sm dark:bg-slate-700 dark:text-emerald-400"
-          : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
+          ? "bg-white text-emerald-600 shadow-sm dark:bg-zinc-700 dark:text-emerald-400"
+          : "text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200"
       }`}
     >
       {children}
@@ -229,7 +229,7 @@ function TabButton({
         <span className={`ml-1.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-xs ${
           active
             ? "bg-emerald-600 text-white dark:bg-emerald-500 dark:text-white"
-            : "bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-300"
+            : "bg-zinc-200 text-zinc-600 dark:bg-zinc-700 dark:text-zinc-300"
         }`}>
           {count}
         </span>
@@ -258,7 +258,7 @@ function Section({
   if (count === 0) return null;
   return (
     <section className="mb-8">
-      <h2 className="mb-3 text-sm font-semibold uppercase text-slate-400">
+      <h2 className="mb-3 text-sm font-semibold uppercase text-zinc-400">
         {title} ({count})
       </h2>
       <div className="space-y-3">
@@ -302,8 +302,8 @@ function ActivityCard({
     <div
       className={`rounded-lg border p-4 ${
         isActive
-          ? "border-slate-200 bg-white dark:border-slate-800 dark:bg-[#18181b]"
-          : "border-slate-100 bg-slate-50 opacity-70 dark:border-slate-800 dark:bg-[#18181b]"
+          ? "border-zinc-200 bg-white dark:border-zinc-800 dark:bg-[#18181b]"
+          : "border-zinc-100 bg-zinc-50 opacity-70 dark:border-zinc-800 dark:bg-[#18181b]"
       }`}
     >
       <div className="mb-2 flex items-start justify-between">
@@ -326,13 +326,13 @@ function ActivityCard({
             </span>
           )}
           {!isActive && (
-            <span className="rounded-full bg-[#eaebed] px-2 py-0.5 text-[10px] font-medium text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+            <span className="rounded-full bg-[#eaebed] px-2 py-0.5 text-[10px] font-medium text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400">
               {a.status === "archived" ? "Realizada" : "Cancelada"}
             </span>
           )}
         </div>
       </div>
-      <div className="mb-3 flex flex-wrap gap-3 text-xs text-slate-500 dark:text-slate-400">
+      <div className="mb-3 flex flex-wrap gap-3 text-xs text-zinc-500 dark:text-zinc-400">
         <span>{a.zone}</span>
         {date && <span>{date}</span>}
         {time && <span>{time}</span>}
@@ -344,13 +344,13 @@ function ActivityCard({
             <>
               <Link
                 href={`/voluntarios/${a.id}/admin`}
-                className="rounded-md border border-slate-200 px-3 py-1.5 text-xs font-medium transition hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800"
+                className="rounded-md border border-zinc-200 px-3 py-1.5 text-xs font-medium transition hover:bg-zinc-50 dark:border-zinc-700 dark:hover:bg-zinc-800"
               >
                 Administrar
               </Link>
               <Link
                 href={`/voluntarios/${a.id}/editar`}
-                className="rounded-md border border-slate-200 px-3 py-1.5 text-xs font-medium transition hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800"
+                className="rounded-md border border-zinc-200 px-3 py-1.5 text-xs font-medium transition hover:bg-zinc-50 dark:border-zinc-700 dark:hover:bg-zinc-800"
               >
                 Editar
               </Link>
@@ -375,7 +375,7 @@ function ActivityCard({
             onLeave && (
               <button
                 onClick={() => onLeave(a.id, a.title)}
-                className="rounded-md border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 transition hover:bg-slate-50 dark:border-slate-700 dark:text-slate-400 dark:hover:bg-slate-800"
+                className="rounded-md border border-zinc-200 px-3 py-1.5 text-xs font-medium text-zinc-600 transition hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-800"
               >
                 Salir
               </button>
@@ -390,14 +390,14 @@ function ActivityCard({
 function EmptyState({ tab }: { tab: Tab }) {
   return (
     <div className="py-12 text-center">
-      <p className="text-sm text-slate-500">
+      <p className="text-sm text-zinc-500">
         {tab === "created"
           ? "No has creado ninguna actividad aun."
           : "No te has inscrito en ninguna actividad aun."}
       </p>
       <Link
         href="/voluntarios"
-        className="mt-3 inline-block text-sm font-medium text-slate-700 underline hover:text-slate-900 dark:text-slate-300"
+        className="mt-3 inline-block text-sm font-medium text-zinc-700 underline hover:text-zinc-900 dark:text-zinc-300"
       >
         {tab === "created" ? "Crear mi primera actividad" : "Explorar actividades"}
       </Link>

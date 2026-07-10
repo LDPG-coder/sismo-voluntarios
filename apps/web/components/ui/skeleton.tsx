@@ -9,7 +9,7 @@ export function Skeleton({
   return (
     <div
       className={cn(
-        "relative overflow-hidden rounded-md bg-slate-200/70 dark:bg-slate-700/50",
+        "relative overflow-hidden rounded-md bg-zinc-200/70 dark:bg-zinc-700/50",
         className,
       )}
       {...props}
