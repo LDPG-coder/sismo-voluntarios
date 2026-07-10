@@ -111,6 +111,28 @@ def my_activities(
 # -- Notifications -----------------------------------------------------
 
 
+@router.get("/enrolled")
+def enrolled_activities(
+    user: Annotated[User, Depends(require_session)],
+    db: Annotated[Session, Depends(get_db)],
+) -> list[dict]:
+    q = (
+        select(Activity)
+        .join(ActivityMember, ActivityMember.activity_id == Activity.id)
+        .where(ActivityMember.user_id == user.id)
+        .order_by(Activity.date_time.desc())
+    )
+    activities = db.execute(q).scalars().all()
+
+    result = []
+    for a in activities:
+        count = db.execute(
+            select(func.count()).select_from(ActivityMember).where(ActivityMember.activity_id == a.id)
+        ).scalar() or 0
+        result.append(_serialize_activity(a, member_count=count))
+    return result
+
+
 @router.get("/notifications")
 def list_notifications(
     user: Annotated[User, Depends(require_session)],
