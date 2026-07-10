@@ -169,7 +169,7 @@ export function ActivityGanttView({
                       left: `${left}px`,
                       width: `${width}px`,
                       height: 72,
-                      top: 6,
+                      top: index * 84 + 6,
                     }}
                   >
                     <span className="line-clamp-2 leading-tight">{block.activity.title}</span>
