@@ -259,7 +259,7 @@ export function ProfilePhoto({
             </button>
             <button
               onClick={reset}
-              disabled={resetting || !defaultPhotoUrl || photoUrl === defaultPhotoUrl}
+              disabled={resetting || !defaultPhotoUrl}
               className="flex items-center gap-1.5 rounded-md border border-zinc-200 px-4 py-1.5 text-xs font-medium text-zinc-600 transition hover:bg-zinc-50 disabled:opacity-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
             >
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor">
