@@ -2,6 +2,7 @@ import { requireSession } from "@/lib/auth/require-session";
 import { fetchCurrentUser } from "@/lib/auth/me";
 import { ReferralBox } from "@/components/referral-box";
 import { InviteForm } from "@/components/invite-form";
+import { NavBar } from "@/components/nav-bar";
 
 export default async function PerfilPage() {
   await requireSession();
@@ -10,6 +11,7 @@ export default async function PerfilPage() {
 
   return (
     <div className="min-h-screen">
+      <NavBar />
       <main className="mx-auto max-w-lg px-4 py-8">
         <h1 className="mb-6 text-xl font-bold">Mi perfil</h1>
 
