@@ -10,8 +10,8 @@ type ActivityGanttViewProps = {
   onSelectActivity: (activity: Activity) => void;
 };
 
-const START_HOUR = 6;
-const END_HOUR = 22;
+const DEFAULT_START_HOUR = 6;
+const DEFAULT_END_HOUR = 22;
 const HOUR_WIDTH = 100;
 
 type ActivityBlock = {
@@ -72,13 +72,11 @@ export function ActivityGanttView({
   enrolledIds,
   onSelectActivity,
 }: ActivityGanttViewProps) {
-  const { blocks, conflicts, hours } = useMemo(() => {
-    const hoursList: number[] = [];
-    for (let h = START_HOUR; h <= END_HOUR; h++) {
-      hoursList.push(h);
-    }
-
+  const { blocks, conflicts, hours, startHour } = useMemo(() => {
     const activityBlocks: ActivityBlock[] = [];
+
+    let minStart = DEFAULT_START_HOUR;
+    let maxEnd = DEFAULT_END_HOUR;
 
     for (const activity of activities) {
       const block = getActivityBlock(activity, selectedDate);
@@ -88,7 +86,17 @@ export function ActivityGanttView({
           startHour: block.startHour,
           duration: block.duration,
         });
+        minStart = Math.min(minStart, Math.floor(block.startHour));
+        maxEnd = Math.max(maxEnd, Math.ceil(block.startHour + block.duration));
       }
+    }
+
+    const dynStart = Math.max(0, Math.min(minStart, DEFAULT_START_HOUR));
+    const dynEnd = Math.min(24, Math.max(maxEnd, DEFAULT_END_HOUR));
+
+    const hoursList: number[] = [];
+    for (let h = dynStart; h <= dynEnd; h++) {
+      hoursList.push(h);
     }
 
     const conflictIds = detectConflicts(activityBlocks);
@@ -97,10 +105,11 @@ export function ActivityGanttView({
       blocks: activityBlocks,
       conflicts: conflictIds,
       hours: hoursList,
+      startHour: dynStart,
     };
   }, [activities, selectedDate]);
 
-  const totalWidth = (END_HOUR - START_HOUR + 1) * HOUR_WIDTH;
+  const totalWidth = hours.length * HOUR_WIDTH;
 
   if (blocks.length === 0) {
     return (
@@ -123,8 +132,12 @@ export function ActivityGanttView({
                 className="border-r border-slate-100 px-1 py-2 text-center text-xs text-slate-400 dark:border-slate-800 dark:text-slate-500"
                 style={{ width: HOUR_WIDTH }}
               >
-                {hour === 12
+                {hour === 0
+                  ? "12 AM"
+                  : hour === 12
                   ? "12 PM"
+                  : hour === 24
+                  ? "12 AM"
                   : hour > 12
                   ? `${hour - 12} PM`
                   : `${hour} AM`}
@@ -134,7 +147,7 @@ export function ActivityGanttView({
 
           <div className="relative">
             {hours.map((hour) => {
-              const left = (hour - START_HOUR) * HOUR_WIDTH;
+              const left = (hour - startHour) * HOUR_WIDTH;
               return (
                 <div
                   key={hour}
@@ -145,7 +158,7 @@ export function ActivityGanttView({
             })}
 
             {blocks.map((block, index) => {
-              const left = (block.startHour - START_HOUR) * HOUR_WIDTH;
+              const left = (block.startHour - startHour) * HOUR_WIDTH;
               const width = block.duration * HOUR_WIDTH;
               const isConflict = conflicts.has(block.activity.id);
               const isEnrolled = enrolledIds?.has(block.activity.id) ?? false;
