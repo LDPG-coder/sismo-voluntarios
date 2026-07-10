@@ -332,7 +332,7 @@ function ActivityCard({
           )}
         </div>
       </div>
-      <div className="flex flex-wrap items-start justify-between gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_auto] sm:items-start">
         <div className="flex flex-wrap gap-3 text-xs text-zinc-500 dark:text-zinc-400">
           <span>{a.zone}</span>
           {date && <span>{date}</span>}
@@ -340,7 +340,7 @@ function ActivityCard({
           <span>{a.member_count} inscritos</span>
         </div>
         {isActive && (
-          <div className="flex flex-wrap justify-end gap-2">
+          <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:justify-end sm:gap-2">
             {isCreated ? (
             <>
               <Link
