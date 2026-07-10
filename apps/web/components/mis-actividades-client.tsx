@@ -390,7 +390,6 @@ function ActivityCard({
 function EmptyState({ tab }: { tab: Tab }) {
   return (
     <div className="py-12 text-center">
-      <div className="mb-3 text-4xl">{tab === "created" ? "📝" : "🤝"}</div>
       <p className="text-sm text-slate-500">
         {tab === "created"
           ? "No has creado ninguna actividad aun."
