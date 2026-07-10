@@ -167,7 +167,9 @@ export function ActivityMonthView({
                   }}
                   className={cn(
                     "relative flex min-h-[116px] flex-col border-b border-r border-zinc-200 p-2 transition dark:border-white/[0.06]",
-                    !day.isCurrentMonth && "bg-zinc-100/60 dark:bg-white/[0.02]",
+                    day.isCurrentMonth
+                      ? "bg-white dark:bg-white/[0.05]"
+                      : "bg-zinc-100/60 dark:bg-white/[0.02]",
                     day.isToday &&
                       "bg-emerald-500/10 ring-1 ring-inset ring-emerald-500 dark:bg-emerald-400/10 dark:ring-emerald-400",
                     isSelected && !day.isToday && "bg-emerald-50 dark:bg-emerald-950/30"
@@ -176,11 +178,11 @@ export function ActivityMonthView({
                   <div className="flex justify-end">
                     <span
                       className={cn(
-                        "text-xs tabular-nums",
+                        "text-sm font-bold tabular-nums",
                         day.isToday
-                          ? "font-semibold text-zinc-900 dark:text-white"
+                          ? "text-zinc-900 dark:text-white"
                           : day.isCurrentMonth
-                          ? "font-medium text-zinc-800 dark:text-white"
+                          ? "text-zinc-800 dark:text-white"
                           : "text-zinc-400 dark:text-zinc-600"
                       )}
                     >
