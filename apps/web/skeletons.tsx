@@ -81,7 +81,7 @@ export function VoluntariosGanttSkeleton() {
             {hours.map((h) => (
               <div
                 key={h}
-                className="absolute top-0 bottom-0 w-px bg-slate-100 dark:bg-slate-800"
+                className="absolute top-0 bottom-0 w-px bg-[#eaebed] dark:bg-slate-800"
                 style={{ left: `${(h - 6) * HOUR_WIDTH}px` }}
               />
             ))}

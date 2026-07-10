@@ -34,7 +34,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             type="button"
             onClick={() => setOpen(true)}
             aria-label="Abrir menu"
-            className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-slate-700 transition hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+            className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-slate-700 transition hover:bg-[#eaebed] dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
           >
             <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
@@ -44,7 +44,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <div className="flex items-center gap-1">
             <NotificationsBell />
             <ThemeToggle />
-            <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+            <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-[#eaebed] dark:bg-slate-800">
               {user?.photo_url ? (
                 <img src={user.photo_url} alt="" className="h-full w-full object-cover" />
               ) : (

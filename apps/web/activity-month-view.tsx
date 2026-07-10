@@ -161,7 +161,7 @@ export function ActivityMonthView({
                             className={`cursor-pointer truncate rounded px-1.5 py-1 text-[11px] font-medium leading-tight transition ${
                               isEnrolled
                                 ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-200 dark:bg-emerald-900 dark:text-emerald-300 dark:hover:bg-emerald-800"
-                                : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-emerald-700"
+                                : "bg-[#eaebed] text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-emerald-700"
                             }`}
                             title={activity.title}
                           >

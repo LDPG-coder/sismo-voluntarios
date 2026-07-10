@@ -101,7 +101,7 @@ export function MisActividadesClient() {
           </Link>
         </div>
 
-        <div className="mb-6 flex gap-1 rounded-xl bg-slate-100 p-1 dark:bg-slate-800">
+        <div className="mb-6 flex gap-1 rounded-xl bg-[#eaebed] p-1 dark:bg-slate-800">
           <TabButton
             active={tab === "created"}
             onClick={() => setTab("created")}
@@ -326,7 +326,7 @@ function ActivityCard({
             </span>
           )}
           {!isActive && (
-            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+            <span className="rounded-full bg-[#eaebed] px-2 py-0.5 text-[10px] font-medium text-slate-500 dark:bg-slate-800 dark:text-slate-400">
               {a.status === "archived" ? "Realizada" : "Cancelada"}
             </span>
           )}

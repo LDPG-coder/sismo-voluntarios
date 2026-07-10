@@ -42,7 +42,7 @@ export function ActivityCard({ activity, isEnrolled, onJoin, onLeave }: Activity
           </span>
         )}
         <div className="mb-2">
-          <span className="inline-block rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-400">
+          <span className="inline-block rounded-full bg-[#eaebed] px-2.5 py-0.5 text-xs font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-400">
             {activity.zone}
           </span>
         </div>

@@ -202,7 +202,7 @@ export function ActivityWeekView({
                     return (
                       <div
                         key={hour}
-                        className="absolute top-0 bottom-0 w-px bg-slate-100 dark:bg-slate-800"
+                        className="absolute top-0 bottom-0 w-px bg-[#eaebed] dark:bg-slate-800"
                         style={{ left: `${left}px` }}
                       />
                     );
@@ -221,7 +221,7 @@ export function ActivityWeekView({
                         className={`absolute cursor-pointer overflow-hidden rounded-md border px-2 py-1 text-xs leading-tight transition hover:shadow-md ${
                           isEnrolled
                             ? "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
-                            : "border-slate-200 bg-slate-100 text-slate-700 hover:bg-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-emerald-700"
+                            : "border-slate-200 bg-[#eaebed] text-slate-700 hover:bg-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-emerald-700"
                         }`}
                         style={{
                           left: `${left}px`,
