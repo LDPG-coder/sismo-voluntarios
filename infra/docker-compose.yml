@@ -1,0 +1,121 @@
+# ============================================================
+# Sismo Voluntarios — Production
+# ============================================================
+# Quick start:
+#   cp .env.example .env   (edit with real values)
+#   docker compose up -d --build
+#   docker compose exec api alembic upgrade head
+# ============================================================
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${SISMO_DB_NAME:-sismo}
+      POSTGRES_USER: ${SISMO_DB_USER:-sismo}
+      POSTGRES_PASSWORD: ${SISMO_DB_PASSWORD:?Set SISMO_DB_PASSWORD in .env}
+    volumes:
+      - sismo_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${SISMO_DB_USER:-sismo} -d ${SISMO_DB_NAME:-sismo}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - sismo-internal
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  api:
+    build:
+      context: ../apps/api
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    env_file:
+      - ../apps/api/.env
+    environment:
+      SISMO_DB_HOST: postgres
+      SISMO_DB_PORT: "5432"
+      SISMO_REDIS_URL: redis://redis:6379/0
+      SISMO_API_CORS_ORIGINS: ${SISMO_API_CORS_ORIGINS:-https://sismo.lat}
+      SISMO_WEB_ORIGIN: ${SISMO_WEB_ORIGIN:-https://sismo.lat}
+    ports:
+      - "127.0.0.1:8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - sismo-internal
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+
+  web:
+    build:
+      context: ../apps/web
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:?Set NEXT_PUBLIC_API_URL in .env}
+        NEXT_PUBLIC_WEB_ORIGIN: ${NEXT_PUBLIC_WEB_ORIGIN:-https://sismo.lat}
+    restart: unless-stopped
+    environment:
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+      NEXT_PUBLIC_WEB_ORIGIN: ${NEXT_PUBLIC_WEB_ORIGIN:-https://sismo.lat}
+      SISMO_SESSION_SECRET: ${SISMO_SESSION_SECRET:?Set SISMO_SESSION_SECRET in .env}
+      INTERNAL_API_URL: http://api:8000
+    ports:
+      - "127.0.0.1:3000:3000"
+    depends_on:
+      api:
+        condition: service_healthy
+    networks:
+      - sismo-internal
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    networks:
+      - sismo-internal
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    restart: unless-stopped
+    command: tunnel run
+    environment:
+      TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN:?Set CLOUDFLARE_TUNNEL_TOKEN in .env}
+    depends_on:
+      - api
+      - web
+    networks:
+      - sismo-internal
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+
+volumes:
+  sismo_pgdata:
+    name: sismo_pgdata
+
+networks:
+  sismo-internal:
+    driver: bridge

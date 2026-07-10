@@ -1,0 +1,78 @@
+# ============================================================
+# Sismo Voluntarios — Development
+# ============================================================
+# Quick start:
+#   ./dev.sh up      # Start all services
+#   ./dev.sh logs    # Tail logs
+#   ./dev.sh down    # Stop everything
+#   ./dev.sh migrate # Run migrations
+#   ./dev.sh shell   # Shell into API container
+# ============================================================
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${SISMO_DB_NAME:-sismo}
+      POSTGRES_USER: ${SISMO_DB_USER:-sismo}
+      POSTGRES_PASSWORD: ${SISMO_DB_PASSWORD:-sismo}
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - sismo_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${SISMO_DB_USER:-sismo}"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - sismo-dev
+
+  api:
+    build:
+      context: ../apps/api
+      dockerfile: Dockerfile.dev
+    restart: unless-stopped
+    env_file:
+      - ../apps/api/.env
+    environment:
+      SISMO_DB_HOST: postgres
+      SISMO_DB_PORT: "5432"
+      SISMO_API_CORS_ORIGINS: http://localhost:3001
+      SISMO_WEB_ORIGIN: http://localhost:3001
+    ports:
+      - "127.0.0.1:8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ../apps/api:/app
+    networks:
+      - sismo-dev
+
+  web:
+    build:
+      context: ../apps/web
+      dockerfile: Dockerfile.dev
+    restart: unless-stopped
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:8000
+      NEXT_PUBLIC_WEB_ORIGIN: http://localhost:3001
+    ports:
+      - "127.0.0.1:3001:3001"
+    depends_on:
+      - api
+    volumes:
+      - ../apps/web:/app
+      - /app/node_modules
+    networks:
+      - sismo-dev
+
+volumes:
+  sismo_pgdata:
+    name: sismo_pgdata_dev
+
+networks:
+  sismo-dev:
+    driver: bridge

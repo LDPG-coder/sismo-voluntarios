@@ -1,0 +1,48 @@
+# Python
+__pycache__/
+*.py[cod]
+*.so
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+
+# Node
+node_modules/
+.next/
+out/
+
+# Environment
+.env
+.env.*
+*.env
+!.env.example
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Dev state
+.dev-state/
+
+# Docker
+*.log
+
+# Alembic
+alembic/versions/*.pyc
+
+# Old code
+archive/
+
+# Misc
+Makefile
+dev.sh
+README.md
+docs/
