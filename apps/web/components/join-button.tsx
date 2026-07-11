@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ConfirmJoinDialog } from "@/components/confirm-join-dialog";
 import { csrfHeaders } from "@/lib/auth/csrf-client";
 
 type Activity = {
@@ -16,6 +17,23 @@ type User = { id: string } | null;
 export function JoinButton({ activity, user }: { activity: Activity; user: User }) {
   const [status, setStatus] = useState<"loading" | "idle" | "done" | "left">("loading");
   const [memberCount, setMemberCount] = useState(activity.member_count);
+  const [confirming, setConfirming] = useState(false);
+
+  const confirmJoin = async () => {
+    setConfirming(false);
+    setStatus("loading");
+    const res = await fetch(`${API}/api/v1/activities/${activity.id}/join`, {
+      method: "POST",
+      credentials: "include",
+      headers: csrfHeaders("POST"),
+    });
+    if (res.ok) {
+      setMemberCount((c) => c + 1);
+      setStatus("done");
+    } else {
+      setStatus("idle");
+    }
+  };
 
   const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
@@ -81,23 +99,19 @@ export function JoinButton({ activity, user }: { activity: Activity; user: User 
 
   if (status === "left") {
     return (
-      <button
-        onClick={async () => {
-          setStatus("loading");
-          const res = await fetch(`${API}/api/v1/activities/${activity.id}/join`, {
-            method: "POST",
-            credentials: "include",
-            headers: csrfHeaders("POST"),
-          });
-          if (res.ok) {
-            setMemberCount((c) => c + 1);
-            setStatus("done");
-          }
-        }}
-        className="rounded-md bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700 dark:bg-emerald-500 dark:text-white"
-      >
-        Unirme
-      </button>
+      <>
+        <button
+          onClick={() => setConfirming(true)}
+          className="rounded-md bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700 dark:bg-emerald-500 dark:text-white"
+        >
+          Unirme
+        </button>
+        <ConfirmJoinDialog
+          open={confirming}
+          onCancel={() => setConfirming(false)}
+          onConfirm={confirmJoin}
+        />
+      </>
     );
   }
 
@@ -110,24 +124,18 @@ export function JoinButton({ activity, user }: { activity: Activity; user: User 
   }
 
   return (
-    <button
-      onClick={async () => {
-        setStatus("loading");
-        const res = await fetch(`${API}/api/v1/activities/${activity.id}/join`, {
-          method: "POST",
-          credentials: "include",
-          headers: csrfHeaders("POST"),
-        });
-        if (res.ok) {
-          setMemberCount((c) => c + 1);
-          setStatus("done");
-        } else {
-          setStatus("idle");
-        }
-      }}
-      className="rounded-md bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 dark:bg-emerald-500 dark:text-white"
-    >
-      Unirme
-    </button>
+    <>
+      <button
+        onClick={() => setConfirming(true)}
+        className="rounded-md bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 dark:bg-emerald-500 dark:text-white"
+      >
+        Unirme
+      </button>
+      <ConfirmJoinDialog
+        open={confirming}
+        onCancel={() => setConfirming(false)}
+        onConfirm={confirmJoin}
+      />
+    </>
   );
 }

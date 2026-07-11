@@ -7,6 +7,7 @@ import { ActivityGanttView } from "@/components/activity-gantt-view";
 import { ActivityWeekView } from "@/components/activity-week-view";
 import { ActivityMonthView } from "@/components/activity-month-view";
 import { ActivityDetailModal } from "@/components/activity-detail-modal";
+import { ConfirmJoinDialog } from "@/components/confirm-join-dialog";
 import { ZoneFilter } from "@/components/zone-filter";
 import {
   VoluntariosListSkeleton,
@@ -58,6 +59,7 @@ export default function VoluntariosPage() {
 
   const [modalActivity, setModalActivity] = useState<Activity | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [pendingJoin, setPendingJoin] = useState<string | null>(null);
 
   useEffect(() => {
     localStorage.setItem("voluntarios-view", activeView);
@@ -99,6 +101,10 @@ export default function VoluntariosPage() {
   const handleSelectActivity = (activity: Activity) => {
     setModalActivity(activity);
     setIsModalOpen(true);
+  };
+
+  const requestJoin = (activityId: string) => {
+    setPendingJoin(activityId);
   };
 
   const handleJoin = (activityId: string) => {
@@ -232,7 +238,7 @@ export default function VoluntariosPage() {
                     key={a.id}
                     activity={a}
                     isEnrolled={enrolledIds.has(a.id)}
-                    onJoin={handleJoin}
+                    onJoin={requestJoin}
                     onLeave={handleLeave}
                   />
                 ))}
@@ -297,15 +303,7 @@ export default function VoluntariosPage() {
           setIsModalOpen(false);
           setModalActivity(null);
         }}
-        onJoin={(activityId) => {
-          handleJoin(activityId);
-          if (modalActivity) {
-            setModalActivity({
-              ...modalActivity,
-              member_count: modalActivity.member_count + 1,
-            });
-          }
-        }}
+        onJoin={requestJoin}
         onLeave={(activityId) => {
           handleLeave(activityId);
           if (modalActivity) {
@@ -314,6 +312,23 @@ export default function VoluntariosPage() {
               member_count: Math.max(0, modalActivity.member_count - 1),
             });
           }
+        }}
+      />
+
+      <ConfirmJoinDialog
+        open={pendingJoin !== null}
+        onCancel={() => setPendingJoin(null)}
+        onConfirm={() => {
+          if (!pendingJoin) return;
+          const id = pendingJoin;
+          handleJoin(id);
+          if (modalActivity && modalActivity.id === id) {
+            setModalActivity({
+              ...modalActivity,
+              member_count: modalActivity.member_count + 1,
+            });
+          }
+          setPendingJoin(null);
         }}
       />
     </div>
