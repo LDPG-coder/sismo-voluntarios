@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { AttendeeList } from "@/components/attendee-list";
 import { ActivityAdminSkeleton } from "@/components/skeletons";
+import { csrfHeaders } from "@/lib/auth/csrf-client";
 
 type Activity = {
   id: string;
@@ -61,7 +62,7 @@ export function ActivityAdminClient() {
     await fetch(`${API}/api/v1/activities/${params.id}/attendees/${userId}/attended`, {
       method: "POST",
       credentials: "include",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...csrfHeaders("POST") },
       body: JSON.stringify({ attended }),
     });
     setAttendees((prev) =>
@@ -76,7 +77,7 @@ export function ActivityAdminClient() {
       const res = await fetch(`${API}/api/v1/activities/${params.id}/expand`, {
         method: "POST",
         credentials: "include",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...csrfHeaders("POST") },
         body: JSON.stringify({ additional: additionalCups }),
       });
       if (!res.ok) throw new Error("Error al guardar");

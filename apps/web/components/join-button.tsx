@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { csrfHeaders } from "@/lib/auth/csrf-client";
 
 type Activity = {
   id: string;
@@ -65,6 +66,7 @@ export function JoinButton({ activity, user }: { activity: Activity; user: User 
             await fetch(`${API}/api/v1/activities/${activity.id}/leave`, {
               method: "POST",
               credentials: "include",
+              headers: csrfHeaders("POST"),
             });
             setMemberCount((c) => c - 1);
             setStatus("left");
@@ -85,6 +87,7 @@ export function JoinButton({ activity, user }: { activity: Activity; user: User 
           const res = await fetch(`${API}/api/v1/activities/${activity.id}/join`, {
             method: "POST",
             credentials: "include",
+            headers: csrfHeaders("POST"),
           });
           if (res.ok) {
             setMemberCount((c) => c + 1);
@@ -113,6 +116,7 @@ export function JoinButton({ activity, user }: { activity: Activity; user: User 
         const res = await fetch(`${API}/api/v1/activities/${activity.id}/join`, {
           method: "POST",
           credentials: "include",
+          headers: csrfHeaders("POST"),
         });
         if (res.ok) {
           setMemberCount((c) => c + 1);

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { csrfHeaders } from "@/lib/auth/csrf-client";
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
@@ -45,6 +46,7 @@ export function NotificationsBell() {
       await fetch(`${API}/api/v1/activities/notifications/${id}/read`, {
         method: "POST",
         credentials: "include",
+        headers: csrfHeaders("POST"),
       });
       setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, read: true } : n)));
     } catch {

@@ -205,7 +205,7 @@ export function ActivityGanttView({
       <div className="overflow-hidden rounded-lg border border-zinc-200 dark:border-white/10">
         <div className="overflow-x-auto">
         <div style={{ minWidth: totalWidth }}>
-          <div className="flex border-b border-zinc-200 dark:border-zinc-700">
+          <div className="flex border-b border-zinc-200 bg-[#fafafa] dark:border-zinc-700 dark:bg-white/[0.02]">
             {hours.map((hour) => (
               <div
                 key={hour}
@@ -226,6 +226,21 @@ export function ActivityGanttView({
           </div>
 
           <div className="relative">
+            {hours.map((hour, hi) => {
+              const left = (hour - startHour) * HOUR_WIDTH;
+              return (
+                <div
+                  key={`band-${hour}`}
+                  className={
+                    hi % 2 === 0
+                      ? "absolute top-0 bottom-0 bg-[#fafafa] dark:bg-white/[0.025]"
+                      : "absolute top-0 bottom-0"
+                  }
+                  style={{ left: `${left}px`, width: HOUR_WIDTH }}
+                />
+              );
+            })}
+
             {hours.map((hour) => {
               const left = (hour - startHour) * HOUR_WIDTH;
               return (

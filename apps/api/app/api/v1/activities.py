@@ -392,6 +392,7 @@ def join_activity(
 
     # Overbooking check: atomic insert with count check
     from sqlalchemy import text
+    from uuid import uuid4
     result = db.execute(
         text("""
             INSERT INTO activity_members (id, activity_id, user_id, attended, created_at, updated_at)
@@ -402,7 +403,7 @@ def join_activity(
                 SELECT COALESCE(max_participants, 999999) FROM activities WHERE id = :activity_id
             )
         """),
-        {"id": str(UUID()), "activity_id": str(a.id), "user_id": str(user.id)},
+        {"id": str(uuid4()), "activity_id": str(a.id), "user_id": str(user.id)},
     )
     if result.rowcount == 0:
         raise ApiError(ErrorCode.activity_full, "cupos agotados")

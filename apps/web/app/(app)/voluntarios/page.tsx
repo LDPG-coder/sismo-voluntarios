@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { ViewSelector, type ViewType } from "@/components/view-selector";
 import { ActivityCard } from "@/components/activity-card";
 import { ActivityGanttView } from "@/components/activity-gantt-view";
@@ -15,6 +15,7 @@ import {
   VoluntariosMonthSkeleton,
 } from "@/components/skeletons";
 import type { Activity } from "@/lib/types";
+import { csrfHeaders } from "@/lib/auth/csrf-client";
 
 type User = {
   id: string;
@@ -105,7 +106,9 @@ export default function VoluntariosPage() {
     fetch(`${API}/api/v1/activities/${activityId}/join`, {
       method: "POST",
       credentials: "include",
-    }).then(() => {
+      headers: csrfHeaders("POST"),
+    }).then((res) => {
+      if (!res.ok) return;
       setEnrolledIds((prev) => new Set(prev).add(activityId));
       setActivities((prev) =>
         prev.map((a) =>
@@ -122,7 +125,9 @@ export default function VoluntariosPage() {
     fetch(`${API}/api/v1/activities/${activityId}/leave`, {
       method: "POST",
       credentials: "include",
-    }).then(() => {
+      headers: csrfHeaders("POST"),
+    }).then((res) => {
+      if (!res.ok) return;
       setEnrolledIds((prev) => {
         const next = new Set(prev);
         next.delete(activityId);
@@ -180,6 +185,11 @@ export default function VoluntariosPage() {
     setCurrentMonth(next);
   };
 
+  const visibleActivities = useMemo(
+    () => activities.filter((a) => !enrolledIds.has(a.id)),
+    [activities, enrolledIds]
+  );
+
   return (
     <div className="min-h-screen">
       <main className="mx-auto max-w-6xl px-4 py-8">
@@ -207,16 +217,17 @@ export default function VoluntariosPage() {
           ) : (
             <VoluntariosMonthSkeleton />
           )
-        ) : activities.length === 0 ? (
+        ) : visibleActivities.length === 0 ? (
           <div className="py-12 text-center text-zinc-500">
             No hay actividades disponibles
             {activeZone ? ` en ${activeZone}` : ""}.
+            {enrolledIds.size > 0 && " Ya te uniste a las actividades disponibles."}
           </div>
         ) : (
           <>
             {activeView === "list" && (
               <div className="grid gap-4 sm:grid-cols-2">
-                {activities.map((a) => (
+                {visibleActivities.map((a) => (
                   <ActivityCard
                     key={a.id}
                     activity={a}
@@ -230,7 +241,7 @@ export default function VoluntariosPage() {
 
             {activeView === "gantt" && (
               <ActivityGanttView
-                activities={activities}
+                activities={visibleActivities}
                 selectedDate={selectedDate}
                 enrolledIds={enrolledIds}
                 currentUserId={user?.id ?? null}
@@ -243,7 +254,7 @@ export default function VoluntariosPage() {
 
             {activeView === "week" && (
               <ActivityWeekView
-                activities={activities}
+                activities={visibleActivities}
                 weekStart={weekStart}
                 enrolledIds={enrolledIds}
                 currentUserId={user?.id ?? null}
@@ -256,7 +267,7 @@ export default function VoluntariosPage() {
 
             {activeView === "month" && (
               <ActivityMonthView
-                activities={activities}
+                activities={visibleActivities}
                 currentMonth={currentMonth}
                 enrolledIds={enrolledIds}
                 onSelectActivity={handleSelectActivity}

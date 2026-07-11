@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { UsuariosTableSkeleton } from "@/components/skeletons";
+import { csrfHeaders } from "@/lib/auth/csrf-client";
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
@@ -59,7 +60,7 @@ export function AdminUsuariosClient() {
       const res = await fetch(`${API}/api/v1/users/${editingUser.id}`, {
         method: "PUT",
         credentials: "include",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...csrfHeaders("PUT") },
         body: JSON.stringify({
           role: editingUser.role,
           status: editingUser.status,

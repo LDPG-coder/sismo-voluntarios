@@ -46,10 +46,10 @@ def _user_or_404(db: Session, user_id: uuid.UUID) -> User:
 
 
 def _user_active(user: User) -> None:
-    if user.status != UserStatus.active:
+    if user.status != UserStatus.active.value:
         raise ApiError(
             ErrorCode.auth_forbidden,
-            f"user is {user.status.value}; sign in again to refresh",
+            f"user is {user.status}; sign in again to refresh",
         )
 
 

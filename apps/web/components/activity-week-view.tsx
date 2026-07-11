@@ -272,7 +272,9 @@ export function ActivityWeekView({
               >
                 <div
                   className={`shrink-0 border-r border-zinc-200 px-2 py-3 dark:border-zinc-700 ${
-                    isToday ? "bg-emerald-50 dark:bg-emerald-950/30" : ""
+                    isToday
+                      ? "bg-emerald-50 dark:bg-emerald-950/30"
+                      : "bg-[#fafafa] dark:bg-white/[0.02]"
                   }`}
                   style={{ width: DAY_LABEL_WIDTH }}
                 >
@@ -302,6 +304,21 @@ export function ActivityWeekView({
                   }`}
                   style={{ width: gridWidth, height: rowHeight }}
                 >
+                  {hours.map((hour, hi) => {
+                    const left = (hour - startHour) * HOUR_WIDTH;
+                    return (
+                      <div
+                        key={`band-${hour}`}
+                        className={
+                          hi % 2 === 0
+                            ? "absolute top-0 bottom-0 bg-[#fafafa] dark:bg-white/[0.025]"
+                            : "absolute top-0 bottom-0"
+                        }
+                        style={{ left: `${left}px`, width: HOUR_WIDTH }}
+                      />
+                    );
+                  })}
+
                   {hours.map((hour) => {
                     const left = (hour - startHour) * HOUR_WIDTH;
                     return (
