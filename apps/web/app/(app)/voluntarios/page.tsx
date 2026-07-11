@@ -17,12 +17,7 @@ import {
 } from "@/components/skeletons";
 import type { Activity } from "@/lib/types";
 import { csrfHeaders } from "@/lib/auth/csrf-client";
-
-type User = {
-  id: string;
-  role: string;
-  status: string;
-} | null;
+import { useSession } from "@/components/session-provider";
 
 type Zone = { name: string; count: number };
 
@@ -48,8 +43,8 @@ export default function VoluntariosPage() {
   const [zones, setZones] = useState<Zone[]>([]);
   const [activeZone, setActiveZone] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState<User>(null);
   const [enrolledIds, setEnrolledIds] = useState<Set<string>>(new Set());
+  const { user } = useSession();
 
   const [activeView, setActiveView] = useState<ViewType>("list");
 
@@ -76,17 +71,13 @@ export default function VoluntariosPage() {
         `${API}/api/v1/activities${activeZone ? `?zone=${activeZone}` : ""}`,
         opts
       ).then((r) => (r.ok ? r.json() : [])),
-      fetch(`${API}/api/v1/auth/me`, opts).then((r) =>
-        r.ok ? r.json() : null
-      ),
       fetch(`${API}/api/v1/activities/enrolled`, opts).then((r) =>
         r.ok ? r.json() : []
       ),
     ])
-      .then(([zonesData, activitiesData, userData, enrolledData]) => {
+      .then(([zonesData, activitiesData, enrolledData]) => {
         setZones(Array.isArray(zonesData) ? zonesData : []);
         setActivities(Array.isArray(activitiesData) ? activitiesData : []);
-        setUser(userData);
         const ids = new Set<string>(
           (Array.isArray(enrolledData) ? enrolledData : []).map(
             (a: Activity) => a.id

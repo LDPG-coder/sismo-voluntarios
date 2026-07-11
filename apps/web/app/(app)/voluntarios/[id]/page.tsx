@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { JoinButton } from "@/components/join-button";
 import { ActivityDetailSkeleton } from "@/components/skeletons";
+import { useSession } from "@/components/session-provider";
 
 type Activity = {
   id: string;
@@ -29,8 +30,6 @@ type Activity = {
   };
 };
 
-type User = { id: string; role: string; status: string } | null;
-
 type Attendee = {
   user_id: string;
   name: string;
@@ -44,24 +43,20 @@ export default function ActivityDetailPage() {
   const params = useParams();
   const router = useRouter();
   const [activity, setActivity] = useState<Activity | null>(null);
-  const [user, setUser] = useState<User>(null);
   const [attendees, setAttendees] = useState<Attendee[]>([]);
   const [loading, setLoading] = useState(true);
+  const { user } = useSession();
 
   const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
   useEffect(() => {
     Promise.all([
       fetch(`${API}/api/v1/activities/${params.id}`, { credentials: "include" }).then((r) => r.json()),
-      fetch(`${API}/api/v1/auth/me`, { credentials: "include" }).then((r) =>
-        r.ok ? r.json() : null
-      ),
       fetch(`${API}/api/v1/activities/${params.id}/attendees`, {
         credentials: "include",
       }).then((r) => (r.ok ? r.json() : [])),
-    ]).then(([act, u, att]) => {
+    ]).then(([act, att]) => {
       setActivity(act);
-      setUser(u);
       setAttendees(att);
       setLoading(false);
     });

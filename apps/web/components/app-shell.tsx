@@ -6,30 +6,20 @@ import { Sidebar } from "@/components/sidebar";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { NotificationsBell } from "@/components/notifications-bell";
 import { onPhotoChanged } from "@/lib/photo-events";
-
-type User = {
-  name: string | null;
-  photo_url: string | null;
-  email: string;
-} | null;
+import { useSession, type SessionUser } from "@/components/session-provider";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
-  const [user, setUser] = useState<User>(null);
+  const { user, setUser } = useSession();
 
   useEffect(() => {
-    fetch(`${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"}/api/v1/auth/me`, {
-      credentials: "include",
-    })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data) => setUser(data))
-      .catch(() => {});
-
     const unsub = onPhotoChanged((photoUrl) => {
-      setUser((prev) => (prev ? { ...prev, photo_url: photoUrl } : prev));
+      setUser((prev: SessionUser) =>
+        prev ? { ...prev, photo_url: photoUrl } : prev
+      );
     });
     return unsub;
-  }, []);
+  }, [setUser]);
 
   return (
     <div className="flex min-h-screen bg-[#f4f5f7] dark:bg-[#0c0b0a]">
