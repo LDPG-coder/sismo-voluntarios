@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import secrets
 import urllib.parse
 from datetime import UTC, datetime
 from typing import Annotated
@@ -15,7 +14,9 @@ from sqlalchemy.orm import Session
 from app.core.config import Settings, get_settings
 from app.core.errors import ApiError, ErrorCode
 from app.core.logging import get_logger
+from app.core.utils import generate_referral_code, serialize_user
 from app.db.base import get_db
+from app.db.constants import MVP_TENANT_ID
 from app.db.enums import UserRole, UserStatus
 from app.db.models import User
 from app.pipeline import oauth
@@ -27,25 +28,6 @@ _log = get_logger("app.api.v1.auth")
 
 _FINISH_PATH = "/auth/finish"
 _LOGIN_PATH = "/login"
-
-
-def _generate_referral_code() -> str:
-    return secrets.token_urlsafe(6).upper()[:8]
-
-
-def _serialize(user: User) -> dict:
-    return {
-        "id": str(user.id),
-        "email": user.email,
-        "name": user.name,
-        "photo_url": user.photo_url,
-        "role": user.role,
-        "status": user.status,
-        "referral_code": user.referral_code,
-        "referred_by": str(user.referred_by) if user.referred_by else None,
-        "last_login_at": user.last_login_at.isoformat() if user.last_login_at else None,
-        "created_at": user.created_at.isoformat() if user.created_at else None,
-    }
 
 
 def _web_origin(settings: Settings) -> str:
@@ -152,7 +134,7 @@ def auth_logout(
 
 @router.get("/me")
 def get_me(user: Annotated[User, Depends(require_session)]) -> dict:
-    return _serialize(user)
+    return serialize_user(user)
 
 
 @router.post("/me/photo/reset", status_code=200)
@@ -163,7 +145,7 @@ def reset_photo(
     user.photo_url = user.google_photo_url
     db.commit()
     db.refresh(user)
-    return _serialize(user)
+    return serialize_user(user)
 
 
 class _InviteBody(BaseModel):
@@ -182,7 +164,7 @@ def invite_user(
     if existing:
         raise ApiError(ErrorCode.user_email_exists, f"email {email!r} already registered")
 
-    referral_code = _generate_referral_code()
+    referral_code = generate_referral_code()
     new_user = User(
         email=email,
         name=None,
@@ -191,7 +173,6 @@ def invite_user(
         referral_code=referral_code,
         referred_by=user.id,
     )
-    from app.db.constants import MVP_TENANT_ID
     new_user.tenant_id = MVP_TENANT_ID
     db.add(new_user)
     db.commit()

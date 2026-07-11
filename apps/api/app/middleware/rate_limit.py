@@ -7,6 +7,7 @@ import time
 from collections import deque
 
 from app.core.config import get_settings
+from app.core.errors import error_response
 from app.core.logging import get_logger
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
@@ -101,14 +102,12 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
             log.warning("rate_limit.exceeded", bucket=bucket, path=request.url.path)
             return JSONResponse(
                 status_code=429,
-                content={
-                    "error": {
-                        "code": "rate_limit.exceeded",
-                        "message": f"rate limit exceeded for {bucket} bucket",
-                        "request_id": rid,
-                        "details": {"retry_after": retry_after, "limit_per_minute": per_minute},
-                    }
-                },
+                content=error_response(
+                    code="rate_limit.exceeded",
+                    message=f"rate limit exceeded for {bucket} bucket",
+                    request_id=rid,
+                    details={"retry_after": retry_after, "limit_per_minute": per_minute},
+                ),
                 headers={"Retry-After": str(retry_after), "X-Request-Id": rid},
             )
 

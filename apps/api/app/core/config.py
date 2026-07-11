@@ -60,6 +60,8 @@ class Settings(BaseSettings):
     openai_model: str = "north-mini-code-free"
     ai_rate_limit_per_user_per_hour: int = 100
 
+    timezone_offset_hours: int = -4
+
     @field_validator("google_redirect_uri", mode="before")
     @classmethod
     def _strip_scheme_prefix(cls, value: object) -> object:

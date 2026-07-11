@@ -5,7 +5,9 @@ from __future__ import annotations
 import secrets
 import uuid
 from dataclasses import dataclass
+from datetime import UTC, datetime
 from typing import Any
+from urllib.parse import urlencode
 
 import httpx
 from sqlalchemy import select
@@ -92,7 +94,6 @@ def consume_code(db: Session, code: str, ttl: float):
 
 
 def _now() -> Any:
-    from datetime import UTC, datetime
     return datetime.now(UTC)
 
 
@@ -100,7 +101,6 @@ def _now() -> Any:
 
 
 def build_google_authorize_url(settings: Settings, *, state: str) -> str:
-    from urllib.parse import urlencode
     params = {
         "client_id": settings.google_client_id or "",
         "redirect_uri": settings.google_redirect_uri,
@@ -164,10 +164,6 @@ def _verify_id_token(settings: Settings, *, id_token: str) -> dict[str, Any]:
 
 
 # -- Invitation-only user resolution ------------------------------
-
-
-def _generate_referral_code() -> str:
-    return secrets.token_urlsafe(6).upper()[:8]
 
 
 @dataclass

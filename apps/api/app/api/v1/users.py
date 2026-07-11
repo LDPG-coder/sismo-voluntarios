@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from typing import Annotated
+from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel
@@ -11,6 +12,7 @@ from sqlalchemy.orm import Session
 
 from app.core.errors import ApiError, ErrorCode
 from app.core.logging import get_logger
+from app.core.utils import serialize_user, validate_enum
 from app.db.base import get_db
 from app.db.enums import UserRole, UserStatus
 from app.db.models import User
@@ -18,22 +20,6 @@ from app.pipeline.dependencies import require_admin_session, require_session
 
 router = APIRouter(prefix="/users", tags=["users"])
 _log = get_logger("app.api.v1.users")
-
-
-def _serialize_user(u: User) -> dict:
-    return {
-        "id": str(u.id),
-        "email": u.email,
-        "name": u.name,
-        "photo_url": u.photo_url,
-        "phone": u.phone,
-        "role": u.role,
-        "status": u.status,
-        "referral_code": u.referral_code,
-        "referred_by": str(u.referred_by) if u.referred_by else None,
-        "last_login_at": u.last_login_at.isoformat() if u.last_login_at else None,
-        "created_at": u.created_at.isoformat() if u.created_at else None,
-    }
 
 
 @router.get("")
@@ -57,7 +43,7 @@ def list_users(
     users = db.execute(q.order_by(User.created_at.desc()).offset(offset).limit(page_size)).scalars().all()
 
     return {
-        "users": [_serialize_user(u) for u in users],
+        "users": [serialize_user(u, include_phone=True)(u) for u in users],
         "total": total,
         "page": page,
         "page_size": page_size,
@@ -70,11 +56,10 @@ def get_user(
     admin: Annotated[User, Depends(require_admin_session)],
     db: Annotated[Session, Depends(get_db)],
 ) -> dict:
-    from uuid import UUID
     u = db.get(User, UUID(user_id))
     if not u:
         raise ApiError(ErrorCode.user_not_found, "user not found")
-    return _serialize_user(u)
+    return serialize_user(u, include_phone=True)(u)
 
 
 class _UpdateUserBody(BaseModel):
@@ -95,23 +80,22 @@ def update_user(
     admin: Annotated[User, Depends(require_admin_session)],
     db: Annotated[Session, Depends(get_db)],
 ) -> dict:
-    from uuid import UUID
     u = db.get(User, UUID(user_id))
     if not u:
         raise ApiError(ErrorCode.user_not_found, "user not found")
 
     if body.role is not None:
         try:
-            UserRole(body.role)
-        except ValueError:
-            raise ApiError(ErrorCode.validation_invalid_format, f"invalid role: {body.role}")
+            validate_enum(body.role, UserRole, "role")
+        except ValueError as e:
+            raise ApiError(ErrorCode.validation_invalid_format, str(e))
         u.role = body.role
 
     if body.status is not None:
         try:
-            UserStatus(body.status)
-        except ValueError:
-            raise ApiError(ErrorCode.validation_invalid_format, f"invalid status: {body.status}")
+            validate_enum(body.status, UserStatus, "status")
+        except ValueError as e:
+            raise ApiError(ErrorCode.validation_invalid_format, str(e))
         u.status = body.status
 
     if body.phone is not None:
@@ -123,7 +107,7 @@ def update_user(
     db.commit()
     db.refresh(u)
     _log.info("user.updated", user_id=str(u.id), admin_id=str(admin.id))
-    return _serialize_user(u)
+    return serialize_user(u, include_phone=True)(u)
 
 
 _MAX_PHOTO_LEN = 3_500_000
@@ -145,7 +129,7 @@ def update_my_photo(
     db.commit()
     db.refresh(user)
     _log.info("user.photo.updated", user_id=str(user.id))
-    return _serialize_user(user)
+    return serialize_user(u, include_phone=True)(user)
 
 
 @router.delete("/me/photo")
@@ -157,7 +141,7 @@ def delete_my_photo(
     db.commit()
     db.refresh(user)
     _log.info("user.photo.deleted", user_id=str(user.id))
-    return _serialize_user(user)
+    return serialize_user(u, include_phone=True)(user)
 
 
 @router.post("/me/photo/reset")
@@ -169,4 +153,4 @@ def reset_my_photo(
     db.commit()
     db.refresh(user)
     _log.info("user.photo.reset", user_id=str(user.id))
-    return _serialize_user(user)
+    return serialize_user(u, include_phone=True)(user)

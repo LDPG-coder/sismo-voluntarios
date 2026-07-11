@@ -112,15 +112,26 @@ def request_id_from_request(request: Request) -> str:
 
 def _envelope(
     *,
-    code: ErrorCode,
+    code: ErrorCode | str,
     message: str,
     request_id: str,
     details: dict | None = None,
 ) -> dict:
-    body: dict = {"error": {"code": code.value, "message": message, "request_id": request_id}}
+    code_value = code.value if isinstance(code, ErrorCode) else code
+    body: dict = {"error": {"code": code_value, "message": message, "request_id": request_id}}
     if details is not None:
         body["error"]["details"] = details
     return body
+
+
+def error_response(
+    *,
+    code: ErrorCode | str,
+    message: str,
+    request_id: str,
+    details: dict | None = None,
+) -> dict:
+    return _envelope(code=code, message=message, request_id=request_id, details=details)
 
 
 async def _api_error_handler(request: Request, exc: ApiError) -> JSONResponse:

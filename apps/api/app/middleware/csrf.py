@@ -9,6 +9,7 @@ from starlette.requests import Request
 from starlette.responses import JSONResponse
 from starlette.types import ASGIApp
 
+from app.core.errors import error_response
 from app.core.logging import get_logger
 
 CSRF_COOKIE_NAME = "XSRF-TOKEN"
@@ -16,10 +17,6 @@ CSRF_HEADER_NAME = "X-CSRF-Token"
 _WRITE_METHODS = frozenset({"POST", "PATCH", "PUT", "DELETE"})
 
 _log = get_logger("app.middleware.csrf")
-
-
-def _envelope(code: str, message: str, request_id: str) -> dict:
-    return {"error": {"code": code, "message": message, "request_id": request_id}}
 
 
 class CsrfMiddleware(BaseHTTPMiddleware):
@@ -40,7 +37,7 @@ class CsrfMiddleware(BaseHTTPMiddleware):
             _log.warning("csrf.missing_header", path=request.url.path, request_id=rid)
             return JSONResponse(
                 status_code=403,
-                content=_envelope("auth.csrf_missing", f"X-CSRF-Token header required for {request.method}", rid),
+                content=error_response(code="auth.csrf_missing", message=f"X-CSRF-Token header required for {request.method}", request_id=rid),
             )
 
         if not hmac.compare_digest(cookie_value, header_value):
@@ -48,7 +45,7 @@ class CsrfMiddleware(BaseHTTPMiddleware):
             _log.warning("csrf.mismatch", path=request.url.path, request_id=rid)
             return JSONResponse(
                 status_code=403,
-                content=_envelope("auth.csrf_invalid", "X-CSRF-Token does not match XSRF-TOKEN cookie", rid),
+                content=error_response(code="auth.csrf_invalid", message="X-CSRF-Token does not match XSRF-TOKEN cookie", request_id=rid),
             )
 
         return await call_next(request)

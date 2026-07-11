@@ -4,16 +4,20 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 from typing import Annotated
+from uuid import UUID, uuid4
 
+from dateutil.parser import parse as parse_dt
 from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel
-from sqlalchemy import func, select
+from sqlalchemy import func, select, text
 from sqlalchemy.orm import Session
 
 from app.core.config import Settings, get_settings
 from app.core.errors import ApiError, ErrorCode
 from app.core.logging import get_logger
+from app.core.utils import ensure_timezone
 from app.db.base import get_db
+from app.db.constants import MVP_TENANT_ID
 from app.db.enums import ActivityStatus
 from app.db.models import Activity, ActivityMember, Notification, User
 from app.pipeline.dependencies import require_session
@@ -50,6 +54,32 @@ def _serialize_activity(a: Activity, member_count: int = 0, creator: User | None
     return result
 
 
+def _serialize_activities_batch(activities: list[Activity], db: Session) -> list[dict]:
+    if not activities:
+        return []
+
+    activity_ids = [a.id for a in activities]
+    creator_ids = {a.creator_id for a in activities}
+
+    count_rows = db.execute(
+        select(ActivityMember.activity_id, func.count())
+        .select_from(ActivityMember)
+        .where(ActivityMember.activity_id.in_(activity_ids))
+        .group_by(ActivityMember.activity_id)
+    ).all()
+    member_counts = {row[0]: row[1] for row in count_rows}
+
+    creators = db.execute(
+        select(User).where(User.id.in_(creator_ids))
+    ).scalars().all()
+    creator_map = {c.id: c for c in creators}
+
+    return [
+        _serialize_activity(a, member_count=member_counts.get(a.id, 0), creator=creator_map.get(a.creator_id))
+        for a in activities
+    ]
+
+
 # -- Public endpoints ----------------------------------------------
 
 
@@ -67,15 +97,7 @@ def list_activities(
         q = q.where(Activity.status == status)
     q = q.order_by(Activity.date_time.desc())
     activities = db.execute(q).scalars().all()
-
-    result = []
-    for a in activities:
-        count = db.execute(
-            select(func.count()).select_from(ActivityMember).where(ActivityMember.activity_id == a.id)
-        ).scalar() or 0
-        creator = db.get(User, a.creator_id)
-        result.append(_serialize_activity(a, member_count=count, creator=creator))
-    return result
+    return _serialize_activities_batch(activities, db)
 
 
 @router.get("/zones")
@@ -99,15 +121,7 @@ def my_activities(
 ) -> list[dict]:
     q = select(Activity).where(Activity.creator_id == user.id).order_by(Activity.created_at.desc())
     activities = db.execute(q).scalars().all()
-
-    result = []
-    for a in activities:
-        count = db.execute(
-            select(func.count()).select_from(ActivityMember).where(ActivityMember.activity_id == a.id)
-        ).scalar() or 0
-        creator = db.get(User, a.creator_id)
-        result.append(_serialize_activity(a, member_count=count, creator=creator))
-    return result
+    return _serialize_activities_batch(activities, db)
 
 
 # -- Notifications -----------------------------------------------------
@@ -125,15 +139,7 @@ def enrolled_activities(
         .order_by(Activity.date_time.desc())
     )
     activities = db.execute(q).scalars().all()
-
-    result = []
-    for a in activities:
-        count = db.execute(
-            select(func.count()).select_from(ActivityMember).where(ActivityMember.activity_id == a.id)
-        ).scalar() or 0
-        creator = db.get(User, a.creator_id)
-        result.append(_serialize_activity(a, member_count=count, creator=creator))
-    return result
+    return _serialize_activities_batch(activities, db)
 
 
 @router.get("/notifications")
@@ -141,11 +147,10 @@ def list_notifications(
     user: Annotated[User, Depends(require_session)],
     db: Annotated[Session, Depends(get_db)],
 ) -> list[dict]:
-    from app.db.models import Notification as NotificationModel
     notifs = db.execute(
-        select(NotificationModel)
-        .where(NotificationModel.user_id == user.id)
-        .order_by(NotificationModel.created_at.desc())
+        select(Notification)
+        .where(Notification.user_id == user.id)
+        .order_by(Notification.created_at.desc())
         .limit(50)
     ).scalars().all()
     return [
@@ -168,9 +173,7 @@ def mark_notification_read(
     user: Annotated[User, Depends(require_session)],
     db: Annotated[Session, Depends(get_db)],
 ) -> dict:
-    from uuid import UUID
-    from app.db.models import Notification as NotificationModel
-    n = db.get(NotificationModel, UUID(notification_id))
+    n = db.get(Notification, UUID(notification_id))
     if not n or str(n.user_id) != str(user.id):
         raise ApiError(ErrorCode.not_found, "notification not found")
     n.read = True
@@ -184,7 +187,6 @@ def get_activity(
     user: Annotated[User, Depends(require_session)],
     db: Annotated[Session, Depends(get_db)],
 ) -> dict:
-    from uuid import UUID
     a = db.get(Activity, UUID(activity_id))
     if not a:
         raise ApiError(ErrorCode.activity_not_found, "activity not found")
@@ -201,7 +203,6 @@ def check_membership(
     user: Annotated[User, Depends(require_session)],
     db: Annotated[Session, Depends(get_db)],
 ) -> dict:
-    from uuid import UUID
     a = db.get(Activity, UUID(activity_id))
     if not a:
         raise ApiError(ErrorCode.activity_not_found, "activity not found")
@@ -233,12 +234,8 @@ def create_activity(
     if not date_time_str:
         raise ApiError(ErrorCode.validation_missing_field, "date_time is required")
 
-    from dateutil.parser import parse as parse_dt
-    from datetime import timezone, timedelta
     try:
-        date_time = parse_dt(date_time_str)
-        if date_time.tzinfo is None:
-            date_time = date_time.replace(tzinfo=timezone(timedelta(hours=-4)))
+        date_time = ensure_timezone(parse_dt(date_time_str))
     except (ValueError, TypeError):
         raise ApiError(ErrorCode.validation_invalid_format, "invalid date_time format")
 
@@ -246,9 +243,7 @@ def create_activity(
     end_time_str = body.get("end_time")
     if end_time_str:
         try:
-            end_time = parse_dt(end_time_str)
-            if end_time.tzinfo is None:
-                end_time = end_time.replace(tzinfo=timezone(timedelta(hours=-4)))
+            end_time = ensure_timezone(parse_dt(end_time_str))
         except (ValueError, TypeError):
             pass
 
@@ -266,7 +261,6 @@ def create_activity(
         creator_id=user.id,
         status=ActivityStatus.active.value,
     )
-    from app.db.constants import MVP_TENANT_ID
     a.tenant_id = MVP_TENANT_ID
     db.add(a)
     db.commit()
@@ -278,50 +272,19 @@ def create_activity(
 @router.patch("/{activity_id}")
 def update_activity(
     activity_id: str,
-    body: dict,
+    body: _UpdateActivityBody,
     user: Annotated[User, Depends(require_session)],
     db: Annotated[Session, Depends(get_db)],
 ) -> dict:
-    from uuid import UUID
     a = db.get(Activity, UUID(activity_id))
     if not a:
         raise ApiError(ErrorCode.activity_not_found, "activity not found")
     if str(a.creator_id) != str(user.id):
         raise ApiError(ErrorCode.activity_not_creator, "solo el creador puede editar")
 
-    for field in ("title", "description", "zone", "raw_address", "requirements"):
-        if field in body:
-            setattr(a, field, body[field])
-    if "date_time" in body:
-        from dateutil.parser import parse as parse_dt
-        from datetime import timezone, timedelta
-        try:
-            dt = parse_dt(body["date_time"])
-            if dt.tzinfo is None:
-                dt = dt.replace(tzinfo=timezone(timedelta(hours=-4)))
-            a.date_time = dt
-        except (ValueError, TypeError):
-            raise ApiError(ErrorCode.validation_invalid_format, "invalid date_time format")
-    if "end_time" in body:
-        from dateutil.parser import parse as parse_dt
-        from datetime import timezone, timedelta
-        end_val = body["end_time"]
-        if end_val:
-            try:
-                et = parse_dt(end_val)
-                if et.tzinfo is None:
-                    et = et.replace(tzinfo=timezone(timedelta(hours=-4)))
-                a.end_time = et
-            except (ValueError, TypeError):
-                pass
-        else:
-            a.end_time = None
-    if "max_participants" in body:
-        a.max_participants = body["max_participants"]
-    if "estimated_duration_min" in body:
-        a.estimated_duration_min = body["estimated_duration_min"]
-    if "contact_info" in body:
-        a.contact_info = body["contact_info"]
+    _apply_text_fields(a, body)
+    _apply_datetime_fields(a, body)
+    _apply_numeric_fields(a, body)
 
     db.commit()
     db.refresh(a)
@@ -336,7 +299,6 @@ def cancel_activity(
     db: Annotated[Session, Depends(get_db)],
     body: dict | None = None,
 ) -> dict:
-    from uuid import UUID
     a = db.get(Activity, UUID(activity_id))
     if not a:
         raise ApiError(ErrorCode.activity_not_found, "activity not found")
@@ -363,7 +325,6 @@ def cancel_activity(
             title=f"Actividad {status_label}: {a.title}",
             message=f"La actividad '{a.title}' ha sido {status_label} por el organizador.",
         )
-        from app.db.constants import MVP_TENANT_ID
         n.tenant_id = MVP_TENANT_ID
         db.add(n)
 
@@ -377,7 +338,6 @@ def join_activity(
     user: Annotated[User, Depends(require_session)],
     db: Annotated[Session, Depends(get_db)],
 ) -> dict:
-    from uuid import UUID
     a = db.get(Activity, UUID(activity_id))
     if not a:
         raise ApiError(ErrorCode.activity_not_found, "activity not found")
@@ -391,8 +351,6 @@ def join_activity(
         raise ApiError(ErrorCode.activity_already_joined, "ya estás inscrito")
 
     # Overbooking check: atomic insert with count check
-    from sqlalchemy import text
-    from uuid import uuid4
     result = db.execute(
         text("""
             INSERT INTO activity_members (id, activity_id, user_id, attended, created_at, updated_at)
@@ -419,7 +377,6 @@ def leave_activity(
     user: Annotated[User, Depends(require_session)],
     db: Annotated[Session, Depends(get_db)],
 ) -> dict:
-    from uuid import UUID
     a = db.get(Activity, UUID(activity_id))
     if not a:
         raise ApiError(ErrorCode.activity_not_found, "activity not found")
@@ -441,7 +398,6 @@ def list_attendees(
     user: Annotated[User, Depends(require_session)],
     db: Annotated[Session, Depends(get_db)],
 ) -> list[dict]:
-    from uuid import UUID
     a = db.get(Activity, UUID(activity_id))
     if not a:
         raise ApiError(ErrorCode.activity_not_found, "activity not found")
@@ -468,6 +424,51 @@ class _AttendeeAction(BaseModel):
     attended: bool
 
 
+class _UpdateActivityBody(BaseModel):
+    title: str | None = None
+    description: str | None = None
+    zone: str | None = None
+    raw_address: str | None = None
+    requirements: str | None = None
+    date_time: str | None = None
+    end_time: str | None = None
+    max_participants: int | None = None
+    estimated_duration_min: int | None = None
+    contact_info: str | None = None
+
+
+def _apply_text_fields(a: Activity, body: _UpdateActivityBody) -> None:
+    for field in ("title", "description", "zone", "raw_address", "requirements"):
+        val = getattr(body, field)
+        if val is not None:
+            setattr(a, field, val)
+
+
+def _apply_datetime_fields(a: Activity, body: _UpdateActivityBody) -> None:
+    if body.date_time is not None:
+        try:
+            a.date_time = ensure_timezone(parse_dt(body.date_time))
+        except (ValueError, TypeError):
+            raise ApiError(ErrorCode.validation_invalid_format, "invalid date_time format")
+    if body.end_time is not None:
+        if body.end_time:
+            try:
+                a.end_time = ensure_timezone(parse_dt(body.end_time))
+            except (ValueError, TypeError):
+                pass
+        else:
+            a.end_time = None
+
+
+def _apply_numeric_fields(a: Activity, body: _UpdateActivityBody) -> None:
+    if body.max_participants is not None:
+        a.max_participants = body.max_participants
+    if body.estimated_duration_min is not None:
+        a.estimated_duration_min = body.estimated_duration_min
+    if body.contact_info is not None:
+        a.contact_info = body.contact_info
+
+
 @router.post("/{activity_id}/attendees/{target_user_id}/attended")
 def mark_attendance(
     activity_id: str,
@@ -476,7 +477,6 @@ def mark_attendance(
     user: Annotated[User, Depends(require_session)],
     db: Annotated[Session, Depends(get_db)],
 ) -> dict:
-    from uuid import UUID
     a = db.get(Activity, UUID(activity_id))
     if not a:
         raise ApiError(ErrorCode.activity_not_found, "activity not found")
@@ -508,7 +508,6 @@ def expand_capacity(
     user: Annotated[User, Depends(require_session)],
     db: Annotated[Session, Depends(get_db)],
 ) -> dict:
-    from uuid import UUID
     a = db.get(Activity, UUID(activity_id))
     if not a:
         raise ApiError(ErrorCode.activity_not_found, "activity not found")
