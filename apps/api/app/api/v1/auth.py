@@ -155,6 +155,17 @@ def get_me(user: Annotated[User, Depends(require_session)]) -> dict:
     return _serialize(user)
 
 
+@router.post("/me/photo/reset", status_code=200)
+def reset_photo(
+    user: Annotated[User, Depends(require_session)],
+    db: Annotated[Session, Depends(get_db)],
+) -> dict:
+    user.photo_url = user.google_photo_url
+    db.commit()
+    db.refresh(user)
+    return _serialize(user)
+
+
 class _InviteBody(BaseModel):
     email: str
 

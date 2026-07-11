@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Sidebar } from "@/components/sidebar";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { NotificationsBell } from "@/components/notifications-bell";
+import { onPhotoChanged } from "@/lib/photo-events";
 
 type User = {
   name: string | null;
@@ -23,6 +24,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => setUser(data))
       .catch(() => {});
+
+    const unsub = onPhotoChanged((photoUrl) => {
+      setUser((prev) => (prev ? { ...prev, photo_url: photoUrl } : prev));
+    });
+    return unsub;
   }, []);
 
   return (

@@ -36,12 +36,28 @@ export function CrearActivityClient() {
   const [aiThinking, setAiThinking] = useState(false);
   const [aiEnabled, setAiEnabled] = useState(true);
   const [textShimmer, setTextShimmer] = useState(false);
+  const [draftReady, setDraftReady] = useState(false);
   const descriptionRef = useRef<HTMLTextAreaElement>(null);
+
+  const aiEnabledRef = useRef(aiEnabled);
+  aiEnabledRef.current = aiEnabled;
 
   const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
   const mountedRef = useRef(false);
   const draftTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const resetAiFields = () => {
+    setTitle("");
+    setZone("");
+    setRawAddress("");
+    setDateTime("");
+    setEndDateTime("");
+    setEstimatedDuration("");
+    setMaxParticipants("");
+    setContactInfo("");
+    setRequirements([]);
+  };
 
   useEffect(() => {
     try {
@@ -49,19 +65,23 @@ export function CrearActivityClient() {
       if (raw) {
         const saved = JSON.parse(raw);
         if (saved.description) setDescription(saved.description);
-        if (saved.title) setTitle(saved.title);
-        if (saved.zone) setZone(saved.zone);
-        if (saved.rawAddress) setRawAddress(saved.rawAddress);
-        if (saved.dateTime) setDateTime(saved.dateTime);
-        if (saved.endDateTime) setEndDateTime(saved.endDateTime);
-        if (saved.estimatedDuration) setEstimatedDuration(saved.estimatedDuration);
-        if (saved.maxParticipants) setMaxParticipants(saved.maxParticipants);
-        if (saved.contactInfo) setContactInfo(saved.contactInfo);
-        if (saved.requirements?.length) setRequirements(saved.requirements);
         if (typeof saved.aiEnabled === "boolean") setAiEnabled(saved.aiEnabled);
+        const restoreAiFields = saved.aiEnabled !== false;
+        if (restoreAiFields) {
+          if (saved.title) setTitle(saved.title);
+          if (saved.zone) setZone(saved.zone);
+          if (saved.rawAddress) setRawAddress(saved.rawAddress);
+          if (saved.dateTime) setDateTime(saved.dateTime);
+          if (saved.endDateTime) setEndDateTime(saved.endDateTime);
+          if (saved.estimatedDuration) setEstimatedDuration(saved.estimatedDuration);
+          if (saved.maxParticipants) setMaxParticipants(saved.maxParticipants);
+          if (saved.contactInfo) setContactInfo(saved.contactInfo);
+          if (saved.requirements?.length) setRequirements(saved.requirements);
+        }
       }
     } catch {}
     mountedRef.current = true;
+    setDraftReady(true);
   }, []);
 
   useEffect(() => {
@@ -105,9 +125,59 @@ export function CrearActivityClient() {
     } catch {}
   };
 
+  const applySuggestion = useCallback(
+    (data: any) => {
+      if (!aiEnabledRef.current) return;
+      if (data.title && !title) setTitle(typeof data.title === "string" ? data.title : String(data.title));
+      if (data.zone && !zone) setZone(typeof data.zone === "string" ? data.zone : String(data.zone));
+      if (data.raw_address && !rawAddress) {
+        const addr = Array.isArray(data.raw_address) ? data.raw_address.join(", ") : String(data.raw_address);
+        setRawAddress(addr);
+      }
+      const dt = data.date_time || data.date_time_suggestion;
+      if (dt && !dateTime) {
+        const d = new Date(dt);
+        if (!isNaN(d.getTime())) {
+          const utc = d.getTime() + d.getTimezoneOffset() * 60000;
+          const local = new Date(utc - 4 * 3600000);
+          const yyyy = local.getFullYear();
+          const mm = String(local.getMonth() + 1).padStart(2, "0");
+          const dd = String(local.getDate()).padStart(2, "0");
+          const hh = String(local.getHours()).padStart(2, "0");
+          const mi = String(local.getMinutes()).padStart(2, "0");
+          setDateTime(`${yyyy}-${mm}-${dd}T${hh}:${mi}`);
+        }
+      }
+      const et = data.end_time || data.end_time_suggestion;
+      if (et && !endDateTime) {
+        const d = new Date(et);
+        if (!isNaN(d.getTime())) {
+          const utc = d.getTime() + d.getTimezoneOffset() * 60000;
+          const local = new Date(utc - 4 * 3600000);
+          const yyyy = local.getFullYear();
+          const mm = String(local.getMonth() + 1).padStart(2, "0");
+          const dd = String(local.getDate()).padStart(2, "0");
+          const hh = String(local.getHours()).padStart(2, "0");
+          const mi = String(local.getMinutes()).padStart(2, "0");
+          setEndDateTime(`${yyyy}-${mm}-${dd}T${hh}:${mi}`);
+        }
+      }
+      if (data.estimated_duration_min && !estimatedDuration) setEstimatedDuration(String(data.estimated_duration_min));
+      if (data.max_participants && !maxParticipants) setMaxParticipants(String(data.max_participants));
+      if (data.contact_info && !contactInfo) {
+        const c = Array.isArray(data.contact_info) ? data.contact_info.join(", ") : String(data.contact_info);
+        setContactInfo(c);
+      }
+      if (Array.isArray(data.requirements) && data.requirements.length > 0 && requirements.length === 0) {
+        setRequirements(data.requirements);
+      }
+    },
+    [title, zone, rawAddress, dateTime, endDateTime, estimatedDuration, maxParticipants, contactInfo, requirements],
+  );
+
   const callAi = useCallback(
     async (desc: string) => {
-      if (!aiEnabled || desc.length < 15) return;
+      if (!aiEnabledRef.current || desc.length < 15) return;
       if (abortRef.current) abortRef.current.abort();
       const ctrl = new AbortController();
       abortRef.current = ctrl;
@@ -170,50 +240,8 @@ export function CrearActivityClient() {
         }
       }
     },
-    [],
+    [applySuggestion],
   );
-
-  const applySuggestion = (data: any) => {
-    if (data.title && !title) setTitle(typeof data.title === "string" ? data.title : String(data.title));
-    if (data.zone && !zone) setZone(typeof data.zone === "string" ? data.zone : String(data.zone));
-    if (data.raw_address && !rawAddress) {
-      const addr = Array.isArray(data.raw_address) ? data.raw_address.join(", ") : String(data.raw_address);
-      setRawAddress(addr);
-    }
-    if (data.date_time && !dateTime) {
-      const d = new Date(data.date_time);
-      if (!isNaN(d.getTime())) {
-        const utc = d.getTime() + d.getTimezoneOffset() * 60000;
-        const local = new Date(utc - 4 * 3600000);
-        const yyyy = local.getFullYear();
-        const mm = String(local.getMonth() + 1).padStart(2, "0");
-        const dd = String(local.getDate()).padStart(2, "0");
-        const hh = String(local.getHours()).padStart(2, "0");
-        const mi = String(local.getMinutes()).padStart(2, "0");
-        setDateTime(`${yyyy}-${mm}-${dd}T${hh}:${mi}`);
-      }
-    }
-    if (data.end_time && !endDateTime) {
-      const d = new Date(data.end_time);
-      if (!isNaN(d.getTime())) {
-        const utc = d.getTime() + d.getTimezoneOffset() * 60000;
-        const local = new Date(utc - 4 * 3600000);
-        const yyyy = local.getFullYear();
-        const mm = String(local.getMonth() + 1).padStart(2, "0");
-        const dd = String(local.getDate()).padStart(2, "0");
-        const hh = String(local.getHours()).padStart(2, "0");
-        const mi = String(local.getMinutes()).padStart(2, "0");
-        setEndDateTime(`${yyyy}-${mm}-${dd}T${hh}:${mi}`);
-      }
-    }
-    if (data.estimated_duration_min && !estimatedDuration) setEstimatedDuration(String(data.estimated_duration_min));
-    if (data.max_participants && !maxParticipants) setMaxParticipants(String(data.max_participants));
-    if (data.contact_info && !contactInfo) {
-      const c = Array.isArray(data.contact_info) ? data.contact_info.join(", ") : String(data.contact_info);
-      setContactInfo(c);
-    }
-    if (data.requirements?.length && requirements.length === 0) setRequirements(data.requirements);
-  };
 
   useEffect(() => {
     const el = descriptionRef.current;
@@ -223,9 +251,15 @@ export function CrearActivityClient() {
   }, [description]);
 
   useEffect(() => {
-    const t = setTimeout(() => callAi(description), 1500);
+    if (!draftReady) return;
+    if (!aiEnabled) {
+      if (abortRef.current) abortRef.current.abort();
+      setAiThinking(false);
+      return;
+    }
+    const t = setTimeout(() => callAi(description), 800);
     return () => clearTimeout(t);
-  }, [description, callAi, aiEnabled]);
+  }, [description, callAi, aiEnabled, draftReady]);
 
   const addRequirement = (raw: string) => {
     const parts = raw.split(",").map((s) => s.trim()).filter(Boolean);
@@ -306,6 +340,8 @@ export function CrearActivityClient() {
                   if (next) {
                     setTextShimmer(true);
                     setTimeout(() => setTextShimmer(false), 1300);
+                  } else {
+                    resetAiFields();
                   }
                 }}
                 className="flex items-center gap-2 text-xs text-zinc-500 transition hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200"
@@ -474,7 +510,8 @@ export function CrearActivityClient() {
               value={contactInfo}
               onChange={(e) => setContactInfo(e.target.value)}
               placeholder="Ej: @usuarioTelegram, +58 412 1234567, grupo de WhatsApp"
-              className={INPUT_cls}
+              disabled={aiThinking}
+              className={aiThinking ? INPUT_LOADING_cls : INPUT_cls}
             />
             <p className="mt-1 text-xs text-zinc-400">Numero de telefono, usuario de Telegram/WhatsApp, o enlace al grupo</p>
           </div>
@@ -506,7 +543,8 @@ export function CrearActivityClient() {
               onKeyDown={handleReqKeyDown}
               onBlur={handleReqBlur}
               placeholder="Escribe y presiona Enter o coma para agregar"
-              className={INPUT_cls}
+              disabled={aiThinking}
+              className={aiThinking ? INPUT_LOADING_cls : INPUT_cls}
             />
           </div>
 

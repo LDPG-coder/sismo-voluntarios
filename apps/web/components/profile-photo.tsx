@@ -2,6 +2,7 @@
 
 import { useCallback, useRef, useState } from "react";
 import { csrfHeaders } from "@/lib/auth/csrf-client";
+import { emitPhotoChanged } from "@/lib/photo-events";
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
@@ -129,7 +130,9 @@ export function ProfilePhoto({
       });
       if (!res.ok) throw new Error("No se pudo guardar la foto");
       const data = await res.json();
-      setPhotoUrl(data.photo_url ?? cropped);
+      const url = data.photo_url ?? cropped;
+      setPhotoUrl(url);
+      emitPhotoChanged(url);
       setPending(null);
       setNatural(null);
     } catch (e: any) {
@@ -150,6 +153,7 @@ export function ProfilePhoto({
       });
       if (!res.ok) throw new Error("No se pudo eliminar la foto");
       setPhotoUrl(null);
+      emitPhotoChanged(null);
       setPending(null);
     } catch (e: any) {
       setError(e.message || "Error al eliminar");
@@ -169,7 +173,9 @@ export function ProfilePhoto({
       });
       if (!res.ok) throw new Error("No se pudo restablecer la foto");
       const data = await res.json();
-      setPhotoUrl(data.photo_url ?? defaultPhotoUrl);
+      const url = data.photo_url ?? defaultPhotoUrl;
+      setPhotoUrl(url);
+      emitPhotoChanged(url);
       setPending(null);
     } catch (e: any) {
       setError(e.message || "Error al restablecer");
@@ -259,7 +265,7 @@ export function ProfilePhoto({
             </button>
             <button
               onClick={reset}
-              disabled={resetting || !defaultPhotoUrl}
+              disabled={resetting}
               className="flex items-center gap-1.5 rounded-md border border-zinc-200 px-4 py-1.5 text-xs font-medium text-zinc-600 transition hover:bg-zinc-50 disabled:opacity-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
             >
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor">

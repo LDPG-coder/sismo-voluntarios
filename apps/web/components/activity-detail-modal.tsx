@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useCallback } from "react";
-import Link from "next/link";
 import type { Activity } from "@/lib/types";
 
 type User = { id: string; role: string; status: string } | null;
@@ -85,15 +84,9 @@ export function ActivityDetailModal({
             </span>
           </div>
 
-          <Link
-            href={`/voluntarios/${activity.id}`}
-            onClick={onClose}
-            className="group block mt-2"
-          >
-            <h2 className="text-lg font-semibold text-zinc-900 transition group-hover:text-emerald-600 dark:text-zinc-100 dark:group-hover:text-emerald-400">
-              {activity.title}
-            </h2>
-          </Link>
+          <h2 className="group block mt-2 text-lg font-semibold text-zinc-900 dark:text-zinc-100">
+            {activity.title}
+          </h2>
 
           <div className="mt-4 space-y-2.5 text-sm text-zinc-600 dark:text-zinc-400">
             <div className="flex items-start gap-2.5">
@@ -136,13 +129,19 @@ export function ActivityDetailModal({
 
         <div className="border-t border-zinc-100 px-6 py-4 dark:border-zinc-800">
           <div className="flex items-center gap-3">
-            {isEnrolled ? (
-              <button
-                onClick={() => onLeave?.(activity.id)}
-                className="flex-1 rounded-lg border border-zinc-200 px-4 py-2.5 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
-              >
-                Abandonar
-              </button>
+            {user?.id && String(user.id) === String(activity.creator_id) ? (
+              <p className="flex-1 text-center text-sm text-zinc-500 dark:text-zinc-400">
+                Esta es tu actividad
+              </p>
+            ) : isEnrolled ? (
+              <>
+                <button
+                  onClick={() => onLeave?.(activity.id)}
+                  className="flex-1 rounded-lg border border-zinc-200 px-4 py-2.5 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
+                >
+                  Abandonar
+                </button>
+              </>
             ) : (
               <button
                 onClick={() => onJoin?.(activity.id)}
@@ -151,13 +150,6 @@ export function ActivityDetailModal({
                 Unirme
               </button>
             )}
-            <Link
-              href={`/voluntarios/${activity.id}`}
-              onClick={onClose}
-              className="rounded-lg border border-zinc-200 px-4 py-2.5 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
-            >
-              Ver más
-            </Link>
           </div>
         </div>
       </div>

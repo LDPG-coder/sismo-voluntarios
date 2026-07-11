@@ -7,6 +7,7 @@ type Activity = {
   id: string;
   max_participants: number | null;
   member_count: number;
+  creator_id?: string | number | null;
 };
 
 type User = { id: string } | null;
@@ -48,6 +49,10 @@ export function JoinButton({ activity, user }: { activity: Activity; user: User 
 
   if (status === "loading") {
     return <Skeleton className="h-9 w-24 rounded-md" />;
+  }
+
+  if (user?.id && activity.creator_id != null && Number(user.id) === Number(activity.creator_id)) {
+    return <p className="text-sm text-zinc-500">Esta es tu actividad</p>;
   }
 
   if (status === "done") {
