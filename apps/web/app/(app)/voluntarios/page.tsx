@@ -233,6 +233,7 @@ export default function VoluntariosPage() {
                 activities={activities}
                 selectedDate={selectedDate}
                 enrolledIds={enrolledIds}
+                currentUserId={user?.id ?? null}
                 onPrevDay={handlePrevDay}
                 onNextDay={handleNextDay}
                 onToday={handleToday}

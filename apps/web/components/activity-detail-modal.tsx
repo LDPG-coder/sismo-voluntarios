@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useCallback } from "react";
+import { useEffect, useCallback, useState } from "react";
+import { useRouter } from "next/navigation";
 import type { Activity } from "@/lib/types";
 
 type User = { id: string; role: string; status: string } | null;
@@ -30,6 +31,9 @@ export function ActivityDetailModal({
     },
     [onClose]
   );
+
+  const router = useRouter();
+  const [titleActive, setTitleActive] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -84,7 +88,16 @@ export function ActivityDetailModal({
             </span>
           </div>
 
-          <h2 className="group block mt-2 text-lg font-semibold text-zinc-900 dark:text-zinc-100">
+          <h2
+            onClick={() => {
+              setTitleActive(true);
+              setTimeout(() => {
+                onClose();
+                router.push(`/voluntarios/${activity.id}`);
+              }, 250);
+            }}
+            className={`group block mt-2 cursor-pointer text-lg font-semibold transition-colors ${titleActive ? "text-emerald-600 dark:text-emerald-400" : "text-zinc-900 dark:text-zinc-100"}`}
+          >
             {activity.title}
           </h2>
 

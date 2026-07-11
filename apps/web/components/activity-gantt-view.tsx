@@ -7,6 +7,7 @@ type ActivityGanttViewProps = {
   activities: Activity[];
   selectedDate: Date;
   enrolledIds?: Set<string>;
+  currentUserId?: string | null;
   onPrevDay?: () => void;
   onNextDay?: () => void;
   onToday?: () => void;
@@ -48,31 +49,52 @@ function getActivityBlock(
   return { startHour, duration: Math.max(duration, 0.5) };
 }
 
-function detectConflicts(blocks: ActivityBlock[]): Set<string> {
-  const conflicts = new Set<string>();
+function detectConflicts(
+  blocks: ActivityBlock[],
+  isUser: (a: Activity) => boolean
+): Map<string, "emergency" | "warning"> {
+  const n = blocks.length;
+  if (n < 2) return new Map();
 
-  for (let i = 0; i < blocks.length; i++) {
-    for (let j = i + 1; j < blocks.length; j++) {
+  const parent = Array.from({ length: n }, (_, i) => i);
+  const find = (x: number): number =>
+    parent[x] === x ? x : (parent[x] = find(parent[x]));
+
+  for (let i = 0; i < n; i++) {
+    for (let j = i + 1; j < n; j++) {
       const a = blocks[i];
       const b = blocks[j];
-
       const aEnd = a.startHour + a.duration;
       const bEnd = b.startHour + b.duration;
-
-      if (a.startHour < bEnd && b.startHour < aEnd) {
-        conflicts.add(a.activity.id);
-        conflicts.add(b.activity.id);
+      if (a.startHour < bEnd - 1e-6 && b.startHour < aEnd - 1e-6) {
+        parent[find(i)] = find(j);
       }
     }
   }
 
-  return conflicts;
+  const size = new Map<number, number>();
+  const hasUser = new Map<number, boolean>();
+  for (let i = 0; i < n; i++) {
+    const r = find(i);
+    size.set(r, (size.get(r) ?? 0) + 1);
+    hasUser.set(r, (hasUser.get(r) ?? false) || isUser(blocks[i].activity));
+  }
+
+  const result = new Map<string, "emergency" | "warning">();
+  for (let i = 0; i < n; i++) {
+    const r = find(i);
+    if ((size.get(r) ?? 0) > 1) {
+      result.set(blocks[i].activity.id, hasUser.get(r) ? "emergency" : "warning");
+    }
+  }
+  return result;
 }
 
 export function ActivityGanttView({
   activities,
   selectedDate,
   enrolledIds,
+  currentUserId,
   onPrevDay,
   onNextDay,
   onToday,
@@ -105,15 +127,18 @@ export function ActivityGanttView({
       hoursList.push(h);
     }
 
-    const conflictIds = detectConflicts(activityBlocks);
+    const conflictMap = detectConflicts(activityBlocks, (a) =>
+      (enrolledIds?.has(a.id) ?? false) ||
+      (currentUserId != null && a.creator_id === currentUserId)
+    );
 
     return {
       blocks: activityBlocks,
-      conflicts: conflictIds,
+      conflicts: conflictMap,
       hours: hoursList,
       startHour: dynStart,
     };
-  }, [activities, selectedDate]);
+  }, [activities, selectedDate, enrolledIds, currentUserId]);
 
   const totalWidth = hours.length * HOUR_WIDTH;
 
@@ -215,7 +240,8 @@ export function ActivityGanttView({
             {blocks.map((block, index) => {
               const left = (block.startHour - startHour) * HOUR_WIDTH;
               const width = block.duration * HOUR_WIDTH;
-              const isConflict = conflicts.has(block.activity.id);
+              const conflict = conflicts.get(block.activity.id);
+              const isConflict = conflict === "emergency" || conflict === "warning";
               const isEnrolled = enrolledIds?.has(block.activity.id) ?? false;
 
               return (
@@ -227,8 +253,10 @@ export function ActivityGanttView({
                   <div
                     onClick={() => onSelectActivity(block.activity)}
                     className={`absolute cursor-pointer rounded-md px-3 py-2 text-sm font-medium transition-all hover:shadow-lg ${
-                      isConflict
+                      conflict === "emergency"
                         ? "border border-rose-300 bg-rose-50 text-rose-700 dark:border-rose-700 dark:bg-rose-950 dark:text-rose-300"
+                        : conflict === "warning"
+                        ? "border border-amber-300 bg-amber-50 text-amber-700 dark:border-amber-700 dark:bg-amber-950 dark:text-amber-300"
                         : isEnrolled
                         ? "border border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
                         : "border border-zinc-200 bg-[#eaebed] text-zinc-700 hover:bg-zinc-200 dark:border-zinc-700 dark:bg-zinc-700 dark:text-zinc-300 dark:hover:bg-emerald-700"
@@ -241,7 +269,10 @@ export function ActivityGanttView({
                     }}
                   >
                     <span className="line-clamp-2 leading-tight">{block.activity.title}</span>
-                    {isConflict && (
+                    {conflict === "emergency" && (
+                      <span className="ml-1 text-xs">⚠</span>
+                    )}
+                    {conflict === "warning" && (
                       <span className="ml-1 text-xs">⚠</span>
                     )}
                     {isEnrolled && !isConflict && (
