@@ -1,0 +1,66 @@
+# ============================================================
+# Sismo Voluntarios — Production (override, auto-cargado)
+# ============================================================
+# Se carga automáticamente con `docker compose up` (sin -f).
+# Añade postgres + redis LOCALES y conecta api/web a ellos con
+# healthchecks. Para usar BD/Redis EXTERNOS, levanta solo la base:
+#     docker compose -f docker-compose.yml up -d
+# y define SISMO_DB_HOST / SISMO_REDIS_URL en infra/.env.
+# ============================================================
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${SISMO_DB_NAME:-sismo}
+      POSTGRES_USER: ${SISMO_DB_USER:-sismo}
+      POSTGRES_PASSWORD: ${SISMO_DB_PASSWORD:?Set SISMO_DB_PASSWORD in .env}
+    volumes:
+      - sismo_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${SISMO_DB_USER:-sismo} -d ${SISMO_DB_NAME:-sismo}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - sismo
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    networks:
+      - sismo
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+
+  api:
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      SISMO_DB_HOST: postgres
+      SISMO_DB_PORT: "5432"
+      SISMO_REDIS_URL: redis://redis:6379/0
+
+  web:
+    depends_on:
+      api:
+        condition: service_healthy
+
+volumes:
+  sismo_pgdata:
+    name: sismo_pgdata

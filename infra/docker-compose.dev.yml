@@ -1,12 +1,16 @@
 # ============================================================
 # Sismo Voluntarios — Development
 # ============================================================
-# Quick start:
-#   ./dev.sh up      # Start all services
-#   ./dev.sh logs    # Tail logs
-#   ./dev.sh down    # Stop everything
-#   ./dev.sh migrate # Run migrations
-#   ./dev.sh shell   # Shell into API container
+# Optimizado para velocidad de build y pruebas en dev.
+# Puertos y servicios parametrizados (ver .env / export de vars).
+#
+# Arranque rápido:
+#   ./dev.sh up          # api + web + postgres + redis
+#   ./dev.sh up-test     # igual + servicio de tests listo
+#   ./dev.sh test-api    # corre pytest dentro del container api
+#
+# Para desactivar un servicio opcional usa perfiles:
+#   docker compose -f docker-compose.dev.yml --profile cache down
 # ============================================================
 
 services:
@@ -18,7 +22,7 @@ services:
       POSTGRES_USER: ${SISMO_DB_USER:-sismo}
       POSTGRES_PASSWORD: ${SISMO_DB_PASSWORD:-sismo}
     ports:
-      - "127.0.0.1:5432:5432"
+      - "127.0.0.1:${SISMO_PG_PORT:-5432}:5432"
     volumes:
       - sismo_pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -28,6 +32,21 @@ services:
       retries: 5
     networks:
       - sismo-dev
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    networks:
+      - sismo-dev
+    deploy:
+      resources:
+        limits:
+          memory: 128M
 
   api:
     build:
@@ -39,15 +58,20 @@ services:
     environment:
       SISMO_DB_HOST: postgres
       SISMO_DB_PORT: "5432"
-      SISMO_API_CORS_ORIGINS: http://localhost:3001
-      SISMO_WEB_ORIGIN: http://localhost:3001
+      SISMO_REDIS_URL: redis://redis:6379/0
+      SISMO_API_PORT: ${SISMO_API_PORT:-8000}
+      SISMO_API_CORS_ORIGINS: http://localhost:${SISMO_WEB_PORT:-3001}
+      SISMO_WEB_ORIGIN: http://localhost:${SISMO_WEB_PORT:-3001}
     ports:
-      - "127.0.0.1:8000:8000"
+      - "127.0.0.1:${SISMO_API_PORT:-8000}:${SISMO_API_PORT:-8000}"
     depends_on:
       postgres:
         condition: service_healthy
+      redis:
+        condition: service_healthy
+    # :cached acelera montajes en macOS/Windows (no-op en Linux)
     volumes:
-      - ../apps/api:/app
+      - ../apps/api:/app:cached
     networks:
       - sismo-dev
 
@@ -57,17 +81,44 @@ services:
       dockerfile: Dockerfile.dev
     restart: unless-stopped
     environment:
-      NEXT_PUBLIC_API_URL: http://localhost:8000
-      NEXT_PUBLIC_WEB_ORIGIN: http://localhost:3001
+      NEXT_PUBLIC_API_URL: http://localhost:${SISMO_API_PORT:-8000}
+      NEXT_PUBLIC_WEB_ORIGIN: http://localhost:${SISMO_WEB_PORT:-3001}
+      SISMO_WEB_PORT: ${SISMO_WEB_PORT:-3001}
+    command: npx next dev --port ${SISMO_WEB_PORT:-3001}
     ports:
-      - "127.0.0.1:3001:3001"
+      - "127.0.0.1:${SISMO_WEB_PORT:-3001}:${SISMO_WEB_PORT:-3001}"
     depends_on:
       - api
     volumes:
-      - ../apps/web:/app
+      - ../apps/web:/app:cached
       - /app/node_modules
     networks:
       - sismo-dev
+
+  # Servicio efímero para correr la suite de tests sin rebuild.
+  # Usar: docker compose -f docker-compose.dev.yml run --rm test-api
+  test-api:
+    build:
+      context: ../apps/api
+      dockerfile: Dockerfile.dev
+    profiles: ["test"]
+    env_file:
+      - ../apps/api/.env
+    environment:
+      SISMO_DB_HOST: postgres
+      SISMO_DB_PORT: "5432"
+      SISMO_REDIS_URL: redis://redis:6379/0
+      SISMO_API_PORT: ${SISMO_API_PORT:-8000}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ../apps/api:/app:cached
+    networks:
+      - sismo-dev
+    command: ["sh", "-c", "python -m pytest tests/ -q"]
 
 volumes:
   sismo_pgdata:
@@ -75,4 +126,5 @@ volumes:
 
 networks:
   sismo-dev:
+    name: sismo-dev
     driver: bridge

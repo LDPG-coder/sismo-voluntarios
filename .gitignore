@@ -36,6 +36,10 @@ Thumbs.db
 # Docker
 *.log
 
+# Docker secrets generados localmente (nunca commitear)
+infra/secrets/
+*.env.secrets
+
 # Alembic
 alembic/versions/*.pyc
 

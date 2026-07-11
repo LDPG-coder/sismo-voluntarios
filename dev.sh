@@ -4,14 +4,23 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 INFRA_DIR="$SCRIPT_DIR/infra"
 
+# Project name aislado para dev, así no colisiona con el stack de
+# producción (que usa el nombre "infra" del directorio). Permite tener
+# dev y prod corriendo a la vez sin pisarse los containers/redes.
+export COMPOSE_PROJECT_NAME=sismo-dev
+
 usage() {
     cat <<EOF
 Sismo Voluntarios — Dev Manager
 
 Usage: ./dev.sh <command>
 
+Environment (all optional, with defaults):
+  SISMO_API_PORT (8000)  SISMO_WEB_PORT (3001)  SISMO_PG_PORT (5432)
+  COMPOSE_PROFILES        e.g. "test" to also bring up the test service
+
 Commands:
-  up          Start all services (postgres, api, web)
+  up          Start all services (postgres, redis, api, web)
   down        Stop all services
   restart     Restart all services
   logs        Tail logs from all services
@@ -23,13 +32,18 @@ Commands:
   db          Open psql shell
   status      Show service status
   build       Rebuild all containers
-  clean       Stop and remove volumes (DESTRUCTIVE)
-  test-api    Run API tests
+  test-api    Run API pytest suite (efímero, sin rebuild del stack)
+  test-web    Run web typecheck inside the web container
   lint        Run linters (ruff + tsc)
+  clean       Stop and remove volumes (DESTRUCTIVE)
 EOF
 }
 
 cd "$INFRA_DIR"
+
+API_PORT="${SISMO_API_PORT:-8000}"
+WEB_PORT="${SISMO_WEB_PORT:-3001}"
+PG_PORT="${SISMO_PG_PORT:-5432}"
 
 case "${1:-help}" in
     up)
@@ -37,9 +51,9 @@ case "${1:-help}" in
         docker compose -f docker-compose.dev.yml up -d --build
         echo ""
         echo "Services:"
-        echo "  API  → http://localhost:8000/docs"
-        echo "  Web  → http://localhost:3001"
-        echo "  DB   → localhost:5432"
+        echo "  API  → http://localhost:${API_PORT}/docs"
+        echo "  Web  → http://localhost:${WEB_PORT}"
+        echo "  DB   → localhost:${PG_PORT}"
         ;;
     down)
         docker compose -f docker-compose.dev.yml down
@@ -87,7 +101,12 @@ case "${1:-help}" in
         fi
         ;;
     test-api)
-        docker compose -f docker-compose.dev.yml exec api python -m pytest tests/ -v
+        echo "Running API tests..."
+        docker compose -f docker-compose.dev.yml --profile test run --rm --build test-api
+        ;;
+    test-web)
+        echo "Running web typecheck..."
+        docker compose -f docker-compose.dev.yml run --rm web npm run typecheck
         ;;
     lint)
         echo "Running ruff..."

@@ -1,0 +1,24 @@
+# ============================================================
+# Red externa reutilizable
+# ============================================================
+# Úsalo cuando quieras que OTRO stack/container se conecte a
+# los servicios de Sismo por nombre (api, web, postgres, redis).
+#
+# Ejemplo: otro compose que necesita hablar con la API:
+#   networks:
+#     sismo:
+#       name: sismo
+#       external: true
+#   services:
+#     worker:
+#       networks: [sismo]
+#       # ahora puede hacer http://api:8000
+#
+# O conecta un container ya corriendo:
+#   docker network connect sismo mi-otro-container
+# ============================================================
+
+networks:
+  sismo:
+    name: sismo
+    external: true

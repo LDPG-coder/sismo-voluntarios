@@ -88,6 +88,31 @@ sismo-voluntarios/
 - Docker Engine con Docker Compose v2
 - 4GB RAM disponible para Docker
 
+#### Compatibilidad multi-sistema operativo
+
+- **Linux**: funciona tal cual. Los volúmenes se montan con rendimiento nativo.
+- **macOS**: Docker Desktop. Los bind-mounts son lentos; por eso el
+  `docker-compose.dev.yml` usa `:cached` en el código (acelera lectura).
+  Si usas Apple Silicon, las imágenes se emulan; para máxima velocidad
+  construye en nativo con BuildKit:
+  ```bash
+  DOCKER_BUILDKIT=1 docker compose build
+  ```
+- **Windows**: **usa WSL2** (Windows Subsystem for Linux 2). No corras los
+  comandos en PowerShell/CMD nativo con los volúmenes del repo en el disco
+  de Windows (`C:\`), porque Docker monta eso muy lento y con problemas de
+  permisos. Pasos recomendados:
+  1. Instala WSL2 (Ubuntu) y Docker Desktop con la integración de WSL2
+     habilitada (`Settings → Resources → WSL Integration`).
+  2. Clona el repositorio **dentro** del filesystem de WSL2
+     (p. ej. `~/sismo` en `/home/tu-usuario`), no en `/mnt/c/...`.
+  3. Ejecuta `./dev.sh` desde la terminal de WSL2 (bash). Los scripts
+     `.sh` ya tienen saltos de línea LF gracias a `.gitattributes`.
+  4. Accede a los servicios desde el navegador de Windows vía
+     `http://localhost:<puerto>` (Docker reenvía los puertos del WSL2).
+  - Opcional: si prefieres PowerShell, los comandos equivalen a
+    `docker compose -f infra/docker-compose.dev.yml up -d --build`.
+
 ---
 
 ## Despliegue en Desarrollo
@@ -120,7 +145,7 @@ cp infra/.env.example infra/.env
 ### Comandos del Script `dev.sh`
 
 ```bash
-./dev.sh up              # Levantar servicios
+./dev.sh up              # Levantar servicios (api+web+postgres+redis)
 ./dev.sh down            # Detener servicios
 ./dev.sh restart         # Reiniciar servicios
 ./dev.sh logs            # Ver logs de todos los servicios
@@ -131,17 +156,108 @@ cp infra/.env.example infra/.env
 ./dev.sh shell           # Shell bash dentro del contenedor API
 ./dev.sh db              # Consola psql de PostgreSQL
 ./dev.sh status          # Estado de los contenedores
-./dev.sh build           # Reconstruir imágenes (sin cache)
-./dev.sh clean           # Detener y ELIMINAR volúmenes (DESTRUCTIVO)
+./dev.sh build           # Reconstruir imágenes
+./dev.sh test-api        # Correr pytest de la API (container efímero)
+./dev.sh test-web        # Typecheck del frontend
 ./dev.sh lint            # Ejecutar linters (ruff + tsc)
+./dev.sh clean           # Detener y ELIMINAR volúmenes (DESTRUCTIVO)
 ```
 
 ### Arquitectura de Desarrollo
 
 - **Hot-reload**: Tanto API (uvicorn --reload) como Web (next dev) tienen hot-reload
 - **Volúmenes**: El código fuente se monta directamente en los contenedores
+  (con `:cached` en macOS/Windows para acelerar la lectura)
 - **Base de datos**: Datos persisten en el volumen `sismo_pgdata_dev`
-- **Network**: Todos los servicios en la red `sismo-dev`
+- **Network**: Todos los servicios en la red `sismo-dev` (nombre estable `sismo-dev`)
+- **Redis**: incluido por defecto para que la API funcione completa (rate-limit, IA)
+
+### Puertos y variables abstractas (dev)
+
+Todos los puertos se toman de variables de entorno con defaults sensatos:
+
+| Variable | Default | Uso |
+|---|---|---|
+| `SISMO_API_PORT` | `8000` | Puerto de la API |
+| `SISMO_WEB_PORT` | `3001` | Puerto del frontend dev |
+| `SISMO_PG_PORT` | `5432` | Puerto de PostgreSQL mapeado al host |
+
+Para levantar en puertos distintos (p. ej. evitar conflictos):
+```bash
+SISMO_API_PORT=9000 SISMO_WEB_PORT=9001 ./dev.sh up
+```
+
+### Pruebas rápidas en desarrollo
+
+Los tests de API corren en un container efímero (perfil `test`) **sin necesidad
+de rebuild** del stack, reutilizando los servicios de postgres/redis ya activos:
+
+```bash
+./dev.sh test-api     # pytest dentro del container api (perfil test)
+./dev.sh test-web     # typecheck del frontend
+```
+
+`COMPOSE_PROFILES=test` also habilita el servicio `test-api` al hacer `up`.
+
+### Desacoplar servicios y conectar otros containers
+
+La configuración de producción está dividida en dos archivos:
+
+- **`docker-compose.yml`** (base): solo `api` + `web` + `cloudflared`
+  (este último tras el perfil `tunnel`). No incluye postgres/redis, así
+  que apunta a servicios externos con `SISMO_DB_HOST` / `SISMO_REDIS_URL`.
+- **`docker-compose.override.yml`** (auto-cargado): añade `postgres` y
+  `redis` **locales** con healthchecks y conecta `api`/`web` a ellos.
+
+Levantar el stack completo local (postgres + redis incluidos):
+```bash
+cd infra
+docker compose up -d --build          # carga .yml + .override.yml
+```
+
+Levantar SOLO api/web contra una BD o Redis externos:
+```bash
+docker compose -f docker-compose.yml up -d --build
+# + en infra/.env: SISMO_DB_HOST / SISMO_DB_PORT / SISMO_REDIS_URL
+```
+
+La red se llama **`sismo`** (sin prefijo de proyecto) para que otros
+stacks se conecten por nombre de servicio. Para enlazar un container externo:
+```bash
+docker network connect sismo <otro-container>   # ya puede usar http://api:8000
+```
+O bien define la misma red como externa en tu otro compose (ver
+`infra/docker-compose.network.yml`).
+
+### Convivir Dev y Producción a la vez
+
+Dev y Prod usan **nombres de proyecto distintos**, así que pueden correr
+simultáneamente sin colisionar:
+
+- **Dev**: project `sismo-dev` (lo fija `dev.sh` vía `COMPOSE_PROJECT_NAME`).
+  Containers: `sismo-dev-api-1`, `sismo-dev-web-1`, etc. Red `sismo-dev`.
+- **Prod**: project `infra` (nombre del directorio). Containers: `infra-*`.
+  Red `sismo`.
+
+Para levantar ambos en paralelo:
+```bash
+./dev.sh up                       # dev en sismo-dev-*
+cd infra && docker compose up -d  # prod en infra-*
+```
+Ambos comparten el host vía `127.0.0.1` en puertos diferentes
+(`SISMO_API_PORT`/`SISMO_WEB_PORT` distintos en cada entorno).
+
+### Builds multi-arquitectura (Apple Silicon / ARM)
+
+Las imágenes se construyen con BuildKit. Para generar artefactos nativos
+en otra arquitectura (p. ej. `linux/arm64` en Mac M-series) sin emulación:
+```bash
+docker buildx create --use
+docker buildx build --platform linux/amd64,linux/arm64 \
+  -f apps/api/Dockerfile -t sismo/api:local apps/api
+```
+O, con compose, define `platform` por servicio en los Dockerfiles/compose
+según tu objetivo.
 
 ---
 
@@ -162,7 +278,18 @@ cp .env.example .env
 #   CLOUDFLARE_TUNNEL_TOKEN=<token-de-cloudflare>
 #   NEXT_PUBLIC_API_URL=https://api.sismo.lat
 #   NEXT_PUBLIC_WEB_ORIGIN=https://sismo.lat
+
+# 3. Generar los Docker secrets (archivos en infra/secrets/, gitignored)
+./setup-secrets.sh
 ```
+
+> **Secretos**: `infra/.env` es la UNICA fuente de configuracion del stack.
+> Los 3 secretos criticos de la API (`SISMO_DB_PASSWORD`,
+> `SISMO_SESSION_SECRET`, `SISMO_GOOGLE_CLIENT_SECRET`) NO se inyectan como
+> `environment` (no aparecen en `docker inspect`): se montan como archivos
+> en `/run/secrets` y el `docker-entrypoint.sh` los exporta en runtime.
+> El token de Cloudflare queda como `environment` porque la imagen de
+> cloudflared no trae shell (no se puede usar shim).
 
 ### Archivo `.env` de Producción (infra/.env)
 
@@ -222,17 +349,24 @@ curl http://localhost:8000/api/v1/health
 
 ### Servicios de Producción
 
+`docker compose up` carga `docker-compose.yml` + `docker-compose.override.yml`,
+así que postgres y redis locales se incluyen por defecto. Para usar servicios
+externos, levanta solo la base: `docker compose -f docker-compose.yml up -d`.
+
 | Servicio | Puerto | Memoria | Notas |
 |---|---|---|---|
-| PostgreSQL | 5432 (interno) | 512MB | Datos en volumen `sismo_pgdata` |
+| PostgreSQL* | 5432 (interno) | 512MB | Del override; datos en volumen `sismo_pgdata` |
 | API (FastAPI) | 8000 (interno) | 1GB | 4 workers, healthcheck en `/api/v1/health` |
 | Web (Next.js) | 3000 (interno) | 1GB | Standalone mode, non-root user |
-| Redis | 6379 (interno) | 128MB | Rate-limiting y cache |
+| Redis* | 6379 (interno) | 128MB | Del override; rate-limiting y cache |
 | Cloudflared | - | 128MB | Tunnel a Cloudflare |
+
+\* Vía `docker-compose.override.yml` (auto-cargado). Puertos reales
+parametrizados por `SISMO_API_PORT` / `SISMO_WEB_PORT`.
 
 ### Red de Producción
 
-- **Red**: `sismo-internal` (bridge)
+- **Red**: `sismo` (bridge, nombre estable)
 - **Exposición**: Solo Cloudflared recibe tráfico externo
 - **Puertos expuestos**: Ninguno directamente al host (solo vía Cloudflare)
 
