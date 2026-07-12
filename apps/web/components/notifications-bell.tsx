@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { csrfHeaders } from "@/lib/auth/csrf-client";
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+const PAGE_SIZE = 20;
 
 interface Notification {
   id: string;
@@ -17,28 +18,57 @@ interface Notification {
 
 export function NotificationsBell() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [unread, setUnread] = useState(0);
   const [open, setOpen] = useState(false);
-
-  const unread = notifications.filter((n) => !n.read).length;
+  const [offset, setOffset] = useState(0);
+  const [hasMore, setHasMore] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const offsetRef = useRef(0);
+  offsetRef.current = offset;
 
   useEffect(() => {
-    fetchNotifications();
-    const interval = setInterval(fetchNotifications, 30000);
+    fetchUnread();
+    const interval = setInterval(fetchUnread, 30000);
     return () => clearInterval(interval);
   }, []);
 
-  const fetchNotifications = async () => {
+  const fetchUnread = async () => {
     try {
-      const res = await fetch(`${API}/api/v1/activities/notifications`, {
+      const res = await fetch(`${API}/api/v1/activities/notifications/summary`, {
         credentials: "include",
       });
       if (res.ok) {
         const data = await res.json();
-        setNotifications(data);
+        setUnread(data.unread ?? 0);
       }
     } catch {
       // silent
     }
+  };
+
+  const loadNotifications = async (reset = true) => {
+    try {
+      const off = reset ? 0 : offsetRef.current;
+      const res = await fetch(
+        `${API}/api/v1/activities/notifications?limit=${PAGE_SIZE}&offset=${off}`,
+        { credentials: "include" }
+      );
+      if (res.ok) {
+        const data: Notification[] = await res.json();
+        setNotifications((prev) => (reset ? data : [...prev, ...data]));
+        const next = off + data.length;
+        setOffset(next);
+        setHasMore(data.length === PAGE_SIZE);
+      }
+    } catch {
+      // silent
+    }
+  };
+
+  const toggleOpen = () => {
+    const next = !open;
+    setOpen(next);
+    if (next) loadNotifications(true);
   };
 
   const markRead = async (id: string) => {
@@ -49,20 +79,41 @@ export function NotificationsBell() {
         headers: csrfHeaders("POST"),
       });
       setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, read: true } : n)));
+      setUnread((u) => Math.max(0, u - 1));
     } catch {
       // silent
     }
   };
 
   const markAllRead = async () => {
-    const unread = notifications.filter((n) => !n.read);
-    await Promise.all(unread.map((n) => markRead(n.id)));
+    const pending = notifications.filter((n) => !n.read);
+    await Promise.all(pending.map((n) => markReadSilently(n.id)));
+    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+    setUnread(0);
+  };
+
+  const markReadSilently = async (id: string) => {
+    try {
+      await fetch(`${API}/api/v1/activities/notifications/${id}/read`, {
+        method: "POST",
+        credentials: "include",
+        headers: csrfHeaders("POST"),
+      });
+    } catch {
+      // silent
+    }
+  };
+
+  const loadMore = async () => {
+    setLoadingMore(true);
+    await loadNotifications(false);
+    setLoadingMore(false);
   };
 
   return (
     <div className="relative">
       <button
-        onClick={() => setOpen(!open)}
+        onClick={toggleOpen}
         className="relative rounded-md p-2 text-zinc-500 transition hover:bg-[#eaebed] hover:text-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
       >
         <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
@@ -70,7 +121,7 @@ export function NotificationsBell() {
         </svg>
         {unread > 0 && (
           <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] font-bold text-white">
-            {unread}
+            {unread > 99 ? "99+" : unread}
           </span>
         )}
       </button>
@@ -78,7 +129,7 @@ export function NotificationsBell() {
       {open && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-          <div className="absolute right-0 top-full z-50 mt-2 w-80 rounded-lg border border-zinc-200 bg-white shadow-lg dark:border-zinc-800 dark:bg-[#18181b]">
+          <div className="fixed inset-x-2 top-14 z-50 flex max-h-[70vh] w-auto flex-col rounded-lg border border-zinc-200 bg-white shadow-lg dark:border-zinc-800 dark:bg-[#18181b] sm:absolute sm:inset-x-auto sm:right-0 sm:top-full sm:mt-2 sm:max-h-80 sm:w-80">
             <div className="flex items-center justify-between border-b border-zinc-200 px-4 py-3 dark:border-zinc-800">
               <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Notificaciones</span>
               {unread > 0 && (
@@ -87,7 +138,7 @@ export function NotificationsBell() {
                 </button>
               )}
             </div>
-            <div className="max-h-80 overflow-y-auto">
+            <div className="flex-1 overflow-y-auto">
               {notifications.length === 0 && (
                 <p className="px-4 py-8 text-center text-sm text-zinc-500">Sin notificaciones</p>
               )}
@@ -111,6 +162,15 @@ export function NotificationsBell() {
                   </p>
                 </button>
               ))}
+              {hasMore && (
+                <button
+                  onClick={loadMore}
+                  disabled={loadingMore}
+                  className="w-full px-4 py-3 text-center text-xs font-medium text-indigo-500 hover:text-indigo-600 disabled:opacity-50"
+                >
+                  {loadingMore ? "Cargando..." : "Cargar mas"}
+                </button>
+              )}
             </div>
           </div>
         </>
