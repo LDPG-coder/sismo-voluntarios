@@ -1,4 +1,17 @@
-"""Rate-limit middleware."""
+"""Rate-limit middleware.
+
+Limits requests per client IP using a sliding/fixed window counter. The
+counter is stored in Redis when available (shared across workers/instances)
+and falls back to an in-process counter otherwise.
+
+Security notes:
+- Client-supplied IP headers (``X-Forwarded-For`` / ``CF-Connecting-IP``) are
+  only honored when ``SISMO_RATE_LIMIT_TRUST_PROXY=true`` (i.e. the API sits
+  behind a trusted proxy that overwrites those headers). Otherwise the peer
+  socket address is used so attackers cannot rotate headers to dodge limits.
+- The previous ``X-Idempotency-Replay: true`` header bypass has been removed;
+  rate limiting is always applied to state-changing and read traffic.
+"""
 
 from __future__ import annotations
 
@@ -16,14 +29,24 @@ from starlette.types import ASGIApp
 
 log = get_logger("app.middleware.rate_limit")
 
+try:
+    import redis.asyncio as redis_async
+
+    _REDIS_AVAILABLE = True
+except Exception:  # pragma: no cover - redis is a hard dependency
+    redis_async = None
+    _REDIS_AVAILABLE = False
+
 
 def _get_remote_address(request: Request) -> str:
-    cf = request.headers.get("CF-Connecting-IP")
-    if cf:
-        return cf.strip()
-    fwd = request.headers.get("X-Forwarded-For")
-    if fwd:
-        return fwd.split(",")[0].strip()
+    settings = get_settings()
+    if settings.rate_limit_trust_proxy:
+        cf = request.headers.get("CF-Connecting-IP")
+        if cf:
+            return cf.strip()
+        fwd = request.headers.get("X-Forwarded-For")
+        if fwd:
+            return fwd.split(",")[0].strip()
     if request.client is None:
         return "unknown"
     return request.client.host
@@ -71,6 +94,8 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         super().__init__(app)
         self._counters: dict[str, _WindowCounter] = {}
         self._counters_lock = threading.Lock()
+        self._redis: "redis_async.Redis | None" = None
+        self._redis_tried = False
 
     def _counter(self, name: str, *, limit: int, burst: int) -> _WindowCounter:
         existing = self._counters.get(name)
@@ -84,19 +109,55 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
             self._counters[name] = counter
             return counter
 
+    def _get_redis(self) -> "redis_async.Redis | None":
+        if not _REDIS_AVAILABLE:
+            return None
+        if self._redis_tried:
+            return self._redis
+        self._redis_tried = True
+        try:
+            settings = get_settings()
+            self._redis = redis_async.from_url(settings.redis_url, decode_responses=True)
+        except Exception:
+            self._redis = None
+            log.warning("rate_limit.redis_unavailable", url=get_settings().redis_url)
+        return self._redis
+
+    async def _redis_hit(self, bucket: str, key: str, per_minute: int, burst: int) -> tuple[bool, int, int]:
+        r = self._get_redis()
+        if r is None:
+            return self._memory_hit(bucket, key, per_minute, burst)
+        cap = per_minute + burst
+        rk = f"ratelimit:{bucket}:{key}"
+        try:
+            pipe = r.pipeline()
+            await pipe.incr(rk)
+            await pipe.expire(rk, 60, nx=True)
+            results = await pipe.execute()
+            count = results[0]
+            if count > cap:
+                ttl = await r.ttl(rk)
+                retry = max(1, ttl) if ttl and ttl > 0 else 60
+                return False, retry, max(0, cap - count)
+            remaining = max(0, cap - count)
+            return True, 0, remaining
+        except Exception:
+            log.warning("rate_limit.redis_error_fallback")
+            return self._memory_hit(bucket, key, per_minute, burst)
+
+    def _memory_hit(self, bucket: str, key: str, per_minute: int, burst: int) -> tuple[bool, int, int]:
+        counter = self._counter(f"{bucket}:{key}", limit=per_minute, burst=burst)
+        return counter.hit(time.monotonic())
+
     async def dispatch(self, request: Request, call_next):  # type: ignore[no-untyped-def]
         if request.method == "OPTIONS":
-            return await call_next(request)
-        if request.headers.get("X-Idempotency-Replay") == "true":
             return await call_next(request)
 
         bucket, key, per_minute, burst = _bucket_for(request)
         if per_minute <= 0:
             return await call_next(request)
 
-        counter_name = f"{bucket}:{key}"
-        counter = self._counter(counter_name, limit=per_minute, burst=burst)
-        accepted, retry_after, remaining = counter.hit(time.monotonic())
+        accepted, retry_after, remaining = await self._redis_hit(bucket, key, per_minute, burst)
         if not accepted:
             rid = getattr(request.state, "request_id", "")
             log.warning("rate_limit.exceeded", bucket=bucket, path=request.url.path)

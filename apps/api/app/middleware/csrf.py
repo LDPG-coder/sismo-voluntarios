@@ -11,6 +11,7 @@ from starlette.types import ASGIApp
 
 from app.core.errors import error_response
 from app.core.logging import get_logger
+from app.pipeline.dependencies import SESSION_COOKIE_NAME
 
 CSRF_COOKIE_NAME = "XSRF-TOKEN"
 CSRF_HEADER_NAME = "X-CSRF-Token"
@@ -27,17 +28,28 @@ class CsrfMiddleware(BaseHTTPMiddleware):
         if request.method not in _WRITE_METHODS:
             return await call_next(request)
 
+        session_present = request.cookies.get(SESSION_COOKIE_NAME) is not None
         cookie_value = request.cookies.get(CSRF_COOKIE_NAME)
-        if cookie_value is None:
+        header_value = request.headers.get(CSRF_HEADER_NAME)
+
+        # Unauthenticated writes (e.g. the OAuth exchange / referral flows)
+        # have no session yet, so CSRF is not applicable; downstream auth
+        # dependencies still enforce authentication. The middleware only
+        # enforces CSRF once a session cookie is present, which is exactly
+        # the state a logged-in user reaches.
+        if not session_present:
             return await call_next(request)
 
-        header_value = request.headers.get(CSRF_HEADER_NAME)
-        if header_value is None:
+        if not cookie_value or not header_value:
             rid = getattr(request.state, "request_id", "")
-            _log.warning("csrf.missing_header", path=request.url.path, request_id=rid)
+            _log.warning("csrf.missing_token", path=request.url.path, request_id=rid)
             return JSONResponse(
                 status_code=403,
-                content=error_response(code="auth.csrf_missing", message=f"X-CSRF-Token header required for {request.method}", request_id=rid),
+                content=error_response(
+                    code="auth.csrf_missing",
+                    message="CSRF token required for authenticated writes",
+                    request_id=rid,
+                ),
             )
 
         if not hmac.compare_digest(cookie_value, header_value):

@@ -44,6 +44,7 @@ class Settings(BaseSettings):
     oauth_exchange_ttl_seconds: int = 300
 
     session_secret: str | None = None
+    session_max_age_seconds: int = 8 * 60 * 60
     cookie_domain: str | None = None
     cookie_same_site: str = "lax"
 
@@ -53,6 +54,11 @@ class Settings(BaseSettings):
     rate_limit_public_per_min: int = 60
     rate_limit_auth_per_min: int = 30
     rate_limit_burst: int = 10
+    # Only trust X-Forwarded-For / CF-Connecting-IP when the API is deployed
+    # behind a trusted proxy that overwrites those headers (e.g. Cloudflare).
+    # When False (default) the peer socket address is always used, preventing
+    # clients from spoofing their rate-limit bucket via forged headers.
+    rate_limit_trust_proxy: bool = False
 
     redis_url: str = "redis://localhost:6379/0"
 

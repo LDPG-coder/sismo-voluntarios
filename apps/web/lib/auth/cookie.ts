@@ -5,7 +5,7 @@
 
 import { createHash, createHmac, timingSafeEqual } from "node:crypto";
 
-import { sessionSecret } from "./config";
+import { authCookieMaxAgeSeconds, sessionSecret } from "./config";
 import type { UserRole, UserStatus } from "./role";
 
 const SEPARATOR = ".";
@@ -37,7 +37,9 @@ function base64UrlToBytes(value: string): Buffer {
 }
 
 export function encodeSession(payload: SessionPayload): string {
-  const json = JSON.stringify(payload);
+  const now = Math.floor(Date.now() / 1000);
+  const exp = now + authCookieMaxAgeSeconds;
+  const json = JSON.stringify({ ...payload, iat: now, exp });
   const encoded = bytesToBase64Url(Buffer.from(json, "utf-8"));
   return `${encoded}${SEPARATOR}${sign(encoded)}`;
 }

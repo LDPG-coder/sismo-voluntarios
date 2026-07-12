@@ -5,6 +5,7 @@ from __future__ import annotations
 import base64
 import hmac
 import json
+import time
 import uuid
 from dataclasses import dataclass
 from hashlib import sha256
@@ -21,6 +22,8 @@ class SessionPayload:
     user_id: uuid.UUID
     role: UserRoleStr
     status: UserStatusStr
+    iat: int | None = None
+    exp: int | None = None
 
 
 @dataclass(frozen=True)
@@ -56,11 +59,15 @@ def _b64url_decode(s: str) -> bytes:
 
 
 def encode_session(settings: Settings, payload: SessionPayload) -> str:
+    now = int(time.time())
+    exp = now + int(settings.session_max_age_seconds)
     json_bytes = json.dumps(
         {
             "user_id": str(payload.user_id),
             "role": payload.role,
             "status": payload.status,
+            "iat": now,
+            "exp": exp,
         },
         separators=(",", ":"),
         ensure_ascii=False,
@@ -111,7 +118,18 @@ def decode_session(settings: Settings, value: str | None) -> VerifyResult:
         return VerifyResult(ok=False, reason="malformed")
     if status not in ("pending", "active", "suspended"):
         return VerifyResult(ok=False, reason="malformed")
+    iat = raw.get("iat")
+    exp = raw.get("exp")
+    if isinstance(exp, int):
+        if int(time.time()) >= exp:
+            return VerifyResult(ok=False, reason="expired")
     return VerifyResult(
         ok=True,
-        payload=SessionPayload(user_id=user_id, role=role, status=status),
+        payload=SessionPayload(
+            user_id=user_id,
+            role=role,
+            status=status,
+            iat=iat if isinstance(iat, int) else None,
+            exp=exp if isinstance(exp, int) else None,
+        ),
     )
