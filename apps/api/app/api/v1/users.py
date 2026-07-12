@@ -43,7 +43,7 @@ def list_users(
     users = db.execute(q.order_by(User.created_at.desc()).offset(offset).limit(page_size)).scalars().all()
 
     return {
-        "users": [serialize_user(u, include_phone=True)(u) for u in users],
+        "users": [serialize_user(u, include_phone=True) for u in users],
         "total": total,
         "page": page,
         "page_size": page_size,
@@ -59,7 +59,7 @@ def get_user(
     u = db.get(User, UUID(user_id))
     if not u:
         raise ApiError(ErrorCode.user_not_found, "user not found")
-    return serialize_user(u, include_phone=True)(u)
+    return serialize_user(u, include_phone=True)
 
 
 class _UpdateUserBody(BaseModel):
@@ -107,7 +107,7 @@ def update_user(
     db.commit()
     db.refresh(u)
     _log.info("user.updated", user_id=str(u.id), admin_id=str(admin.id))
-    return serialize_user(u, include_phone=True)(u)
+    return serialize_user(u, include_phone=True)
 
 
 _MAX_PHOTO_LEN = 3_500_000
@@ -129,7 +129,7 @@ def update_my_photo(
     db.commit()
     db.refresh(user)
     _log.info("user.photo.updated", user_id=str(user.id))
-    return serialize_user(u, include_phone=True)(user)
+    return serialize_user(user, include_phone=True)
 
 
 @router.delete("/me/photo")
@@ -141,7 +141,7 @@ def delete_my_photo(
     db.commit()
     db.refresh(user)
     _log.info("user.photo.deleted", user_id=str(user.id))
-    return serialize_user(u, include_phone=True)(user)
+    return serialize_user(user, include_phone=True)
 
 
 @router.post("/me/photo/reset")
@@ -153,4 +153,4 @@ def reset_my_photo(
     db.commit()
     db.refresh(user)
     _log.info("user.photo.reset", user_id=str(user.id))
-    return serialize_user(u, include_phone=True)(user)
+    return serialize_user(user, include_phone=True)

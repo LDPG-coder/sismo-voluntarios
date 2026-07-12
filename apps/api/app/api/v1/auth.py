@@ -20,7 +20,7 @@ from app.db.constants import MVP_TENANT_ID
 from app.db.enums import UserRole, UserStatus
 from app.db.models import User
 from app.pipeline import oauth
-from app.pipeline.dependencies import SESSION_COOKIE_NAME, require_session
+from app.pipeline.dependencies import SESSION_COOKIE_NAME, require_admin_session, require_session
 from app.pipeline.session import SessionPayload, encode_session
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -155,7 +155,7 @@ class _InviteBody(BaseModel):
 @router.post("/invite")
 def invite_user(
     body: _InviteBody,
-    user: Annotated[User, Depends(require_session)],
+    user: Annotated[User, Depends(require_admin_session)],
     db: Annotated[Session, Depends(get_db)],
     settings: Annotated[Settings, Depends(get_settings)],
 ) -> dict:
