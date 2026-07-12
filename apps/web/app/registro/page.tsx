@@ -54,7 +54,7 @@ export default function RegistroPage() {
               value={code}
               onChange={(e) => setCode(e.target.value.toUpperCase())}
               placeholder="Ej: AVAA-7J2K"
-              className="flex-1 rounded-md border border-zinc-300 px-3 py-2 text-sm uppercase focus:border-zinc-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800"
+              className="flex-1 rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm uppercase focus:border-zinc-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800"
             />
             <button
               onClick={handleValidateCode}
