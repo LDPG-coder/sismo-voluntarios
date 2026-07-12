@@ -2,14 +2,14 @@
 
 from __future__ import annotations
 
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from typing import Annotated
 from uuid import UUID, uuid4
 
 from dateutil.parser import parse as parse_dt
 from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel
-from sqlalchemy import func, select, text
+from sqlalchemy import delete, func, select, text
 from sqlalchemy.orm import Session
 
 from app.core.config import Settings, get_settings
@@ -142,17 +142,52 @@ def enrolled_activities(
     return _serialize_activities_batch(activities, db)
 
 
+def _prune_notifications(db: Session, user_id: UUID) -> None:
+    """Retention policy: drop read notifications older than 30 days so the
+    table does not grow unbounded as volume increases."""
+    cutoff = datetime.now(UTC) - timedelta(days=30)
+    db.execute(
+        delete(Notification).where(
+            Notification.user_id == user_id,
+            Notification.read.is_(True),
+            Notification.created_at < cutoff,
+        )
+    )
+    db.commit()
+
+
+@router.get("/notifications/summary")
+def notifications_summary(
+    user: Annotated[User, Depends(require_session)],
+    db: Annotated[Session, Depends(get_db)],
+) -> dict:
+    unread = db.execute(
+        select(func.count())
+        .select_from(Notification)
+        .where(Notification.user_id == user.id, Notification.read.is_(False))
+    ).scalar() or 0
+    return {"unread": unread}
+
+
 @router.get("/notifications")
 def list_notifications(
     user: Annotated[User, Depends(require_session)],
     db: Annotated[Session, Depends(get_db)],
+    limit: int = 20,
+    offset: int = 0,
+    unread_only: bool = False,
 ) -> list[dict]:
-    notifs = db.execute(
-        select(Notification)
-        .where(Notification.user_id == user.id)
-        .order_by(Notification.created_at.desc())
-        .limit(50)
-    ).scalars().all()
+    limit = max(1, min(limit, 50))
+    offset = max(0, offset)
+
+    # Cheap, side-effecting retention sweep keyed to the owner.
+    _prune_notifications(db, user.id)
+
+    q = select(Notification).where(Notification.user_id == user.id)
+    if unread_only:
+        q = q.where(Notification.read.is_(False))
+    q = q.order_by(Notification.created_at.desc()).limit(limit).offset(offset)
+    notifs = db.execute(q).scalars().all()
     return [
         {
             "id": str(n.id),
@@ -318,6 +353,9 @@ def cancel_activity(
 
     status_label = "realizada" if archive else "cancelada"
     for m in members:
+        # Skip the creator: they are the one cancelling/archiving
+        if str(m.user_id) == str(a.creator_id):
+            continue
         n = Notification(
             user_id=m.user_id,
             activity_id=a.id,
@@ -365,6 +403,18 @@ def join_activity(
     )
     if result.rowcount == 0:
         raise ApiError(ErrorCode.activity_full, "cupos agotados")
+
+    # Notify the host (creator) about the new enrollment
+    if str(a.creator_id) != str(user.id):
+        n = Notification(
+            user_id=a.creator_id,
+            activity_id=a.id,
+            type="new_enrollment",
+            title=f"Nueva inscripcion en {a.title}",
+            message=f"{user.name or user.email} se ha inscrito en tu actividad '{a.title}'.",
+        )
+        n.tenant_id = MVP_TENANT_ID
+        db.add(n)
 
     db.commit()
     _log.info("activity.joined", activity_id=str(a.id), user_id=str(user.id))
