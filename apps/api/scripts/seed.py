@@ -28,10 +28,6 @@ DEV_USER_ID = uuid.UUID("11111111-1111-1111-1111-111111111111")
 DEV_EMAIL = "dev@sismo.local"
 DEV_REFERRAL_CODE = "DEVADMIN"
 
-DEMO_USER_ID = uuid.UUID("22222222-2222-2222-2222-222222222222")
-DEMO_EMAIL = "demo@sismo.lat"
-DEMO_REFERRAL_CODE = "DEMO"
-
 
 def ensure_dev_admin(db) -> User:
     existing = db.execute(
@@ -58,35 +54,6 @@ def ensure_dev_admin(db) -> User:
     return user
 
 
-def ensure_demo_user(db) -> User:
-    """Usuario de demostración para compartir con terceros (p.ej. equipo de SEP)
-    que deban navegar todas las páginas sin una cuenta de Google. El web expone
-    `/auth/demo-login` (solo si SISMO_DEMO_LOGIN=1) que inicia como este usuario.
-    """
-    existing = db.execute(
-        select(User).where(User.id == DEMO_USER_ID)
-    ).scalar_one_or_none()
-    if existing:
-        print(f"[seed] demo user already exists (id={DEMO_USER_ID}); skipping.")
-        return existing
-
-    user = User(
-        id=DEMO_USER_ID,
-        email=DEMO_EMAIL,
-        name="Demo SISMO",
-        role=UserRole.admin,
-        status=UserStatus.active,
-        referral_code=DEMO_REFERRAL_CODE,
-        tenant_id=MVP_TENANT_ID,
-        last_login_at=datetime.now(UTC),
-    )
-    db.add(user)
-    db.commit()
-    db.refresh(user)
-    print(f"[seed] created demo user {DEMO_EMAIL} (id={DEMO_USER_ID}).")
-    return user
-
-
 _SAMPLE_TITLES = [
     ("Limpieza de playa - Sector Norte", "limpieza", "Av. Costanera 1200, Valparaíso", "Reconstruir senderos dañados por el sismo y retirar escombros."),
     ("Reparto de agua potable", "ayuda", "Plaza Principal, Santiago", "Punto de distribución de agua y kits de primera necesidad."),
@@ -98,7 +65,7 @@ _SAMPLE_TITLES = [
 
 def ensure_sample_activities(db, creator: User) -> None:
     existing = db.execute(
-        select(Activity).where(Activity.creator_id == creator.id)
+        select(Activity).where(Activity.creator_id == DEV_USER_ID)
     ).scalars().first()
     if existing:
         print("[seed] sample activities already exist; skipping.")
@@ -119,7 +86,7 @@ def ensure_sample_activities(db, creator: User) -> None:
                 estimated_duration_min=120,
                 max_participants=20,
                 requirements="Ropa cómoda y botella de agua.",
-                contact_info=creator.email,
+                contact_info="dev@sismo.local",
                 creator_id=creator.id,
                 tenant_id=MVP_TENANT_ID,
                 status=ActivityStatus.active,
@@ -136,8 +103,6 @@ def main() -> None:
     try:
         admin = ensure_dev_admin(db)
         ensure_sample_activities(db, admin)
-        demo = ensure_demo_user(db)
-        ensure_sample_activities(db, demo)
         print("[seed] done.")
     finally:
         db.close()
