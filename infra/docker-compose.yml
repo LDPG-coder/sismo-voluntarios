@@ -72,6 +72,9 @@ services:
       NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
       NEXT_PUBLIC_WEB_ORIGIN: ${NEXT_PUBLIC_WEB_ORIGIN:-https://sismo.lat}
       SISMO_WEB_PORT: ${SISMO_WEB_PORT:-3000}
+      # Orígenes SEP autorizados a embeber Sismo en un <iframe> (CSP frame-ancestors).
+      # Vacío => solo mismo origen. Cuando SEP esté listo, agrega su origen separado por comas.
+      SISMO_FRAME_ANCESTORS: ${SISMO_FRAME_ANCESTORS:-}
       INTERNAL_API_URL: http://api:${SISMO_API_PORT:-8000}
     # SISMO_SESSION_SECRET se inyecta vía secret (no como env plano)
     secrets:
