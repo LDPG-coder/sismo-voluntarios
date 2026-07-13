@@ -42,6 +42,12 @@ services:
       SISMO_OPENAI_API_KEY: ${SISMO_OPENAI_API_KEY:-}
       SISMO_OPENAI_MODEL: ${SISMO_OPENAI_MODEL:-north-mini-code-free}
       SISMO_IMPORTER_TOKEN: ${SISMO_IMPORTER_TOKEN:-}
+      # SEP integration (same-origin subpage model). SISMO_SEP_API_TOKEN is the
+      # Bearer for the Partner API + legacy one-time login; SISMO_SEP_PROXY_SECRET
+      # is shared ONLY with SEP's reverse proxy to verify the injected identity
+      # header. Both left empty until SEP provides its proxy/token setup.
+      SISMO_SEP_API_TOKEN: ${SISMO_SEP_API_TOKEN:-}
+      SISMO_SEP_PROXY_SECRET: ${SISMO_SEP_PROXY_SECRET:-}
       SISMO_LOG_LEVEL: ${SISMO_LOG_LEVEL:-INFO}
       SISMO_LOG_FORMAT: ${SISMO_LOG_FORMAT:-json}
     # Los 3 secretos que la API necesita se inyectan vía /run/secrets

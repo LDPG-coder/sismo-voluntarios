@@ -272,3 +272,50 @@ usuarios autenticados en SEP):
 4. SEP: backend que consulta la Partner API y pinta la campana en su header.
 5. Verificar: usuario SEP entra a `/voluntarios` → sin login → ve sus
    actividades; usuario externo → login Google; logout SEP limpia sesión.
+
+---
+
+## 9. Preguntas abiertas / pendientes de SEP
+
+Estas no bloquean escribir el código de SISMO, pero definen valores finales de
+configuración. Mientras tanto, todo queda con **placeholders** (ver §10).
+
+1. **Origen/dominio final de SEP.** Define `basePath` de web, `NEXT_PUBLIC_API_URL`,
+   `NEXT_PUBLIC_WEB_ORIGIN`, `SISMO_API_CORS_ORIGINS` y `SISMO_FRAME_ANCESTORS`.
+   Asumimos `https://sep.org/voluntarios` en los ejemplos; si SEP elige otro
+   dominio/subruta, solo cambian esas envs (no el código).
+2. **Qué reverse proxy usa SEP** (nginx / Caddy / otro / LB gestionado). Afecta
+   solo el pseudocódigo del proxy de SEP (§C del doc largo) y cómo se hace el
+   `rewrite` a `/voluntarios/api`. La API de SISMO no cambia.
+3. **Cuándo se puede hacer el smoke test end-to-end.** El usuario indicó que aún
+   no puede tocar SEP, así que la verificación real (entrar como usuario SEP sin
+   login) queda pendiente hasta que SEP tenga el proxy y el `SISMO_SEP_PROXY_SECRET`.
+
+## 10. Dónde van los placeholders en el código
+
+Todos los valores que SEP debe proveer ya tienen un lugar en el repo. No hay que
+inventar archivos: se rellenan los existentes.
+
+| Valor / archivo | Ruta | Estado |
+|---|---|---|
+| `SISMO_SEP_PROXY_SECRET` | `.env.example` (§SEP), `infra/docker-compose.yml` (servicio `api`) | placeholder añadido |
+| `SISMO_SEP_API_TOKEN` | `.env.example` (§SEP), `infra/docker-compose.yml` (servicio `api`) | placeholder (ya existía) |
+| `SISMO_FRAME_ANCESTORS` | `infra/docker-compose.yml` (~línea 77) + `.env` | placeholder (ya existe) |
+| `NEXT_PUBLIC_API_URL` | `.env` / `infra/docker-compose.yml` (servicio `web`) | a fijar en origen SEP |
+| `NEXT_PUBLIC_WEB_ORIGIN` | `.env` | a fijar en origen SEP |
+| `SEP_EMBED=1` | `.env` del web en server SEP | a setear en este despliegue |
+| `SISMO_API_CORS_ORIGINS` | `.env.example` / `infra/docker-compose.yml` | mismo origen de SEP |
+| `SISMO_DB_*` (apuntar a pg de SEP) | `.env` | BD separada en pg de SEP |
+| `basePath: "/voluntarios"` | `apps/web/next.config.ts` | **código** (bloque §3.4) |
+| `sep_proxy_secret` (campo config) | `apps/api/app/core/config.py` | **código** (bloque §B.1) |
+| `pipeline/sep_proxy.py` (verificación HMAC + sesión) | `apps/api/app/pipeline/sep_proxy.py` | **nuevo**, bloque §B.2 |
+| Integración en resolve de sesión | `apps/api/app/pipeline/session.py` | **código**, bloque §B.3 |
+| Partner API `/partner/v1/...` | `apps/api/app/api/v1/partner.py` | **nuevo**, bloque §B.4 |
+| API bajo `/voluntarios/api` | `uvicorn --root-path` o rewrite del proxy | ver §3.4 |
+
+> Los bloques de código exactos están en `docs/SEP_INTEGRATION_LONGTERM.md`
+> (secciones A–E). Aquí solo se mapea cada valor a su ubicación en el repo.
+
+Una vez SEP confirme origen/proxy y provea `SISMO_SEP_PROXY_SECRET`, basta con:
+rellenar las envs, aplicar los bloques §B en SISMO y el §C en SEP, y recrear los
+contenedores. No hay otra superficie de cambio.
