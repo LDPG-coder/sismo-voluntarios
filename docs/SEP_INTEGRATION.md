@@ -37,10 +37,11 @@
 **Pendiente en el lado SISMO:**
 
 - **Empaquetar el web como remote MF** (`next.config.ts` + `sismo-app.tsx` +
-  `sep-user.tsx`): *receta no aplicada* porque `@module-federation/nextjs-mf` v8
-  es incompatible con Next 15.5 en este entorno (ver "Por qué el remote MF aún
-  es receta" abajo). No es falla de diseño, sino de tooling; se desbloquea al
-  definir el host de SEP y la vía de compatibilidad MF.
+  `sep-user.tsx`): *receta no aplicada y bloqueada por diseño de tooling* — el
+  App Router de Next 15 no es soportado por `@module-federation/nextjs-mf` y el
+  plugin plano no resuelve `react-dom/client` (ver "Por qué el remote MF aún es
+  receta" arriba). Vía pragmática recomendada: **proxy reverso / app única**
+  (SISMO sigue siendo su propio Next App Router servido en ruta de SEP).
 
 **Depende de SEP (decisiones suyas):**
 
@@ -103,16 +104,29 @@ login de SISMO (Google OAuth). SEP simplemente no pasa `code`.
 
 ## 3. Web de SISMO: exponerse como remote MF
 
-### Por qué el remote MF aún es receta (no aplicada)
+### Por qué el remote MF aún es receta (no aplicada) — bloqueo definitivo
 
-`@module-federation/nextjs-mf` v8 **no compila con Next 15.5 + React 19** en
-este entorno: el build falla con `TypeError: _resolveContext_stack.delete is not
-a function` (incompatibilidad del plugin con el `enhanced-resolve`/webpack que
-parchea Next 15.5; probado con `webpack` 5.97.1 y 5.94.0). No es falla de
-nuestro código. Por eso el web hoy compila **sin** MF y el código de abajo es una
-receta pendiente de desbloquear vía: (a) plugin MF compatible con Next 15 App
-Router — línea v9/`@module-federation/enhanced` —, o (b) fijar `enhanced-resolve`
-vía `overrides`. Se necesita primero que SEP defina su host/runtime MF.
+Se probó empíricamente (spike, jul-2026) empaquetar el web de SISMO como remote
+MF y **no es viable con el App Router actual**:
+
+- `@module-federation/nextjs-mf` (incluido el build de compatibilidad `next`,
+  `0.0.0-codex-node24-...`) **falla explícitamente**:
+  `App Directory is not supported by nextjs-mf. Use only pages directory`.
+  El plugin Next-específico solo soporta el **Pages Router**.
+- `@module-federation/enhanced` v2.7.0 (el `ModuleFederationPlugin` de webpack
+  directo, sin el plugin Next) compila el entry federado pero **no resuelve
+  `react-dom/client`** de Next (`Module not found: Can't resolve
+  'react-dom/client'`), porque MF consume `react-dom` como módulo compartido sin
+  proveedor en build-time. Tampoco sirve para App Router.
+
+**Conclusión:** el modelo "SEP monta `./SismoApp` desde el Next de SISMO" no se
+puede lograr con el tooling MF actual mientras SISMO use App Router. Para MF
+real haría falta (a) migrar SISMO a **Pages Router** (rewrite grande, no
+planificado), o (b) re-arquitectar la UI de SISMO como **SPA cliente** (Vite/Rspack)
+expuesta como remote — también re-architecture. Por eso la vía pragmática es la
+**alternativa de proxy reverso / app única** del cookbook (SEP sirve el Next de
+SISMO en una ruta de su dominio), que sí es compatible con App Router. La
+receta de abajo queda como referencia de lo que se intentó.
 
 ### Receta `apps/web/next.config.ts`
 
@@ -240,9 +254,10 @@ logout global.
 
 1. **SISMO api — hecho:** Partner API implementada (`partner.py`); verificar que
    `SISMO_SEP_API_TOKEN` esté configurado en el deploy.
-2. **SISMO web — pendiente/bloqueado:** configurar MF plugin, exponer
-   `./SismoApp`, crear `sismo-app.tsx` + `sep-user.tsx` (receta §3; requiere
-   resolver la compatibilidad MF con Next 15.5).
+2. **SISMO web — bloqueado como MF:** empaquetar como remote MF no es viable con
+   App Router (ver §3). Vía recomendada: **proxy reverso / app única** — SISMO se
+   sirve como su propio Next en una ruta de SEP (p. ej. `sep.org/voluntarios/`),
+   sin cambiar el App Router. Ver cookbook (variante proxy reverso).
 3. **SISMO api — hecho:** `sep-login`, `exchange`, `/auth/sep` y `EmbeddedShell`
    ya están; verificar que `SISMO_SEP_API_TOKEN` esté configurado.
 4. **SEP:** declarar el remote `sismo`, montarlo en su shell (header+sidebar),

@@ -212,7 +212,14 @@ NEXT_PUBLIC_WEB_ORIGIN=https://sep.org
 SEP_EMBED=1
 ```
 
-### B.5b Variante Micro-frontend: SISMO como remote MF (PRINCIPAL)
+### B.5b Variante Micro-frontend: SISMO como remote MF (PRINCIPAL — BLOQUEADA)
+
+> **Bloqueada:** esta variante no es viable mientras SISMO use **App Router**.
+> `@module-federation/nextjs-mf` da `App Directory is not supported`; el plugin
+> plano `@module-federation/enhanced` no resuelve `react-dom/client`. Ver
+> `SEP_INTEGRATION.md` §3 "Por qué el remote MF aún es receta". La vía pragmática
+> es la **alternativa de proxy reverso / app única** (sección siguiente). Esta
+> receta queda como referencia de lo intentado.
 
 SISMO expone un remote Module Federation. El host (SEP) lo consume y monta en
 su propio shell. `next.config.ts`:
@@ -388,7 +395,10 @@ server-to-server.
 
 ---
 
-## E. Checklist de verificación (Micro-frontend — principal)
+## E. Checklist de verificación (Micro-frontend — BLOQUEADA por App Router)
+
+> Ver `SEP_INTEGRATION.md` §3. No viable con App Router. Usar **E.2** (proxy
+> reverso) como vía pragmática.
 
 - [ ] SISMO web expone `./SismoApp` vía MF (`next.config.ts` + `sismo-app.tsx`).
 - [ ] SEP declara el remote `sismo` y lo monta en su shell (header+sidebar).
@@ -400,7 +410,10 @@ server-to-server.
 - [ ] SISMO usa su propia BD; usuarios `auth_source=sep`.
 - [ ] `NEXT_PUBLIC_API_URL` apunta al mismo origen de SEP.
 
-## E.2 Checklist de verificación (Proxy reverso — alternativa)
+## E.2 Checklist de verificación (Proxy reverso — alternativa, VÍA RECOMENDADA)
+
+> SISMO sigue siendo su propio Next App Router servido en una ruta del dominio de
+> SEP (p. ej. `sep.org/voluntarios/`). Compatible con App Router; no requiere MF.
 
 - [ ] SISMO API: `SISMO_SEP_PROXY_SECRET` configurado igual que en el proxy SEP.
 - [ ] `x-sismo-sep-user`/`x-sismo-sep-sig` verificados (firma HMAC correcta).
