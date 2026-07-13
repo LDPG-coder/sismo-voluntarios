@@ -148,11 +148,18 @@ def resolve_session(request, db):
 
 ### 3.3 Web: siempre modo embebido (SEP provee el chrome)
 
-Como SISMO es una subpágina de SEP, debe renderizar `EmbeddedShell`
-(sin header/sidebar propios). Basta setear la env `SEP_EMBED=1` en este
-despliegue: `getEmbedContext()` (`apps/web/lib/auth/embed.ts`) ya devuelve
-`"sep"` con esa env. Opcionalmente el proxy puede enviar `x-sismo-context: sep`
-(también soportado).
+Como SISMO es una subpágina de SEP, **SEP muestra su propio header y su propio
+sidebar** (el chrome del sitio de SEP), y SISMO se renderiza **dentro** de ese
+chrome. Para eso SISMO renderiza `EmbeddedShell`
+(`apps/web/components/embedded-shell.tsx`), que **no** dibuja header ni sidebar
+propios: solo el contenido más una `FloatingNav`/`MobileFabNav` flotante, para no
+duplicar la navegación de SEP.
+
+Basta setear la env `SEP_EMBED=1` en este despliegue: `getEmbedContext()`
+(`apps/web/lib/auth/embed.ts`) ya devuelve `"sep"` con esa env. Opcionalmente el
+proxy puede enviar `x-sismo-context: sep` (también soportado). Del lado de SEP,
+el ítem activo de su sidebar debe apuntar a `/voluntarios` para abrir la
+subpágina de SISMO dentro del layout de SEP.
 
 ### 3.4 Web: subruta y API mismo origen
 
@@ -207,7 +214,7 @@ SEP muestra las notificaciones de SISMO en su header general. Para eso SISMO
 expone una **Partner API** autenticada con `SISMO_SEP_API_TOKEN` (Bearer), que
 el backend de SEP consulta por el `sep_user_id` del usuario actual.
 
-Endpoints (ver `docs/SEP_INTEGRATION_LONGTERM.md` para el contrato completo):
+Endpoints (ver `docs/SEP_INTEGRATION_COOKBOOK.md` para el contrato completo):
 
 ```
 GET /partner/v1/users/{sep_user_id}/notifications/summary
@@ -220,7 +227,7 @@ GET /partner/v1/users/{sep_user_id}/notifications
 ```
 
 El backend de SEP las consume y pinta la campana en su header (ver pseudocódigo
-en el doc largo).
+en el cookbook).
 
 ---
 
@@ -285,7 +292,7 @@ configuración. Mientras tanto, todo queda con **placeholders** (ver §10).
    Asumimos `https://sep.org/voluntarios` en los ejemplos; si SEP elige otro
    dominio/subruta, solo cambian esas envs (no el código).
 2. **Qué reverse proxy usa SEP** (nginx / Caddy / otro / LB gestionado). Afecta
-   solo el pseudocódigo del proxy de SEP (§C del doc largo) y cómo se hace el
+   solo el pseudocódigo del proxy de SEP (§C del cookbook) y cómo se hace el
    `rewrite` a `/voluntarios/api`. La API de SISMO no cambia.
 3. **Cuándo se puede hacer el smoke test end-to-end.** El usuario indicó que aún
    no puede tocar SEP, así que la verificación real (entrar como usuario SEP sin
@@ -313,7 +320,7 @@ inventar archivos: se rellenan los existentes.
 | Partner API `/partner/v1/...` | `apps/api/app/api/v1/partner.py` | **nuevo**, bloque §B.4 |
 | API bajo `/voluntarios/api` | `uvicorn --root-path` o rewrite del proxy | ver §3.4 |
 
-> Los bloques de código exactos están en `docs/SEP_INTEGRATION_LONGTERM.md`
+> Los bloques de código exactos están en `docs/SEP_INTEGRATION_COOKBOOK.md`
 > (secciones A–E). Aquí solo se mapea cada valor a su ubicación en el repo.
 
 Una vez SEP confirme origen/proxy y provea `SISMO_SEP_PROXY_SECRET`, basta con:
