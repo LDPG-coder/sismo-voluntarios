@@ -103,12 +103,15 @@ ni sidebar propios, con navegación flotante).
 ### 2.1 Detección de contexto embebido
 
 `getEmbedContext()` (`apps/web/lib/auth/embed.ts`) en este orden:
-1. **`?embed=1`** (o `?context=sep`) en la URL — usado por el iframe cross-site,
-   donde SEP no puede setear cookies/headers. **Este es el mecanismo recomendado.**
+1. Cookie `sismo_ctx=sep` — **mecanismo principal en producción**. Se setea durante
+   el login SEP (`/auth/sep`) con `SameSite=None`, así que sobrevive al iframe
+   cross-site: tras la redirección del login, la cookie está presente y el shell
+   embebido se renderiza solo, sin que SEP tenga que configurar nada extra.
 2. `SEP_EMBED=1` (env, override local/dev).
 3. Header `x-sismo-context: sep` (inyectado por el proxy de SEP).
-4. Cookie `sismo_ctx=sep` (puesta en el login SEP, `SameSite=None` para sobrevivir
-   al iframe cross-site).
+
+> Nota: en desarrollo local puedes forzar el modo embebido con la cookie
+> `sismo_ctx=sep` o el env `SEP_EMBED=1`. No se usa query param para esto.
 
 El layout `apps/web/app/(app)/layout.tsx` elige `EmbeddedShell` cuando
 `auth_source == "sep"` o el contexto es `sep`.
@@ -116,9 +119,10 @@ El layout `apps/web/app/(app)/layout.tsx` elige `EmbeddedShell` cuando
 ### 2.2 Snippet de iframe para SEP
 
 ```html
-<!-- SEP lee su propio tema y lo pasa como ?theme= -->
+<!-- SEP lee su propio tema y lo pasa como ?theme= ; el modo embebido se
+     resuelve solo vía la cookie sismo_ctx=sep del login SEP -->
 <iframe
-  src="https://app.sismo.lat/?embed=1&theme=dark"
+  src="https://app.sismo.lat/?theme=dark"
   title="Voluntarios SISMO"
   style="width:100%;height:100%;border:0;"
   allow="clipboard-write"

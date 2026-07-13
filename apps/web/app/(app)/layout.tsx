@@ -12,14 +12,11 @@ import { MobileFabNav } from "@/components/mobile-fab-nav";
 // context header/cookie injected by the SEP proxy (getEmbedContext).
 export default async function AppLayout({
   children,
-  searchParams,
 }: {
   children: React.ReactNode;
-  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const user = await fetchCurrentUser();
-  const sp = await searchParams;
-  const embedCtx = await getEmbedContext(sp);
+  const embedCtx = await getEmbedContext();
   const isSep = user?.auth_source === "sep" || embedCtx === "sep";
 
   return (

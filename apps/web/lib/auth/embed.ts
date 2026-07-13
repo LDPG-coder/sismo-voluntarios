@@ -2,29 +2,20 @@ import { headers, cookies } from "next/headers";
 
 export type EmbedContext = "external" | "sep";
 
-export type EmbedSearchParams = Record<string, string | string[] | undefined>;
-
 /**
  * Determines whether the app is rendered standalone (external users that see
  * the full Sismo chrome) or embedded inside the SEP platform (which supplies
  * its own top bar and side bar, so our navigation must be self-contained).
  *
  * Detection priority:
- *   1. `embed=1` (or `context=sep`) query param — used when SEP loads Sismo
- *      inside a cross-site <iframe>, where cookies/headers can't be set by SEP.
- *   2. SEP_EMBED env (local/dev override)
- *   3. `x-sismo-context: sep` request header (injected by the SEP proxy)
- *   4. `sismo_ctx=sep` cookie (alternative proxy signal)
+ *   1. `SEP_EMBED` env (local/dev override)
+ *   2. `x-sismo-context: sep` request header (injected by the SEP proxy)
+ *   3. `sismo_ctx=sep` cookie — set during SEP login with `SameSite=None` so it
+ *      survives being loaded inside SEP's cross-site <iframe>. This is the
+ *      mechanism SEP uses in production: after the SEP login redirect, the
+ *      cookie is present and the embedded shell renders automatically.
  */
-export async function getEmbedContext(
-  searchParams?: EmbedSearchParams,
-): Promise<EmbedContext> {
-  const embedParam =
-    typeof searchParams?.embed === "string" ? searchParams.embed : undefined;
-  const contextParam =
-    typeof searchParams?.context === "string" ? searchParams.context : undefined;
-  if (embedParam === "1" || contextParam === "sep") return "sep";
-
+export async function getEmbedContext(): Promise<EmbedContext> {
   if (process.env.SEP_EMBED === "1") return "sep";
 
   const h = await headers();
