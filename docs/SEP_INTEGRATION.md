@@ -68,7 +68,11 @@ que SISMO maneje su propio login.
 
 ## 3. Web de SISMO: exponerse como remote MF
 
-### 3.1 `apps/web/next.config.ts` — exponer el remote
+### 3.1 `apps/web/next.config.ts` — exponer el remote (RECETA, NO APLICADA)
+
+> **Estado:** esta sección es una receta. **No está aplicada en el repo** porque
+> `@module-federation/nextjs-mf` v8 es incompatible con Next 15.5 en este entorno
+> (ver §12, "Bloqueos conocidos"). SISMO web hoy compila sin MF.
 
 SISMO debe compilarse como productor de un remote Module Federation. La
 configuración exacta depende del plugin compatible con la versión de Next
@@ -81,7 +85,7 @@ import { NextFederationPlugin } from "@module-federation/nextjs-mf";
 const nextConfig: NextConfig = {
   output: "standalone",
   // Sin basePath: en MFE quien define la ruta es el host (SEP).
-  webpack: (config, { isServer }) => {
+  webpack: (config) => {
     config.plugins.push(
       new NextFederationPlugin({
         name: "sismo",
@@ -93,7 +97,6 @@ const nextConfig: NextConfig = {
           react: { singleton: true, requiredVersion: false },
           "react-dom": { singleton: true, requiredVersion: false },
         },
-        extraOptions: { exposePages: false },
       })
     );
     return config;
@@ -102,32 +105,12 @@ const nextConfig: NextConfig = {
 export default nextConfig;
 ```
 
-> **Pendiente de confirmar con SEP:** el plugin y la versión de Next exactos, y
-> que SEP use un runtime de Module Federation compatible (mismo React major).
+### 3.2 Root del remote — `app/(app)/sismo-app.tsx` (RECETA, NO APLICADA)
 
-### 3.2 Root del remote — `app/(app)/sismo-app.tsx`
-
-El remote debe exportar un componente que reciba el contexto de SEP (el `code`
-de sesión y, opcionalmente, datos del usuario) y renderice `EmbeddedShell`
-(sin header/sidebar propios, porque SEP ya los provee):
-
-```tsx
-"use client";
-import { EmbeddedShell } from "@/components/embedded-shell";
-import { SEPUserProvider } from "@/lib/auth/sep-user"; // pasa `code` al client
-
-export default function SismoApp({
-  sepCode,
-}: {
-  sepCode?: string;
-}) {
-  return (
-    <SEPUserProvider sepCode={sepCode}>
-      <EmbeddedShell>{/* rutas internas de SISMO */}</EmbeddedShell>
-    </SEPUserProvider>
-  );
-}
-```
+El remote debe exportar un componente que reciba el `code` de sesión de SEP y
+renderice `EmbeddedShell` (sin header/sidebar propios, porque SEP ya los
+provee). Además un `SEPUserProvider` que redime el `code` vía `fetch("/auth/sep?code=…")`
+(mismo origen, aplica las cookies de sesión). Véase el cookbook §B.5b.
 
 `EmbeddedShell` (`apps/web/components/embedded-shell.tsx`) **no** dibuja
 header ni sidebar propios: solo el contenido + nav flotante, para no duplicar el
@@ -271,3 +254,33 @@ GET /partner/v1/users/{sep_user_id}/notifications
 
 > Los bloques de código exactos (incluida la variante de proxy reverso y el
 > contrato HMAC/Partner API) están en `docs/SEP_INTEGRATION_COOKBOOK.md`.
+
+## 12. Bloqueos conocidos (SISMO-side MF)
+
+- **`@module-federation/nextjs-mf` v8 no compila con Next 15.5 + React 19** en
+  este entorno. Intentos de build (`docker compose build web`) fallaron con:
+  - `Cannot find module 'webpack/lib/util/identifier'` → requiere instalar
+    `webpack` como dependencia explícita.
+  - Tras añadir `webpack` + `NEXT_PRIVATE_LOCAL_WEBPACK=true`:
+    `TypeError: _resolveContext_stack.delete is not a function` (incompatibilidad
+    del plugin con el `enhanced-resolve`/webpack que parchea Next 15.5).
+  - Probado con `webpack` 5.97.1 y 5.94.0; mismo error. No es falla de nuestro
+    código, sino del plugin contra esta versión de Next.
+- **Consecuencia:** el código MF de SISMO (§3.1–3.2, cookbook §B.5b) queda como
+  **receta no aplicada**; el web hoy compila sin MF. Para aplicarlo hay que
+  resolver la compatibilidad, p.ej.:
+  1. usar la versión de `@module-federation/nextjs-mf` compatible con Next 15
+     App Router (la línea v9/`@module-federation/enhanced`, hoy en tag `next`
+     dev), o
+  2. fijar `enhanced-resolve` a la versión que el plugin espera vía `overrides`,
+     o
+  3. esperar/obtener un plugin MF estable para Next 15.5.
+- **No se rompió el build de producción:** los cambios de MF se revertieron;
+  el web reconstruye verde sin ellos.
+
+## 13. Pendiente de SEP para avanzar
+
+- Definir host/framework de SEP y runtime MF compatible (mismo React major que
+  SISMO, Next 15.5 → React 19).
+- Elegir la vía de compatibilidad MF (§12) y entonces aplicar §3.1–3.2 en SISMO.
+- Origen/dominio final y dónde SEP sirve el static del remote.
