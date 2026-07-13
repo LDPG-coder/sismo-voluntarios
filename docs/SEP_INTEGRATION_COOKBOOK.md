@@ -1,10 +1,13 @@
 # Integración SISMO ⇄ SEP — Cookbook y contrato
 
+> **Dominio de ejemplo:** en este documento se usa `sep.org` como ejemplo de la
+> página del SEP (p. ej. `https://sep.org/voluntarios/`). Sustituir por el
+> dominio real de SEP en cada caso.
+
 Documento complementario de `docs/SEP_INTEGRATION.md`. Contiene los bloques de
 código para integrar: los cambios en SISMO y lo que debe implementar el servidor
 de SEP. El mecanismo adoptado es **proxy reverso** (SISMO en `/voluntarios` del
-dominio de SEP). El **Micro-frontend (Module Federation)** se evaluó y se
-descartó (ver apéndice en `SEP_INTEGRATION.md`).
+dominio de SEP).
 
 Cada bloque indica su estado: **[IMPLEMENTADA]** si ya está en el repositorio, o
 **[PENDIENTE]** si aún no se aplica.

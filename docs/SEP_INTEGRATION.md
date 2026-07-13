@@ -1,19 +1,18 @@
 # Integración SISMO ⇄ SEP — Proxy reverso (SISMO en subruta de SEP)
 
+> **Dominio de ejemplo:** en este documento se usa `sep.org` como ejemplo de la
+> página del SEP (p. ej. `https://sep.org/voluntarios/`). Sustituir por el
+> dominio real de SEP en cada caso.
+
 > ## Decisión (jul-2026)
 >
 > **Mecanismo adoptado: proxy reverso.** SISMO se sirve como su propia
-> aplicación Next dentro de una ruta del dominio de SEP
-> (`https://sep.org/voluntarios/`). SEP agrega un enlace en su menú y configura
+> aplicación Next dentro de una ruta de la página del SEP (por ejemplo
+> `https://sep.org/voluntarios/`). SEP agrega un enlace en su menú y configura
 > un reverse proxy que dirige el tráfico de esa ruta hacia los contenedores de
 > SISMO. SISMO mantiene su API, su BD y su lógica; SEP no compila ni embebe el
-> código de SISMO.
->
-> **Motivo de descarte de Micro-frontend (Module Federation):** se evaluó
-> empaquetar SISMO como remote MF para que SEP lo montara dentro de su propio
-> header/sidebar. Ese enfoque no es viable con el App Router de Next 15 (ver
-> apéndice). El proxy reverso es 100% compatible con App Router y exige menos
-> trabajo del lado de SEP.
+> código de SISMO. El proxy reverso es compatible con el App Router de Next 15
+> y exige poco trabajo del lado de SEP.
 >
 > **Identidad:** SEP, por medio de su proxy, envía a SISMO la identidad del
 > usuario ya autenticado firmada por HMAC. SISMO la verifica y emite su propia
@@ -271,20 +270,3 @@ GET /partner/v1/users/{sep_user_id}/notifications
 
 > Los bloques de código exactos (HMAC, web `basePath`, proxy SEP, Partner API)
 > están en `docs/SEP_INTEGRATION_COOKBOOK.md`.
-
----
-
-## Apéndice — Por qué se descartó Module Federation (histórico)
-
-Se evaluó empaquetar SISMO como remote MF para que SEP lo montara dentro de su
-shell. No es viable con el App Router de Next 15:
-
-- `@module-federation/nextjs-mf` (incluso su build de compatibilidad `next`)
-  falla explícitamente: `App Directory is not supported by nextjs-mf. Use only
-  pages directory`.
-- `@module-federation/enhanced` (el `ModuleFederationPlugin` de webpack directo)
-  compila el entry federado pero no resuelve `react-dom/client` de Next.
-
-Lograr MF real exigiría migrar SISMO a Pages Router o re-arquitectar la UI como
-SPA cliente: re-esfuerzo grande y fuera de alcance. Por eso se adoptó el proxy
-reverso, que es compatible con App Router y requiere menos del lado de SEP.
