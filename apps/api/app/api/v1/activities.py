@@ -110,6 +110,15 @@ def _serialize_activities_batch(
 # -- Public endpoints ----------------------------------------------
 
 
+def _enrolled_activity_ids_subquery(user_id: UUID):
+    """Subquery of activity ids where `user_id` is an active member, used to
+    hide already-joined activities from discovery surfaces."""
+    return select(ActivityMember.activity_id).where(
+        ActivityMember.user_id == user_id,
+        ActivityMember.status == "active",
+    )
+
+
 @router.get("")
 def list_activities(
     user: Annotated[User, Depends(require_session)],
@@ -125,6 +134,9 @@ def list_activities(
     # The discovery feed shows activities published by *others*; the user's own
     # creations live under "Mis actividades" (Creadas), not here.
     q = q.where(Activity.creator_id != user.id)
+    # Also hide activities the user has already joined: discovery is for finding
+    # new activities to enroll in, not ones they're already part of.
+    q = q.where(Activity.id.notin_(_enrolled_activity_ids_subquery(user.id)))
     q = q.order_by(Activity.date_time.desc())
     activities = db.execute(q).scalars().all()
     return _serialize_activities_batch(activities, db, user_id=user.id)
@@ -136,12 +148,13 @@ def list_zones(
     db: Annotated[Session, Depends(get_db)],
 ) -> list[dict]:
     # Counts must mirror the discovery feed (GET /activities): exclude the
-    # user's own activities so the filter tags don't advertise counts that the
-    # list itself hides.
+    # user's own activities and the activities they've already joined, so the
+    # filter tags don't advertise counts the list itself hides.
     rows = db.execute(
         select(Activity.zone, func.count())
         .where(Activity.status == ActivityStatus.active.value)
         .where(Activity.creator_id != user.id)
+        .where(Activity.id.notin_(_enrolled_activity_ids_subquery(user.id)))
         .group_by(Activity.zone)
     ).all()
     return [{"name": r[0], "count": r[1]} for r in rows]

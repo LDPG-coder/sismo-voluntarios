@@ -122,3 +122,37 @@ def test_zones_exclude_own_activity(client, db):
     zones = {z["name"]: z["count"] for z in resp.json()}
     assert zones.get("Caracas", 0) >= 1
 
+
+def _join(client, user, activity_id):
+    resp = client.post(
+        f"/api/v1/activities/{activity_id}/join",
+        cookies=auth_cookies(user),
+        headers=auth_headers(),
+    )
+    assert resp.status_code == 200, resp.text
+
+
+def test_feed_excludes_enrolled_activity(client, db):
+    admin = make_user(db, role="admin", status="active")
+    other = make_user(db, auth_source="google", status="active")
+    act_id = _create_activity(client, admin)  # Caracas, active
+    _join(client, other, act_id)
+    # The user who already joined must not see it in the discovery feed.
+    resp = client.get("/api/v1/activities", cookies=auth_cookies(other), headers=auth_headers())
+    assert resp.status_code == 200
+    ids = [a["id"] for a in resp.json()]
+    assert act_id not in ids
+
+
+def test_zones_exclude_enrolled_activity(client, db):
+    admin = make_user(db, role="admin", status="active")
+    other = make_user(db, auth_source="google", status="active")
+    act_id = _create_activity(client, admin)  # Caracas, active
+    _join(client, other, act_id)
+    # The user who already joined must not see it counted in the zone tags.
+    resp = client.get("/api/v1/activities/zones", cookies=auth_cookies(other), headers=auth_headers())
+    assert resp.status_code == 200
+    zones = {z["name"]: z["count"] for z in resp.json()}
+    assert zones.get("Caracas", 0) == 0
+
+
