@@ -663,6 +663,9 @@ Las páginas protegidas (`/perfil`, `/mis-actividades`, `/voluntarios/crear`, `/
 - `GET /api/v1/auth/me`
 - `POST /api/v1/auth/invite`
 - `POST /api/v1/auth/logout`
+- `GET /api/v1/activities` (listar)
+- `GET /api/v1/activities/{id}` (detalle)
+- `GET /api/v1/activities/zones`
 - `GET /api/v1/activities/mine`
 - `POST /api/v1/activities` (crear)
 - `PATCH /api/v1/activities/{id}`
@@ -675,9 +678,6 @@ Las páginas protegidas (`/perfil`, `/mis-actividades`, `/voluntarios/crear`, `/
 ### Endpoints Públicos (no requieren sesión)
 
 - `GET /api/v1/health`
-- `GET /api/v1/activities` (listar)
-- `GET /api/v1/activities/{id}` (detalle)
-- `GET /api/v1/activities/zones`
 - `POST /api/v1/auth/login`
 - `GET /api/v1/auth/callback`
 - `POST /api/v1/auth/exchange`
