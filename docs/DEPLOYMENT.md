@@ -26,7 +26,7 @@
 
 | Componente | Tecnología | Versión |
 |---|---|---|
-| Frontend | Next.js (React) | 15.0.3 |
+| Frontend | Next.js (React) | 15.5.20 |
 | Backend | FastAPI (Python) | 0.139.0 |
 | Base de datos | PostgreSQL | 16-alpine |
 | Cache/Rate-limit | Redis | 7-alpine |
@@ -34,6 +34,25 @@
 | Migraciones | Alembic | 1.18.5 |
 | Tunnel | Cloudflare Tunnel | latest |
 | Containerización | Docker Compose | v2 |
+
+---
+
+## Historial de Cambios de Dependencias
+
+Registro de actualizaciones de versiones y su justificación (ver `apps/web/package.json`,
+`apps/web/package-lock.json` y `apps/api/requirements.txt`).
+
+| Fecha | Componente | De → A | Razón del cambio |
+|---|---|---|---|
+| 2026-07-13 | Next.js | `15.0.3` → `15.5.20` | Cierre de CVEs de seguridad. `15.0.3` era vulnerable a **CVE-2025-29927** y **CVE-2025-57822** (bypass de autorización en el middleware de Next, *críticos*), además de múltiples CVEs de DoS/SSRF. Se evaluó `15.5.3` pero también estaba vulnerado por **CVE-2025-66478**, así que se pasó a la última estable de la línea 15.x (`15.5.20`). `eslint-config-next` se emparejó a la misma versión. El build de producción se verificó exitoso con `15.5.20`. |
+| 2026-07-13 | PyJWT (`apps/api`) | `>=2.9.0` → `>=2.10.1` | **CVE-2024-53861** (falsificación de token JWT vía parámetro `kwarg`). |
+| 2026-07-13 | httpx (`apps/api`) | `>=0.27.0` → `>=0.28.1` | **CVE-2024-47081** (fuga de credenciales mediante redirect). |
+
+> **Nota de contexto:** el middleware de Next en este proyecto (`apps/web/middleware.ts`)
+> únicamente fija headers de seguridad (CSP/HSTS) y **no** realiza autorización — esta se
+> enforce en el backend FastAPI (`require_session`). Por tanto los CVEs de *bypass de
+> middleware* no eran explotables en la práctica aquí, pero se actualizó de todos modos para
+> mantener el árbol de dependencias libre de CVEs conocidos.
 
 ---
 
@@ -630,7 +649,10 @@ docker compose exec api alembic revision --autogenerate -m "descripcion"
 - **OAuth 2.0** con Google como proveedor de identidad
 - **Sesiones** firmadas con HMAC (`sismo_session` cookie, HttpOnly, Secure, SameSite=None en prod)
 - **CSRF** protección con double-submit cookie pattern (`XSRF-TOKEN`)
-- **Rate limiting** por IP: 60 req/min (público), 30 req/min (auth)
+- **Rate limiting** por IP: 60 req/min (público), 30 req/min (auth). El autocompletado
+  con IA tiene un bucket dedicado más permisivo — 600 req/min + burst 200 — y además un
+  tope por usuario de 5000 sugerencias/hora que **solo se cobra al entregar una
+  sugerencia** (no en cada tecla/intento cancelado), para no agotarlo mientras se escribe.
 
 ### Protección de Rutas
 
