@@ -30,12 +30,12 @@
   `SISMO_API_CORS_ORIGINS` en `infra/docker-compose.yml` + `.env`.
 - Regla de negocio: los tags de zona y el feed de descubrimiento excluyen las
   actividades que el usuario ya creó **y** las en las que ya está inscrito.
+- **Partner API** (`apps/api/app/api/v1/partner.py`): implementada. SEP la
+  consulta server-to-server (`Bearer <SISMO_SEP_API_TOKEN>`) para mostrar las
+  notificaciones de SISMO en su header. Contrato en el cookbook.
 
 **Pendiente en el lado SISMO:**
 
-- **Partner API** (notificaciones en el header de SEP): *diseñada* en el
-  cookbook, **aún no implementada** en el repo (`apps/api/app/api/v1/partner.py`
-  no existe). Es la única pieza backend de SISMO que falta para este mecanismo.
 - **Empaquetar el web como remote MF** (`next.config.ts` + `sismo-app.tsx` +
   `sep-user.tsx`): *receta no aplicada* porque `@module-federation/nextjs-mf` v8
   es incompatible con Next 15.5 en este entorno (ver "Por qué el remote MF aún
@@ -194,11 +194,10 @@ server-to-server (ver §6).
 
 ## 6. Notificaciones en el header de SEP (server-to-server)
 
-SEP muestra las notificaciones de SISMO en su header general. SISMO debe exponer
-la **Partner API** autenticada con `SISMO_SEP_API_TOKEN` (Bearer), que el
-backend de SEP consulta por el `sep_user_id`. **Estado:** contrato definido en el
-cookbook (sección Partner API) pero **aún no implementada** en el repo; es la
-pieza backend pendiente de SISMO.
+SEP muestra las notificaciones de SISMO en su header general. SISMO expone la
+**Partner API** (`apps/api/app/api/v1/partner.py`), autenticada con
+`SISMO_SEP_API_TOKEN` (Bearer), que el backend de SEP consulta por el
+`sep_user_id`. Contrato completo en el cookbook (sección Partner API).
 
 ```
 GET /partner/v1/users/{sep_user_id}/notifications/summary
@@ -239,8 +238,8 @@ logout global.
 
 ## 9. Pasos de despliegue (resumen)
 
-1. **SISMO api — pendiente:** implementar la Partner API (`partner.py`) según el
-   cookbook.
+1. **SISMO api — hecho:** Partner API implementada (`partner.py`); verificar que
+   `SISMO_SEP_API_TOKEN` esté configurado en el deploy.
 2. **SISMO web — pendiente/bloqueado:** configurar MF plugin, exponer
    `./SismoApp`, crear `sismo-app.tsx` + `sep-user.tsx` (receta §3; requiere
    resolver la compatibilidad MF con Next 15.5).

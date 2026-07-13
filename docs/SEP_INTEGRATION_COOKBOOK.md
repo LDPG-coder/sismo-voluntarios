@@ -127,39 +127,44 @@ def resolve_session(request, db):
 > El mecanismo de cookie (`encode_session`/`verify_session`) ya existe y usa
 > `SISMO_SESSION_SECRET`; el proxy model lo reusa sin cambios de formato.
 
-### B.4 Partner API — `apps/api/app/api/v1/partner.py` (RECETA, NO APLICADA)
+### B.4 Partner API — `apps/api/app/api/v1/partner.py` (IMPLEMENTADA)
 
-> **Estado:** esta sección es una receta. **No está aplicada en el repo**
-> (`partner.py` no existe aún). Es la única pieza backend de SISMO pendiente
-> para que SEP muestre las notificaciones en su header.
+> **Estado:** implementada y registrada en `app/api/v1/router.py`. SEP la
+> consulta server-to-server con `Authorization: Bearer <SISMO_SEP_API_TOKEN>`.
+> El código real en el repo es el de abajo (equivalente a esta receta, usa
+> `compare_digest` y `auth.sep_unauthorized` cuando el token no está configurado).
 
 ```python
-from fastapi import APIRouter, Depends, Header, HTTPException
-from sqlalchemy import select, func
+from fastapi import APIRouter, Depends, Header
+from sqlalchemy import func, select
+from sqlalchemy.orm import Session
+
+from app.core.config import Settings, get_settings
+from app.core.errors import ApiError, ErrorCode
+from app.db.base import get_db
 from app.db.models import Notification, User
-from app.db.session import get_db
-from app.core.config import settings
 
 router = APIRouter(prefix="/partner/v1", tags=["partner"])
 
 
 def require_sep_partner_token(
     authorization: str = Header(None),
+    settings: Settings = Depends(get_settings),
 ) -> None:
-    scheme, _, token = (authorization or "").partition(" ")
-    if scheme.lower() != "bearer" or token != settings.sep_api_token:
-        raise HTTPException(status_code=401, detail="auth.sep_token_invalid")
+    if not settings.sep_api_token:
+        raise ApiError(ErrorCode.auth_sep_unauthorized, "SEP partner API not configured")
+    expected = f"Bearer {settings.sep_api_token}"
+    if not authorization or not hmac.compare_digest(authorization, expected):
+        raise ApiError(ErrorCode.auth_sep_token_invalid, "invalid SEP API token")
 
 
 @router.get("/users/{sep_user_id}/notifications/summary")
-def sep_user_notifications_summary(
+def partner_notifications_summary(
     sep_user_id: str,
-    db=Depends(get_db),
-    _=Depends(require_sep_partner_token),
-):
-    user = db.execute(
-        select(User).where(User.sep_user_id == sep_user_id)
-    ).scalar_one_or_none()
+    db: Session = Depends(get_db),
+    _: None = Depends(require_sep_partner_token),
+) -> dict:
+    user = db.execute(select(User).where(User.sep_user_id == sep_user_id)).scalar_one_or_none()
     if not user:
         return {"unread": 0, "items": []}
     unread = db.execute(
@@ -184,7 +189,7 @@ def sep_user_notifications_summary(
     }
 ```
 
-Registrar el router en `main.py` con `app.include_router(partner.router)`.
+Registrada en `app/api/v1/router.py` con `api_v1_router.include_router(partner_router)`.
 
 ### B.5 Web — `apps/web/next.config.ts` (VARIANTE PROXY REVERSO)
 
