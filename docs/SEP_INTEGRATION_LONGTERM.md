@@ -1,180 +1,301 @@
-# Integración SISMO ⇄ SEP — Horizonte medio/largo plazo (desacoplada)
+# Integración SISMO ⇄ SEP — Cookbook y contrato
 
-> **Este documento es el plan de evolución. NO es inmediato:** se construye
-> **después** de que la integración primaria de corto plazo
-> ([`docs/SEP_INTEGRATION.md`](./SEP_INTEGRATION.md)) esté funcionando en
-> producción. El objetivo es reemplazar las partes frágiles del MVP por una
-> arquitectura **óptima y desacoplada**, conservando la misma lógica de negocio
-> (ceder cupo, notificaciones, directorio, PII).
+Documento complementario de `docs/SEP_INTEGRATION.md`. Contiene los bloques de
+código para integrar: los **cambios en SISMO** y lo que debe implementar el
+**servidor de SEP** (proxy + backend + header). Todo asume el despliegue de
+mismo origen (`sep.org/voluntarios`).
 
 ---
 
-## 1. Contexto: qué funciona hoy (corto plazo) y sus costos
+## A. Contrato del header de identidad SEP
 
-El MVP actual:
+SEP firma la identidad del usuario autenticado y la inyecta en cada request que
+hace al subpath de SISMO.
 
-- Login SEP → `POST /api/v1/auth/sep-login` (server-to-server, one-time code) →
-  iframe `app.sismo.lat/?embed=1` con `EmbeddedShell`.
-- Campana de notificaciones de SEP llama a `api.sismo.lat` **desde el browser**
-  con la cookie de sesión de SISMO (`SameSite=None`), vía CORS.
-- Tema SEP propagado por `?theme=` en la URL del iframe.
-
-Costos / fragilidades que justifican evolucionar:
-
-1. **Dependencias de cookies cross-site.** La campana y la sesión en el iframe
-   dependen de que el browser envíe cookies de `sismo.lat` a un contexto de
-   terceros (SEP). Los navegadores están dejando de enviar third-party cookies
-   por defecto; `SameSite=None` sigue funcionando hoy, pero es frágil a largo
-   plazo y rompe si SEP decide aislar su sitio.
-2. **Acoplamiento de SEP a la API HTTP de SISMO en el browser.** SEP conoce
-   rutas, formatos de respuesta y el modelo de cookie de SISMO para renderizar
-   la campana. Cualquier cambio en la API rompe el header de SEP.
-3. **Polling de notificaciones** desde el cliente de SEP.
-4. **iframe como única opción de embebido**, con sus límites (scroll, focus,
-   accesibilidad, deep-linking, tema).
-
----
-
-## 2. Principios de la evolución
-
-- **La lógica de negocio vive en SISMO; la autenticación de usuario y la
-  presentación viven en SEP.** SISMO es el sistema de registro de verdad para
-  actividades/voluntarios; SEP es quien autentica a la persona.
-- **Desacoplamiento por contrato versionado**, no por detalles internos. Los
-  contratos son: API server-to-server firmada, webhooks firmados, y (opcional)
-  componentes web versionados. SEP no lee ni escribe cookies de SISMO, no asume
-  el dominio, no depende de clases CSS internas.
-- **Sin dependencias esenciales de cookies cross-site ni de CORS del browser.**
-  Lo que el browser de SEP necesite, lo obtiene vía su propio backend, que sí
-  habla server-to-server con SISMO.
-- **Poblaciones separadas, reglas de ceder cupo y PII se mantienen** — la
-  evolución cambia el *transporte*, no las reglas de negocio.
-
----
-
-## 3. Opciones (se pueden combinar)
-
-### 3.1 API server-to-server de "socio" (extensión de `SISMO_SEP_API_TOKEN`)
-
-Extiende el patrón ya existente de `sep-login` (SEP backend autenticado con
-`Bearer SISMO_SEP_API_TOKEN`) a un conjunto de endpoints de lectura que SEP
-consumiría **desde su backend**, no desde el browser:
-
-- `GET /partner/v1/users/{sep_user_id}/notifications` → lista + `unread`.
-- `GET /partner/v1/activities` / `GET /partner/v1/activities/{id}` → datos para
-  que SEP renderice su propia UI de actividades.
-- `GET /partner/v1/users/{sep_user_id}/directory` → directorio visible según
-  reglas de ceder cupo.
-
-SEP renderiza su propia UI (header, campana, listas) con esos datos. **Elimina
-el iframe, las cookies cross-site y el CORS del browser.** SISMO sigue dueño de
-la lógica; SEP solo presenta.
-
-### 3.2 Webhooks / eventos SISMO → SEP (notificaciones en tiempo real)
-
-En vez de que SEP haga polling, SISMO empuja eventos (`activity.created`,
-`membership.ceded`, `notification.created`, etc.) a una URL configurada de SEP,
-firmados con HMAC (`X-SISMO-Signature`). SEP los usa para actualizar su campana
-en tiempo real y para su propio log/auditoría. Desacoplado: SEP solo consume
-eventos versionados.
-
-### 3.3 SSO estándar (OIDC / OAuth2 con PKCE)
-
-Reemplaza el one-time code custom por un flujo estándar
-(authorization code + PKCE) donde SISMO actúa como IdP (o se federan vía un
-broker). Más interoperable y desacoplado de la implementación puntual actual;
-permite que otros sistemas se integren con el mismo contrato.
-
-### 3.4 BFF / reverse proxy con header firmado (si se quiere seguir embebiendo)
-
-Si SEP prefiere seguir mostrando la UI de SISMO en su sitio (iframe o proxy),
-su gateway: (1) valida la sesión propia de SEP, (2) inyecta `x-sismo-context:
-sep` + identidad en headers **firmados por HMAC** (`x-sismo-sig`), y (3) proxea
-`/api/v1/*` de SISMO. Para el browser de SEP, las llamadas son **mismo origen**
-→ sin CORS ni cookies cross-site. SISMO confía en el gateway por la firma, no
-por la red. Es el enfoque "proxy-headers" mencionado en el doc de corto plazo,
-pero con firma (no solo secreto de proxy).
-
-### 3.5 Micro-frontend / web components (embebido sin iframe)
-
-SISMO publica un **web component** versionado (p.ej. `<sismo-voluntarios>`)
-que SEP importa y monta en su DOM, compartiendo el design system vía un
-contrato de props/slots/eventos. Elimina los límites del iframe (scroll, focus,
-tema, deep-link) y sigue desacoplado por contrato de componente. SISMO puede
-publicarlo como paquete o vía Module Federation.
-
----
-
-## 4. Camino propuesto (fases)
-
-- **Fase A — API server-to-server de socio + webhooks.** Elimina la campana
-  cross-site y el acoplamiento de API en el browser. SEP deja de llamar a
-  `api.sismo.lat` desde el cliente; su backend sí lo hace. Riesgo bajo: reusa
-  el `SISMO_SEP_API_TOKEN` ya existente.
-- **Fase B — SSO OIDC/OAuth2 (opcional).** Estandariza el login y facilita
-  futuras integraciones. Se puede hacer en paralelo a A.
-- **Fase C — Micro-frontend / web components (si SEP quiere la UI de SISMO sin
-  iframe).** Reemplaza el embebido por iframe por un componente versionado.
-
-El corto plazo (iframe + one-time code) queda como MVP; las fases A→C lo
-reemplazan por partes, manteniendo la lógica de negocio intacta.
-
----
-
-## 5. Qué NO cambia
-
-- Poblaciones separadas (`auth_source` google/sep), `sep_user_id` estable.
-- Reglas de **ceder cupo** (externo solo a externo; recibe de cualquiera;
-  SEP/admin a cualquiera).
-- Regla de **PII del creador** (teléfono público solo en la actividad; directorio
-  sin teléfono).
-- Secretos server-to-server (`SISMO_SEP_API_TOKEN`) como única credencial
-  compartida; nunca en el browser.
-
----
-
-## 6. Boceto de contratos (no implementado)
-
-### 6.1 Partner API (server-to-server)
+**Headers:**
 
 ```
-GET https://api.sismo.lat/partner/v1/users/{sep_user_id}/notifications
-Headers: Authorization: Bearer <SISMO_SEP_API_TOKEN>
-         X-SISMO-Context: sep
--> 200 { "unread": 3, "items": [ { "id", "type", "title", "message",
-                                   "activity_id", "read", "created_at" } ] }
+x-sismo-sep-user: <BASE64URL( JSON({
+    "sep_user_id": "uuid-o-pk-estable-de-sep",
+    "email": "usuario@sep.org",
+    "name": "Nombre Apellido",
+    "role": "admin" | "volunteer" | null
+}) )>
+
+x-sismo-sep-sig: <HMAC_SHA256( valor_de_x-sismo-sep-user , SISMO_SEP_PROXY_SECRET )>
 ```
 
-### 6.2 Webhook (SISMO → SEP)
-
-```
-POST https://sep.ejemplo.com/webhooks/sismo
-Headers: X-SISMO-Event: notification.created
-         X-SISMO-Signature: sha256=<hmac>
-Body:    { "sep_user_id", "notification": { ... } }
-```
-
-### 6.3 Proxy firmado (BFF)
-
-```
-SEP gateway -> SISMO
-Headers: x-sismo-context: sep
-         x-sismo-user: <sep_user_id>
-         x-sismo-sig: sha256=<hmac(secret, context|user|ts)>
-         x-sismo-ts: <unix>
-```
+- Algoritmo: `HMAC-SHA256`, hex.
+- La firma se calcula sobre el **valor textual** del header `x-sismo-sep-user`
+  (sin el prefijo del nombre de header), usando `SISMO_SEP_PROXY_SECRET`
+  compartido solo entre el proxy de SEP y la API de SISMO.
+- SISMO verifica con `hmac.compare_digest` (evita timing attacks). Si falla,
+  ignora el header (el usuario caería en flujo de no-autenticado / login).
+- `sep_user_id` debe ser **estable y único** en SEP (PK o UUID). Si cambia,
+  SISMO crearía otra cuenta.
 
 ---
 
-## 7. Relación con el corto plazo
+## B. Cambios en SISMO (bloques para pegar)
 
-| Aspecto | Corto plazo (hoy) | Largo plazo (este doc) |
-|---|---|---|
-| Login | one-time code custom | OIDC/OAuth2 (Fase B) o se mantiene |
-| Notificaciones | polling cross-site en browser | server-to-server + webhooks (Fase A) |
-| Embebido UI | iframe + `?theme=` | micro-frontend/web components (Fase C) o BFF firmado |
-| Acoplamiento | SEP conoce API HTTP de SISMO | SEP consume contratos versionados firmados |
-| Cookies cross-site | necesarias | eliminadas de lo esencial |
+### B.1 `apps/api/app/core/config.py`
 
-El MVP de corto plazo sigue siendo válido hasta completar la Fase A; desde ahí
-se puede ir migrando de a una parte sin romper lo que ya funciona.
+```python
+# Secreto compartido proxy<->API para firmar la identidad inyectada por SEP.
+sep_proxy_secret: str | None = None
+```
+
+### B.2 `apps/api/app/pipeline/sep_proxy.py` (nuevo)
+
+```python
+import base64, hashlib, hmac, json, uuid
+from dataclasses import dataclass
+
+from app.core.config import settings
+from app.api.v1.auth import _resolve_or_create_sep_user
+from app.pipeline.session import SessionPayload, encode_session
+
+
+def _b64url_decode(s: str) -> bytes:
+    return base64.urlsafe_b64decode(s + "=" * (-len(s) % 4))
+
+
+def verify_sep_proxy_header(user_b64: str | None, sig: str | None) -> dict | None:
+    if not user_b64 or not sig or not settings.sep_proxy_secret:
+        return None
+    expected = hmac.new(
+        settings.sep_proxy_secret.encode(), user_b64.encode(), hashlib.sha256
+    ).hexdigest()
+    if not hmac.compare_digest(expected, sig):
+        return None
+    try:
+        identity = json.loads(_b64url_decode(user_b64))
+        if not identity.get("sep_user_id"):
+            return None
+        return identity
+    except Exception:
+        return None
+
+
+def issue_sep_session(db, identity: dict) -> tuple[object, str]:
+    """Upsert del usuario SEP y emisión de la cookie de sesión de SISMO."""
+    user = _resolve_or_create_sep_user(
+        db,
+        sep_user_id=str(identity["sep_user_id"]),
+        email=identity.get("email") or "",
+        name=identity.get("name"),
+        role=identity.get("role"),
+    )
+    payload = SessionPayload(
+        user_id=user.id, role=user.role.value, status=user.status.value
+    )
+    cookie = encode_session(settings, payload)  # firma con SISMO_SESSION_SECRET
+    return user, cookie
+```
+
+### B.3 Integración en el resolve de sesión
+
+En `apps/api/app/pipeline/session.py`, antes de rechazar por "no autenticado",
+intenta el header de SEP:
+
+```python
+from app.pipeline import sep_proxy as sep_proxy
+
+def resolve_session(request, db):
+    user = verify_session_from_cookie(request)   # lógica actual (HMAC cookie)
+    if user is not None:
+        return user
+    identity = sep_proxy.verify_sep_proxy_header(
+        request.headers.get("x-sismo-sep-user"),
+        request.headers.get("x-sismo-sep-sig"),
+    )
+    if identity:
+        user, cookie = sep_proxy.issue_sep_session(db, identity)
+        request.state.set_session_cookie = cookie   # la API lo envía en Set-Cookie
+        return user
+    return None  # -> 401 como hoy
+```
+
+> El mecanismo de cookie (`encode_session`/`verify_session`) ya existe y usa
+> `SISMO_SESSION_SECRET`; el proxy model lo reusa sin cambios de formato.
+
+### B.4 Partner API — `apps/api/app/api/v1/partner.py` (nuevo)
+
+```python
+from fastapi import APIRouter, Depends, Header, HTTPException
+from sqlalchemy import select, func
+from app.db.models import Notification, User
+from app.db.session import get_db
+from app.core.config import settings
+
+router = APIRouter(prefix="/partner/v1", tags=["partner"])
+
+
+def require_sep_partner_token(
+    authorization: str = Header(None),
+) -> None:
+    scheme, _, token = (authorization or "").partition(" ")
+    if scheme.lower() != "bearer" or token != settings.sep_api_token:
+        raise HTTPException(status_code=401, detail="auth.sep_token_invalid")
+
+
+@router.get("/users/{sep_user_id}/notifications/summary")
+def sep_user_notifications_summary(
+    sep_user_id: str,
+    db=Depends(get_db),
+    _=Depends(require_sep_partner_token),
+):
+    user = db.execute(
+        select(User).where(User.sep_user_id == sep_user_id)
+    ).scalar_one_or_none()
+    if not user:
+        return {"unread": 0, "items": []}
+    unread = db.execute(
+        select(func.count()).select_from(Notification).where(
+            Notification.user_id == user.id, Notification.read.is_(False)
+        )
+    ).scalar() or 0
+    notifs = db.execute(
+        select(Notification).where(Notification.user_id == user.id)
+        .order_by(Notification.created_at.desc()).limit(20)
+    ).scalars().all()
+    return {
+        "unread": unread,
+        "items": [
+            {
+                "id": str(n.id), "type": n.type, "title": n.title,
+                "message": n.message, "activity_id": str(n.activity_id) if n.activity_id else None,
+                "read": n.read, "created_at": n.created_at.isoformat() if n.created_at else None,
+            }
+            for n in notifs
+        ],
+    }
+```
+
+Registrar el router en `main.py` con `app.include_router(partner.router)`.
+
+### B.5 Web — `apps/web/next.config.ts`
+
+```ts
+import type { NextConfig } from "next";
+const nextConfig: NextConfig = {
+  output: "standalone",
+  basePath: "/voluntarios",
+};
+export default nextConfig;
+```
+
+Y en el `.env` del web en el server SEP:
+
+```
+NEXT_PUBLIC_API_URL=https://sep.org/voluntarios/api
+NEXT_PUBLIC_WEB_ORIGIN=https://sep.org
+SEP_EMBED=1
+```
+
+### B.6 API expuesta bajo `/voluntarios/api`
+
+La API FastAPI debe escuchar en esa ruta. Opciones:
+- `uvicorn app.main:app --root-path /voluntarios/api`, o
+- el proxy de SEP hace `rewrite` de `/voluntarios/api` → `/api` antes de llegar
+  a SISMO.
+
+---
+
+## C. Lado SEP (pseudocódigo, stack-agnóstico)
+
+### C.1 Firmar e inyectar la identidad en el proxy
+
+El proxy de SEP, **solo si el usuario tiene sesión SEP**, arma e inyecta los
+headers. Ejemplo en Python (puedes portarlo a tu proxy/backend):
+
+```python
+import base64, hashlib, hmac, json
+
+SEP_PROXY_SECRET = os.environ["SISMO_SEP_PROXY_SECRET"]  # compartido con SISMO
+
+def make_sep_identity_headers(user) -> dict:
+    payload = {
+        "sep_user_id": str(user["id"]),
+        "email": user["email"],
+        "name": user.get("name"),
+        "role": user.get("role"),
+    }
+    user_b64 = base64.urlsafe_b64encode(
+        json.dumps(payload, separators=(",", ":")).encode()
+    ).decode().rstrip("=")
+    sig = hmac.new(SEP_PROXY_SECRET.encode(), user_b64.encode(), hashlib.sha256).hexdigest()
+    return {"x-sismo-sep-user": user_b64, "x-sismo-sep-sig": sig}
+```
+
+Config del proxy (nginx/Caddy) — se inyectan los headers en las requests al
+subpath `/voluntarios`. El proxy llama a `make_sep_identity_headers` (o su
+equivalente) usando la sesión SEP ya validada, y **no** las inyecta en las rutas
+de login/OAuth de SISMO.
+
+### C.2 Rutas en el proxy de SEP
+
+```
+/voluntarios            -> SISMO web   (inyectar header si hay sesión SEP)
+/voluntarios/api        -> SISMO api   (inyectar header si hay sesión SEP)
+/voluntarios/login*     -> SISMO web   (SIN auth SEP: es para usuarios externos)
+/voluntarios/api/v1/auth/* -> SISMO api (SIN auth SEP: login Google/OAuth)
+```
+
+### C.3 Backend de SEP: campana en el header general
+
+El backend de SEP, para el usuario actual, consulta la Partner API de SISMO y
+pinta la campana en el header que SEP ya usa en todo el sitio:
+
+```python
+import os, requests
+
+SISMO_API = os.environ["SISMO_API_URL"]          # https://sep.org/voluntarios/api
+SEP_TOKEN  = os.environ["SISMO_SEP_API_TOKEN"]   # mismoBearer que SISMO
+
+def sismo_notifications_for(sep_user_id: str) -> dict:
+    r = requests.get(
+        f"{SISMO_API}/partner/v1/users/{sep_user_id}/notifications/summary",
+        headers={"Authorization": f"Bearer {SEP_TOKEN}"},
+        timeout=3,
+    )
+    return r.json() if r.ok else {"unread": 0, "items": []}
+```
+
+Renderizas el badge (count de `unread`) en el header de SEP igual que tus otras
+notificaciones. Al hacer clic, puedes enlazar a `/voluntarios` (la subpágina de
+SISMO) o a un panel de notificaciones que consuma
+`/partner/v1/users/{sep_user_id}/notifications`.
+
+### C.4 Logout
+
+En el logout global de SEP, además de limpiar la sesión SEP, borra la cookie
+`sismo_session` (mismo origen `sep.org`, SEP puede hacer `Set-Cookie` con
+`Max-Age=0` o `Expires` pasado). Así SISMO queda también deslogueado.
+
+---
+
+## D. Contrato Partner API (resumen)
+
+| Método | Ruta | Auth | Respuesta |
+|---|---|---|---|
+| `GET` | `/partner/v1/users/{sep_user_id}/notifications/summary` | `Bearer <SISMO_SEP_API_TOKEN>` | `{ "unread": int, "items": [...] }` |
+| `GET` | `/partner/v1/users/{sep_user_id}/notifications` | `Bearer <SISMO_SEP_API_TOKEN>` | `[ { id, type, title, message, activity_id, read, created_at } ]` |
+
+- Errores: `401 auth.sep_token_invalid` (token ausente/inválido), `404` si el
+  `sep_user_id` no existe en SISMO (la app devuelve `{unread:0,items:[]}` para
+  no romper el header).
+- `sep_user_id` es el mismo que SEP firma en `x-sismo-sep-user`.
+
+---
+
+## E. Checklist de verificación
+
+- [ ] SISMO API: `SISMO_SEP_PROXY_SECRET` configurado igual que en el proxy SEP.
+- [ ] `x-sismo-sep-user`/`x-sismo-sep-sig` verificados (firma HMAC correcta).
+- [ ] Usuario SEP entra a `/voluntarios` → sesión de SISMO emitida, sin login.
+- [ ] Usuario externo → login Google de SISMO funciona (proxy lo permite).
+- [ ] Logout de SEP limpia `sismo_session`.
+- [ ] Header de SEP muestra `unread` desde la Partner API.
+- [ ] SISMO usa su propia BD (no la de SEP); usuarios `auth_source=sep`.
+- [ ] `basePath: "/voluntarios"` y `NEXT_PUBLIC_API_URL` apuntan al mismo origen.
