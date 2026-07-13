@@ -14,6 +14,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const { user, setUser } = useSession();
   const lastScroll = useRef(0);
 
+  const canCreate = user?.auth_source === "sep" || user?.role === "admin";
+
   useEffect(() => {
     const unsub = onPhotoChanged((photoUrl) => {
       setUser((prev: SessionUser) =>
@@ -59,15 +61,17 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </button>
 
           <div className="flex items-center gap-1">
-            <Link
-              href="/voluntarios/crear"
-              aria-label="Crear actividad"
-              className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-600 text-white transition hover:bg-emerald-700 dark:bg-emerald-600 dark:hover:bg-emerald-700"
-            >
-              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-              </svg>
-            </Link>
+            {canCreate && (
+              <Link
+                href="/voluntarios/crear"
+                aria-label="Crear actividad"
+                className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-600 text-white transition hover:bg-emerald-700 dark:bg-emerald-600 dark:hover:bg-emerald-700"
+              >
+                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                </svg>
+              </Link>
+            )}
             <NotificationsBell />
             <ThemeToggle />
               <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-md bg-[#eaebed] dark:bg-zinc-800">

@@ -8,7 +8,7 @@ from uuid import UUID, uuid4
 
 from dateutil.parser import parse as parse_dt
 from fastapi import APIRouter, Depends, Query
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlalchemy import delete, func, select, text
 from sqlalchemy.orm import Session
 
@@ -18,7 +18,7 @@ from app.core.logging import get_logger
 from app.core.utils import ensure_timezone
 from app.db.base import get_db
 from app.db.constants import MVP_TENANT_ID
-from app.db.enums import ActivityStatus
+from app.db.enums import ActivityStatus, UserRole
 from app.db.models import Activity, ActivityMember, Notification, User
 from app.pipeline.dependencies import require_session
 
@@ -288,49 +288,71 @@ def check_membership(
 # -- Authenticated endpoints ---------------------------------------
 
 
+class _CreateActivityBody(BaseModel):
+    # Whitelist of client-supplied fields. `creator_id`, `tenant_id`,
+    # `status` are NEVER taken from the body — they are derived server-side
+    # from the authenticated session. `description`, `requirements` and
+    # `contact_info` are free text rendered in React (auto-escaped) and are
+    # length-capped to bound storage. Numeric fields are range-checked.
+    title: str = Field(..., min_length=1, max_length=200)
+    zone: str = Field(..., min_length=1, max_length=100)
+    raw_address: str = Field(..., min_length=1, max_length=300)
+    date_time: str = Field(..., description="ISO 8601 datetime")
+    end_time: str | None = Field(None, description="ISO 8601 datetime")
+    description: str | None = Field(None, max_length=2000)
+    requirements: str | None = Field(None, max_length=1000)
+    contact_info: str | None = Field(None, max_length=500)
+    max_participants: int | None = Field(None, ge=1, le=100000)
+    estimated_duration_min: int | None = Field(None, ge=1, le=100000)
+
+
 @router.post("")
 def create_activity(
-    body: dict,
+    body: _CreateActivityBody,
     user: Annotated[User, Depends(require_session)],
     db: Annotated[Session, Depends(get_db)],
 ) -> dict:
-    title = str(body.get("title", "")).strip()
+    # Public (non-SEP) accounts may only join activities, not create them.
+    # SEP-provisioned users and SISMO admins retain full access.
+    if user.auth_source != "sep" and user.role != UserRole.admin.value:
+        raise ApiError(
+            ErrorCode.auth_forbidden,
+            "las cuentas publicas no pueden crear actividades",
+        )
+
+    title = body.title.strip()
     if not title:
         raise ApiError(ErrorCode.validation_missing_field, "title is required")
-    zone = str(body.get("zone", "")).strip()
+    zone = body.zone.strip()
     if not zone:
         raise ApiError(ErrorCode.validation_missing_field, "zone is required")
-    raw_address = str(body.get("raw_address", "")).strip()
+    raw_address = body.raw_address.strip()
     if not raw_address:
         raise ApiError(ErrorCode.validation_missing_field, "raw_address is required")
-    date_time_str = body.get("date_time")
-    if not date_time_str:
-        raise ApiError(ErrorCode.validation_missing_field, "date_time is required")
 
     try:
-        date_time = ensure_timezone(parse_dt(date_time_str))
+        date_time = ensure_timezone(parse_dt(body.date_time))
     except (ValueError, TypeError):
         raise ApiError(ErrorCode.validation_invalid_format, "invalid date_time format")
 
     end_time = None
-    end_time_str = body.get("end_time")
-    if end_time_str:
+    if body.end_time:
         try:
-            end_time = ensure_timezone(parse_dt(end_time_str))
+            end_time = ensure_timezone(parse_dt(body.end_time))
         except (ValueError, TypeError):
             pass
 
     a = Activity(
         title=title,
-        description=body.get("description"),
+        description=body.description,
         zone=zone,
         raw_address=raw_address,
         date_time=date_time,
         end_time=end_time,
-        estimated_duration_min=body.get("estimated_duration_min"),
-        max_participants=body.get("max_participants"),
-        requirements=body.get("requirements"),
-        contact_info=body.get("contact_info"),
+        estimated_duration_min=body.estimated_duration_min,
+        max_participants=body.max_participants,
+        requirements=body.requirements,
+        contact_info=body.contact_info,
         creator_id=user.id,
         status=ActivityStatus.active.value,
     )
@@ -557,7 +579,15 @@ def list_attendees(
     activity_id: str,
     user: Annotated[User, Depends(require_session)],
     db: Annotated[Session, Depends(get_db)],
-) -> list[dict]:
+) -> dict:
+    # Ceder cupo to arbitrary users requires browsing all accounts, which is
+    # restricted to SEP users and admins; public accounts cannot do this.
+    if user.auth_source != "sep" and user.role != UserRole.admin.value:
+        raise ApiError(
+            ErrorCode.auth_forbidden,
+            "las cuentas publicas no pueden ceder cupo",
+        )
+
     a = db.get(Activity, UUID(activity_id))
     if not a:
         raise ApiError(ErrorCode.activity_not_found, "activity not found")

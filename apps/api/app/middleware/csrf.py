@@ -17,6 +17,11 @@ CSRF_COOKIE_NAME = "XSRF-TOKEN"
 CSRF_HEADER_NAME = "X-CSRF-Token"
 _WRITE_METHODS = frozenset({"POST", "PATCH", "PUT", "DELETE"})
 
+# Endpoints authenticated by the HttpOnly refresh token (not the session
+# cookie) are CSRF-exempt: a CSRF attacker cannot read the rotated tokens,
+# so the only effect is refreshing the victim's own session.
+CSRF_BYPASS_PREFIXES = ("/api/v1/auth/refresh",)
+
 _log = get_logger("app.middleware.csrf")
 
 
@@ -26,6 +31,9 @@ class CsrfMiddleware(BaseHTTPMiddleware):
 
     async def dispatch(self, request: Request, call_next):  # type: ignore[no-untyped-def]
         if request.method not in _WRITE_METHODS:
+            return await call_next(request)
+
+        if request.url.path.startswith(CSRF_BYPASS_PREFIXES):
             return await call_next(request)
 
         session_present = request.cookies.get(SESSION_COOKIE_NAME) is not None

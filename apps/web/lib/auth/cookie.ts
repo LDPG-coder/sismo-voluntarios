@@ -3,7 +3,7 @@
  * Format: <base64url(json)>.<hmac>
  */
 
-import { createHash, createHmac, timingSafeEqual } from "node:crypto";
+import { createHash, createHmac, randomUUID, timingSafeEqual } from "node:crypto";
 
 import { authCookieMaxAgeSeconds, sessionSecret } from "./config";
 import type { UserRole, UserStatus } from "./role";
@@ -36,10 +36,15 @@ function base64UrlToBytes(value: string): Buffer {
   return Buffer.from(padded, "base64");
 }
 
-export function encodeSession(payload: SessionPayload): string {
+export function encodeSession(
+  payload: SessionPayload,
+  maxAgeSeconds: number = authCookieMaxAgeSeconds,
+): string {
   const now = Math.floor(Date.now() / 1000);
-  const exp = now + authCookieMaxAgeSeconds;
-  const json = JSON.stringify({ ...payload, iat: now, exp });
+  const exp = now + maxAgeSeconds;
+  // Opaque, unguessable id enabling server-side revocation (logout).
+  const jti = randomUUID();
+  const json = JSON.stringify({ ...payload, jti, iat: now, exp });
   const encoded = bytesToBase64Url(Buffer.from(json, "utf-8"));
   return `${encoded}${SEPARATOR}${sign(encoded)}`;
 }

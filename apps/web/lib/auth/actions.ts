@@ -22,6 +22,7 @@ type ExchangeResponse = {
   user_id: string;
   role: "volunteer" | "admin";
   status: "pending" | "active" | "suspended";
+  access_max_age: number;
 };
 
 async function exchangeCode(code: string): Promise<ExchangeResponse | null> {
@@ -53,7 +54,10 @@ export async function finishOAuthAction(code: string): Promise<void> {
   const { sameSite, secure } = cookieSameSite();
   cookieStore.set({
     name: authCookieName,
-    value: encodeSession({ user_id: user.user_id, role: user.role, status: user.status }),
+    value: encodeSession(
+      { user_id: user.user_id, role: user.role, status: user.status },
+      user.access_max_age,
+    ),
     httpOnly: true,
     secure,
     sameSite,

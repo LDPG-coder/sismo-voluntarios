@@ -30,6 +30,7 @@ const DEV_SESSION_SECRET = "dev-only-session-secret-do-not-use-in-production";
 
 const COOKIE_NAME = "sismo_session";
 const CSRF_COOKIE_NAME = "XSRF-TOKEN";
+const REFRESH_COOKIE_NAME = "sismo_refresh";
 const COOKIE_MAX_AGE_SECONDS = 60 * 60 * 8;
 
 function readEnv(name: string): string | undefined {
@@ -61,6 +62,7 @@ export function isSessionSecretConfigured(): boolean {
 
 export const authCookieName = COOKIE_NAME;
 export const csrfCookieName = CSRF_COOKIE_NAME;
+export const refreshCookieName = REFRESH_COOKIE_NAME;
 export const authCookieMaxAgeSeconds = COOKIE_MAX_AGE_SECONDS;
 
 /**

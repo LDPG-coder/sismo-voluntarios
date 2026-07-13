@@ -42,6 +42,10 @@ async function exchangeCode(code: string): Promise<ExchangeResponse | null> {
 
 const WEB_ORIGIN = process.env.NEXT_PUBLIC_WEB_ORIGIN ?? "http://localhost:3001";
 
+// Redeems a one-time code issued by SEP (POST /api/v1/auth/sep-login) for a
+// normal signed session cookie, mirroring the Google OAuth /auth/finish flow.
+// SEP users are rendered in embedded mode (no SISMO header/sidebar) via the
+// `sismo_ctx=sep` cookie, which getEmbedContext() already honours.
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
 
@@ -52,12 +56,12 @@ export async function GET(request: Request) {
 
   const code = searchParams.get("code");
   if (!code) {
-    return NextResponse.redirect(new URL("/login?error=oauth_missing_params", WEB_ORIGIN));
+    return NextResponse.redirect(new URL("/login?error=sep_missing_code", WEB_ORIGIN));
   }
 
   const user = await exchangeCode(code);
   if (!user) {
-    return NextResponse.redirect(new URL("/login?error=oauth_exchange", WEB_ORIGIN));
+    return NextResponse.redirect(new URL("/login?error=sep_exchange", WEB_ORIGIN));
   }
   if (user.status === "suspended") {
     return NextResponse.redirect(new URL("/login?error=suspended", WEB_ORIGIN));
@@ -70,25 +74,28 @@ export async function GET(request: Request) {
   const domain = cookieDomain();
   const { sameSite, secure } = cookieSameSite();
 
-  console.log("[auth/finish] cookie domain:", domain, "sameSite:", sameSite, "secure:", secure);
-
   const redirectUrl = `${WEB_ORIGIN}/voluntarios`;
   const html = `<!DOCTYPE html><html><head><meta http-equiv="refresh" content="0;url=${redirectUrl}"></head><body>Redirecting...</body></html>`;
   const headers = new Headers();
   headers.set("Content-Type", "text/html");
+  const cookieFlags = `; HttpOnly;${secure ? " Secure;" : ""} SameSite=${
+    sameSite === "none" ? "None" : "Lax"
+  }; Path=/; Max-Age=${accessMaxAge}${domain ? `; Domain=${domain}` : ""}`;
+  headers.append("Set-Cookie", `${authCookieName}=${sessionCookie}${cookieFlags}`);
+  headers.append("Set-Cookie", `${csrfCookieName}=${csrfToken}${cookieFlags}`);
+  // Revocable, rotating refresh token (HttpOnly).
   headers.append(
     "Set-Cookie",
-    `${authCookieName}=${sessionCookie}; HttpOnly; Secure; SameSite=${sameSite === "none" ? "None" : "Lax"}; Path=/; Max-Age=${accessMaxAge}${domain ? `; Domain=${domain}` : ""}`,
+    `${refreshCookieName}=${user.refresh_token}; HttpOnly;${secure ? " Secure;" : ""} SameSite=${
+      sameSite === "none" ? "None" : "Lax"
+    }; Path=/; Max-Age=${refreshMaxAge}${domain ? `; Domain=${domain}` : ""}`,
   );
+  // Marks this session as rendered inside SEP (embedded shell, no SISMO chrome).
   headers.append(
     "Set-Cookie",
-    `${csrfCookieName}=${csrfToken}; Secure; SameSite=${sameSite === "none" ? "None" : "Lax"}; Path=/; Max-Age=${accessMaxAge}${domain ? `; Domain=${domain}` : ""}`,
-  );
-  // Revocable, rotating refresh token (HttpOnly). The API stores its id in
-  // Redis; the web only ever holds the opaque value in this cookie.
-  headers.append(
-    "Set-Cookie",
-    `${refreshCookieName}=${user.refresh_token}; HttpOnly; Secure; SameSite=${sameSite === "none" ? "None" : "Lax"}; Path=/; Max-Age=${refreshMaxAge}${domain ? `; Domain=${domain}` : ""}`,
+    `sismo_ctx=sep;${secure ? " Secure;" : ""} SameSite=${
+      sameSite === "none" ? "None" : "Lax"
+    }; Path=/; Max-Age=${accessMaxAge}${domain ? `; Domain=${domain}` : ""}`,
   );
   return new Response(html, { status: 200, headers });
 }

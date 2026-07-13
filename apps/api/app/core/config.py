@@ -35,6 +35,12 @@ class Settings(BaseSettings):
 
     importer_token: str | None = None
 
+    # Shared secret that the SEP platform backend uses to call SISMO's
+    # server-to-server login endpoint (POST /api/v1/auth/sep-login). SEP mints
+    # a one-time exchange code on behalf of an authenticated SEP user; the
+    # browser then carries that code to SISMO to obtain a normal session cookie.
+    sep_api_token: str | None = None
+
     google_client_id: str | None = None
     google_client_secret: str | None = None
     google_redirect_uri: str = "http://localhost:8000/api/v1/auth/callback"
@@ -44,7 +50,12 @@ class Settings(BaseSettings):
     oauth_exchange_ttl_seconds: int = 300
 
     session_secret: str | None = None
-    session_max_age_seconds: int = 8 * 60 * 60
+    # Short-lived access token (the signed session cookie). Kept short so a
+    # stolen cookie has a small window; longevity comes from refresh tokens.
+    session_max_age_seconds: int = 30 * 60
+    # Revocable, rotating refresh token stored server-side in Redis.
+    session_refresh_max_age_seconds: int = 30 * 24 * 60 * 60
+    session_refresh_cookie_name: str = "sismo_refresh"
     cookie_domain: str | None = None
     cookie_same_site: str = "lax"
 
@@ -54,6 +65,9 @@ class Settings(BaseSettings):
     rate_limit_public_per_min: int = 60
     rate_limit_auth_per_min: int = 30
     rate_limit_burst: int = 10
+    # Strict limit for the public referral-code validation oracle so it cannot
+    # be used to enumerate valid invitation codes.
+    rate_limit_referral_per_min: int = 10
     # Only trust X-Forwarded-For / CF-Connecting-IP when the API is deployed
     # behind a trusted proxy that overwrites those headers (e.g. Cloudflare).
     # When False (default) the peer socket address is always used, preventing
@@ -65,6 +79,9 @@ class Settings(BaseSettings):
     openai_api_key: str | None = None
     openai_model: str = "north-mini-code-free"
     ai_rate_limit_per_user_per_hour: int = 5000
+    # A pending invitation (the user created by POST /auth/invite) is valid for
+    # this many days before it must be re-issued.
+    referral_expiry_days: int = 30
     ai_rate_limit_per_min: int = 600
     ai_rate_limit_burst: int = 200
 

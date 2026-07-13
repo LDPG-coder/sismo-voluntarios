@@ -15,6 +15,7 @@ export type CurrentUser = {
   google_photo_url: string | null;
   role: "volunteer" | "admin";
   status: "pending" | "active" | "suspended";
+  auth_source: "google" | "sep";
   referral_code: string;
 };
 
@@ -37,6 +38,7 @@ export async function fetchCurrentUser(): Promise<CurrentUser | null> {
       google_photo_url: (data.google_photo_url as string | null) ?? null,
       role: data.role as "volunteer" | "admin",
       status: data.status as "pending" | "active" | "suspended",
+      auth_source: (data.auth_source as "google" | "sep") ?? "google",
       referral_code: data.referral_code as string,
     };
   } catch {

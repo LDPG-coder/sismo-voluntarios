@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { authCookieName, cookieDomain } from "@/lib/auth/config";
+import { authCookieName, cookieDomain, refreshCookieName } from "@/lib/auth/config";
 
 const API_BASE = process.env.INTERNAL_API_URL ?? process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
@@ -18,15 +18,9 @@ export async function GET(request: Request) {
 
   const response = NextResponse.redirect(new URL("/login", process.env.NEXT_PUBLIC_WEB_ORIGIN ?? "http://localhost:3001"));
   const domain = cookieDomain();
-  response.cookies.set(authCookieName, "", {
-    path: "/",
-    maxAge: 0,
-    ...(domain ? { domain } : {}),
-  });
-  response.cookies.set("XSRF-TOKEN", "", {
-    path: "/",
-    maxAge: 0,
-    ...(domain ? { domain } : {}),
-  });
+  const opts = { path: "/", maxAge: 0, ...(domain ? { domain } : {}) };
+  response.cookies.set(authCookieName, "", opts);
+  response.cookies.set("XSRF-TOKEN", "", opts);
+  response.cookies.set(refreshCookieName, "", opts);
   return response;
 }

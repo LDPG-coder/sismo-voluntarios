@@ -58,6 +58,14 @@ def user_directory(
     limit: int = Query(10, ge=1, le=50),
     activity_id: str | None = None,
 ) -> list[dict]:
+    # The directory powers "ceder cupo" and lists all accounts. Restricted to
+    # SEP users and admins; public accounts cannot browse all users.
+    if user.auth_source != "sep" and user.role != UserRole.admin.value:
+        raise ApiError(
+            ErrorCode.auth_forbidden,
+            "las cuentas publicas no pueden listar todos los usuarios",
+        )
+
     q = select(User).where(User.id != user.id)
 
     if activity_id:
@@ -141,6 +149,15 @@ def update_user(
 
     if body.name is not None:
         u.name = body.name
+
+    # A role/status change must take effect immediately and invalidate any
+    # outstanding refresh tokens so a stale token cannot mint a new session
+    # with the old (or escalated) role. Access tokens are short-lived and the
+    # per-request DB role/status check enforces the change on the next call.
+    if body.role is not None or body.status is not None:
+        from app.pipeline.session_store import revoke_user_sessions
+
+        revoke_user_sessions(str(u.id))
 
     db.commit()
     db.refresh(u)

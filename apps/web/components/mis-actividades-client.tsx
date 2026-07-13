@@ -6,6 +6,7 @@ import { MisActividadesSkeleton } from "@/components/skeletons";
 import { ActivityStatusBadges } from "@/components/activity-status-badges";
 import { CedeDialog } from "@/components/cede-dialog";
 import { csrfHeaders } from "@/lib/auth/csrf-client";
+import { useSession } from "@/components/session-provider";
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
@@ -39,6 +40,8 @@ export function MisActividadesClient() {
   const [error, setError] = useState<string | null>(null);
   const [confirmAction, setConfirmAction] = useState<{ id: string; title: string; action: "cancel" | "archive" } | null>(null);
   const [processing, setProcessing] = useState(false);
+  const { user } = useSession();
+  const canCreate = user?.auth_source === "sep" || user?.role === "admin";
 
   useEffect(() => {
     fetch(`${API}/api/v1/activities/mine`, { credentials: "include" })
@@ -95,12 +98,14 @@ export function MisActividadesClient() {
       <main className="mx-auto max-w-4xl px-4 py-8">
         <div className="mb-6 flex items-center justify-between">
           <h1 className="text-xl font-bold">Mis actividades</h1>
-          <Link
-            href="/voluntarios/crear"
-            className="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 dark:bg-emerald-500 dark:text-white"
-          >
-            + Nueva
-          </Link>
+          {canCreate && (
+            <Link
+              href="/voluntarios/crear"
+              className="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 dark:bg-emerald-500 dark:text-white"
+            >
+              + Nueva
+            </Link>
+          )}
         </div>
 
         <div className="mb-6 flex gap-1 rounded-xl bg-[#eaebed] p-1 dark:bg-zinc-800">

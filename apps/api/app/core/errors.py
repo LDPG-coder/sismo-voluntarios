@@ -27,6 +27,10 @@ class ErrorCode(StrEnum):
     auth_oauth_token_exchange_failed = "auth.oauth_token_exchange_failed"
     auth_oauth_id_token_invalid = "auth.oauth_id_token_invalid"
     auth_not_invited = "auth.not_invited"
+    auth_sep_token_invalid = "auth.sep_token_invalid"
+    auth_sep_unauthorized = "auth.sep_unauthorized"
+    auth_session_revoked = "auth.session_revoked"
+    auth_session_expired = "auth.session_expired"
 
     activity_not_found = "activity.not_found"
     activity_full = "activity.full"
@@ -61,6 +65,10 @@ _DEFAULT_STATUS: dict[ErrorCode, int] = {
     ErrorCode.auth_oauth_token_exchange_failed: 502,
     ErrorCode.auth_oauth_id_token_invalid: 401,
     ErrorCode.auth_not_invited: 403,
+    ErrorCode.auth_sep_token_invalid: 401,
+    ErrorCode.auth_sep_unauthorized: 401,
+    ErrorCode.auth_session_revoked: 401,
+    ErrorCode.auth_session_expired: 401,
     ErrorCode.activity_not_found: 404,
     ErrorCode.not_found: 404,
     ErrorCode.activity_full: 409,

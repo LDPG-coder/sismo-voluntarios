@@ -15,6 +15,7 @@ from sqlalchemy.orm import Session
 
 from app.core.config import Settings
 from app.core.logging import get_logger
+from app.core.utils import is_invitation_expired
 from app.db.enums import UserRole, UserStatus
 from app.db.models import OAuthExchangeCode, OAuthState, User
 
@@ -205,6 +206,12 @@ def _resolve_or_create_user(
     user = _find_by_email(db, email)
     if user is not None:
         if user.status == UserStatus.pending:
+            # A lapsed invitation must be re-issued by an admin before it can
+            # be used to create an account.
+            if is_invitation_expired(user, settings.referral_expiry_days):
+                raise OAuthNotInvitedError(
+                    f"la invitación para {email!r} expiró. Pide que te re-inviten."
+                )
             user.google_subject = google_subject
             if name:
                 user.name = name

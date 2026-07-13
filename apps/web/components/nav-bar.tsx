@@ -20,6 +20,8 @@ type User = {
   name: string | null;
   photo_url: string | null;
   email: string;
+  auth_source?: "google" | "sep";
+  role?: "volunteer" | "admin";
 };
 
 export function NavBar() {
@@ -40,6 +42,8 @@ export function NavBar() {
     });
     return unsub;
   }, []);
+
+  const canCreate = user?.auth_source === "sep" || user?.role === "admin";
 
   return (
     <nav className="border-b border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950">
@@ -74,14 +78,16 @@ export function NavBar() {
                   <MyActivitiesIcon className="h-4 w-4" />
                   Mis actividades
                 </Link>
-                <Link
-                  href="/voluntarios/crear"
-                  onClick={() => setMenuOpen(false)}
-                  className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 transition hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800"
-                >
-                  <CreateIcon className="h-4 w-4" />
-                  Crear actividad
-                </Link>
+                {canCreate && (
+                  <Link
+                    href="/voluntarios/crear"
+                    onClick={() => setMenuOpen(false)}
+                    className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 transition hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800"
+                  >
+                    <CreateIcon className="h-4 w-4" />
+                    Crear actividad
+                  </Link>
+                )}
                 <div className="my-1 border-t border-slate-100 dark:border-slate-800" />
                 <Link
                   href="/perfil"
@@ -105,15 +111,17 @@ export function NavBar() {
         </div>
 
         <div className="flex items-center gap-1">
-          <Link
-            href="/voluntarios/crear"
-            className="rounded-md bg-slate-900 p-2 text-white transition hover:bg-slate-700 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-slate-200"
-            title="Crear actividad"
-          >
-            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-            </svg>
-          </Link>
+          {canCreate && (
+            <Link
+              href="/voluntarios/crear"
+              className="rounded-md bg-slate-900 p-2 text-white transition hover:bg-slate-700 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-slate-200"
+              title="Crear actividad"
+            >
+              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+              </svg>
+            </Link>
+          )}
           <NotificationsBell />
           <Link
             href="/perfil"

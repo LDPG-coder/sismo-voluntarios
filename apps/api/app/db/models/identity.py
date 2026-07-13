@@ -16,6 +16,13 @@ class User(Base, IdMixin, TimestampMixin, TenantMixin):
 
     email = Column(String(255), unique=True, nullable=False, index=True)
     google_subject = Column(String(64), unique=True, nullable=True, index=True)
+    # How the account was provisioned: "google" (external/public OAuth) or
+    # "sep" (auto-provisioned from the SEP platform). Drives UI chrome
+    # (embedded vs full shell) and authorization limits for public users.
+    auth_source = Column(String(20), nullable=False, default="google", server_default="google")
+    # Stable id of the user in the SEP platform. Unique among SEP-provisioned
+    # accounts; null for accounts created via Google OAuth.
+    sep_user_id = Column(String(255), unique=True, nullable=True, index=True)
     name = Column(String(255), nullable=True)
     photo_url = Column(Text, nullable=True)
     google_photo_url = Column(Text, nullable=True)

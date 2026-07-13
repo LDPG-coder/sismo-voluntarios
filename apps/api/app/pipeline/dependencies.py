@@ -17,6 +17,7 @@ from app.db.base import get_db
 from app.db.enums import UserRole, UserStatus
 from app.db.models import User
 from app.pipeline.session import SessionPayload, decode_session
+from app.pipeline.session_store import is_revoked
 
 _log = get_logger("app.pipeline.dependencies")
 
@@ -31,11 +32,22 @@ def _payload_or_401(settings: Settings, request: Request) -> SessionPayload:
     raw = _read_cookie(request)
     result = decode_session(settings, raw)
     if not result.ok or result.payload is None:
+        if result.reason == "expired":
+            raise ApiError(
+                ErrorCode.auth_session_expired,
+                "session expired; refresh required",
+            )
         raise ApiError(
             ErrorCode.auth_unauthenticated,
             f"invalid session cookie: {result.reason or 'unknown'}",
         )
-    return result.payload
+    payload = result.payload
+    if is_revoked(payload.jti or ""):
+        raise ApiError(
+            ErrorCode.auth_session_revoked,
+            "session was revoked (logged out); sign in again",
+        )
+    return payload
 
 
 def _user_or_404(db: Session, user_id: uuid.UUID) -> User:

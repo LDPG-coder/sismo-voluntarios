@@ -5,6 +5,7 @@ from __future__ import annotations
 import base64
 import hmac
 import json
+import secrets
 import time
 import uuid
 from dataclasses import dataclass
@@ -24,6 +25,11 @@ class SessionPayload:
     status: UserStatusStr
     iat: int | None = None
     exp: int | None = None
+    # Opaque, unguessable session id used for server-side revocation
+    # (e.g. on logout). Sessions issued before this field existed have
+    # jti=None and cannot be individually revoked, but remain valid until
+    # their exp — acceptable for the transition period.
+    jti: str | None = None
 
 
 @dataclass(frozen=True)
@@ -61,6 +67,7 @@ def _b64url_decode(s: str) -> bytes:
 def encode_session(settings: Settings, payload: SessionPayload) -> str:
     now = int(time.time())
     exp = now + int(settings.session_max_age_seconds)
+    jti = payload.jti or secrets.token_urlsafe(16)
     json_bytes = json.dumps(
         {
             "user_id": str(payload.user_id),
@@ -68,6 +75,7 @@ def encode_session(settings: Settings, payload: SessionPayload) -> str:
             "status": payload.status,
             "iat": now,
             "exp": exp,
+            "jti": jti,
         },
         separators=(",", ":"),
         ensure_ascii=False,
@@ -123,6 +131,8 @@ def decode_session(settings: Settings, value: str | None) -> VerifyResult:
     if isinstance(exp, int):
         if int(time.time()) >= exp:
             return VerifyResult(ok=False, reason="expired")
+    jti_raw = raw.get("jti")
+    jti = jti_raw if isinstance(jti_raw, str) and jti_raw else None
     return VerifyResult(
         ok=True,
         payload=SessionPayload(
@@ -131,5 +141,6 @@ def decode_session(settings: Settings, value: str | None) -> VerifyResult:
             status=status,
             iat=iat if isinstance(iat, int) else None,
             exp=exp if isinstance(exp, int) else None,
+            jti=jti,
         ),
     )
