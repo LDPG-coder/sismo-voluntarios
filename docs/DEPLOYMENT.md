@@ -395,6 +395,36 @@ Esto setea la cookie de sesión de admin fijo (`sismo_session` HttpOnly +
 > y `connect-src http://localhost:*`) ya están en el código y no requieren
 > acción manual.
 
+### C.5 Usuario de demostración para compartir con SEP
+
+Para que el equipo de SEP (o cualquier tercero) navegue todas las páginas de
+SISMO sin una cuenta de Google, existe un usuario de demostración ya sembrado
+y un login directo por URL.
+
+1. Sembrar los usuarios (incluye el usuario demo) en la BD de la instancia:
+   ```
+   docker compose -f docker-compose.dev.yml exec api python scripts/seed.py
+   ```
+   Esto crea `demo@sismo.lat` (admin, id `22222222-2222-2222-2222-222222222222`)
+   con actividades de ejemplo para que todas las vistas tengan contenido.
+2. Habilitar el login de demo **solo en esa instancia de demostración/staging**
+   (no en producción con datos reales), p.ej. en el `environment` del servicio
+   `web`:
+   ```
+   SISMO_DEMO_LOGIN: "1"
+   ```
+3. Compartir con SEP la URL:
+   ```
+   https://<dominio-del-web>/auth/demo-login
+   ```
+   Al abrirla se inicia sesión como el usuario demo (admin) y redirige a
+   `/voluntarios`. No requiere contraseña.
+
+> **Advertencia de seguridad:** con `SISMO_DEMO_LOGIN=1` cualquiera que conozca
+> la URL entra como admin. Usarlo únicamente en instancias de
+> demostración/staging. En producción real la variable debe quedar ausente; la
+> ruta responde 404.
+
 ### D. Alternar chrome completo ↔ simulación SEP
 
 El proyecto lee el contexto con `getEmbedContext()` (`apps/web/lib/auth/embed.ts`):
