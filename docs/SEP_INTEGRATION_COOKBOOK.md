@@ -4,14 +4,16 @@ Documento complementario de `docs/SEP_INTEGRATION.md`. Contiene los bloques de
 código para integrar: los **cambios en SISMO** y lo que debe implementar el
 **servidor de SEP**.
 
-**Mecanismo principal elegido: Micro-frontend (Module Federation).** SISMO se
-expone como remote y SEP lo monta en su propio shell (header+sidebar). La
-identidad se entrega vía `sep-login` (one-time code) — ver §B.5, §C.7.
+**Mecanismo principal elegido: Proxy reverso (full-page).** SISMO se sirve como
+su propia app Next en la subruta `/voluntarios` del dominio de SEP; SEP solo
+agrega un enlace en su menú y configura un reverse proxy. La identidad se entrega
+vía header HMAC firmado (§A, §B.1–B.3, §C.1–C.4). Ver `docs/SEP_INTEGRATION.md`
+para el razonamiento y responsabilidades paso a paso.
 
-La **variante de proxy reverso** (SEP inyecta la identidad por header HMAC y
-sirve la página de SISMO tras su proxy) queda documentada como alternativa en
-§A (contrato HMAC) y §C.1–C.4. Úsala solo si SEP prefiere no adoptar Module
-Federation.
+El **Micro-frontend (Module Federation)** se evaluó y **se descartó** porque no
+es compatible con el App Router de Next 15 (ver apéndice en
+`SEP_INTEGRATION.md`). Las recetas MF quedan abajo solo como referencia
+histórica.
 
 ---
 
@@ -193,7 +195,7 @@ Registrada en `app/api/v1/router.py` con `api_v1_router.include_router(partner_r
 
 ### B.5 Web — `apps/web/next.config.ts` (VARIANTE PROXY REVERSO)
 
-Esta es la config para la variante de proxy reverso (no para MFE):
+Esta es la config para el proxy reverso:
 
 ```ts
 import type { NextConfig } from "next";
@@ -212,61 +214,19 @@ NEXT_PUBLIC_WEB_ORIGIN=https://sep.org
 SEP_EMBED=1
 ```
 
-### B.5b Variante Micro-frontend: SISMO como remote MF (PRINCIPAL — BLOQUEADA)
+### B.5b (DEPRECADO) Variante Micro-frontend — referencia histórica
 
-> **Bloqueada:** esta variante no es viable mientras SISMO use **App Router**.
-> `@module-federation/nextjs-mf` da `App Directory is not supported`; el plugin
-> plano `@module-federation/enhanced` no resuelve `react-dom/client`. Ver
-> `SEP_INTEGRATION.md` §3 "Por qué el remote MF aún es receta". La vía pragmática
-> es la **alternativa de proxy reverso / app única** (sección siguiente). Esta
-> receta queda como referencia de lo intentado.
+> **Descartada.** Esta variante no es viable mientras SISMO use **App Router**
+> (Next 15): `@module-federation/nextjs-mf` da `App Directory is not supported`
+> y el plugin plano `@module-federation/enhanced` no resuelve `react-dom/client`.
+> Ver el apéndice de `SEP_INTEGRATION.md`. Se adoptó el **proxy reverso** (§B.5
+> arriba) en su lugar. Se deja constancia de lo intentado:
+>
+> - `next.config.ts` usaba `NextFederationPlugin` exponiendo `./SismoApp` desde
+>   `app/(app)/sismo-app.tsx` (un `SismoApp` que montaba `EmbeddedShell` sin
+>   chrome propio y redimía un `code` vía `SEPUserProvider`).
 
-SISMO expone un remote Module Federation. El host (SEP) lo consume y monta en
-su propio shell. `next.config.ts`:
-
-```ts
-import type { NextConfig } from "next";
-import { NextFederationPlugin } from "@module-federation/nextjs-mf";
-
-const nextConfig: NextConfig = {
-  output: "standalone",
-  webpack: (config, { isServer }) => {
-    config.plugins.push(
-      new NextFederationPlugin({
-        name: "sismo",
-        filename: "static/sismoRemoteEntry.js",
-        exposes: { "./SismoApp": "./app/(app)/sismo-app.tsx" },
-        shared: {
-          react: { singleton: true, requiredVersion: false },
-          "react-dom": { singleton: true, requiredVersion: false },
-        },
-      })
-    );
-    return config;
-  },
-};
-export default nextConfig;
-```
-
-Root del remote — `apps/web/app/(app)/sismo-app.tsx` (recibe el `code` de SEP y
-monta `EmbeddedShell`, que no dibuja header/sidebar propios):
-
-```tsx
-"use client";
-import { EmbeddedShell } from "@/components/embedded-shell";
-import { SEPUserProvider } from "@/lib/auth/sep-user";
-
-export default function SismoApp({ sepCode }: { sepCode?: string }) {
-  return (
-    <SEPUserProvider sepCode={sepCode}>
-      <EmbeddedShell>{/* rutas internas de SISMO */}</EmbeddedShell>
-    </SEPUserProvider>
-  );
-}
-```
-
-> El plugin exacto depende de la versión de Next/React de SISMO y debe ser
-> compatible con el runtime MF del host de SEP. Confirmar antes de implementar.
+No implementar esta variante.
 
 ### B.6 API expuesta bajo `/voluntarios/api` (VARIANTE PROXY REVERSO)
 
@@ -275,8 +235,8 @@ La API FastAPI debe escuchar en esa ruta. Opciones:
 - el proxy de SEP hace `rewrite` de `/voluntarios/api` → `/api` antes de llegar
   a SISMO.
 
-En la variante MFE, la API también se sirve mismo-origen (mismo `NEXT_PUBLIC_API_URL`);
-el static del remote MF lo sirve el propio web de SISMO.
+La API se sirve mismo-origen (mismo `NEXT_PUBLIC_API_URL`) para que la cookie
+de sesión de SISMO sea first-party y no haya CORS.
 
 ---
 
@@ -351,28 +311,12 @@ En el logout global de SEP, además de limpiar la sesión SEP, borra la cookie
 `sismo_session` (mismo origen `sep.org`, SEP puede hacer `Set-Cookie` con
 `Max-Age=0` o `Expires` pasado). Así SISMO queda también deslogueado.
 
-### C.7 Host SEP (Micro-frontend) — montar el remote de SISMO
+### C.7 (DEPRECADO) Host SEP (Micro-frontend) — referencia histórica
 
-Pseudocódigo (el detalle depende del framework/host de SEP). La identidad se
-entrega vía `sep-login` (one-time code), no por header HMAC.
-
-```text
-# 1. SEP declara el remote "sismo" apuntando al static del remote de SISMO:
-#    remotes: { sismo: "sismo@https://sep.org/voluntarios/_next/static/sismoRemoteEntry.js" }
-#    (mismo React major que SISMO; runtime MF compatible)
-
-# 2. Ruta/pestaña de SEP "sismo-voluntariados":
-#    - SEP valida su propia sesión.
-#    - Si hay usuario SEP:  POST /api/v1/auth/sep-login (Bearer SISMO_SEP_API_TOKEN)
-#      -> { code }
-#    - SEP renderiza su shell (header + sidebar) y monta en el contenido:
-#        import SismoApp from "sismo/SismoApp"
-#        <ShellDeSEP><SismoApp sepCode={code} /></ShellDeSEP>
-#    - Si NO hay sesión SEP: <SismoApp />  (SISMO muestra su login Google)
-
-# 3. Logout de SEP: limpiar sismo_session (cookie same-origin) además de la
-#    sesión de SEP.
-```
+> **Descartada** a favor del proxy reverso (§C.1–C.4). Se dejaba constancia de
+> que, en MF, SEP habría montado `./SismoApp` en su shell y entregado la
+> identidad vía `sep-login` (one-time `code`), no por header HMAC. No aplicable
+> con App Router de Next 15.
 
 El header de SEP (campana) se alimenta igual que en §C.3, vía Partner API
 server-to-server.
@@ -390,34 +334,22 @@ server-to-server.
   `sep_user_id` no existe en SISMO (la app devuelve `{unread:0,items:[]}` para
   no romper el header).
 - `sep_user_id` es el identificador estable de SEP del usuario (el mismo que
-  SEP firma en `x-sismo-sep-user` en la variante de proxy, o que ya conoce el
-  backend de SEP en la variante MFE).
+  SEP firma en `x-sismo-sep-user`).
 
 ---
 
-## E. Checklist de verificación (Micro-frontend — BLOQUEADA por App Router)
+## E. Checklist de verificación (Proxy reverso — VÍA ADOPTADA)
 
-> Ver `SEP_INTEGRATION.md` §3. No viable con App Router. Usar **E.2** (proxy
-> reverso) como vía pragmática.
-
-- [ ] SISMO web expone `./SismoApp` vía MF (`next.config.ts` + `sismo-app.tsx`).
-- [ ] SEP declara el remote `sismo` y lo monta en su shell (header+sidebar).
-- [ ] Backend SEP obtiene `code` vía `POST /api/v1/auth/sep-login` y se lo pasa
-  al remote; el remote lo redime (`/exchange`) sin re-login.
-- [ ] Usuario externo → login Google de SISMO funciona (sin `code`).
-- [ ] Logout de SEP limpia `sismo_session`.
-- [ ] Header de SEP muestra `unread` desde la Partner API.
-- [ ] SISMO usa su propia BD; usuarios `auth_source=sep`.
-- [ ] `NEXT_PUBLIC_API_URL` apunta al mismo origen de SEP.
-
-## E.2 Checklist de verificación (Proxy reverso — alternativa, VÍA RECOMENDADA)
-
-> SISMO sigue siendo su propio Next App Router servido en una ruta del dominio de
-> SEP (p. ej. `sep.org/voluntarios/`). Compatible con App Router; no requiere MF.
+> SISMO es su propio Next App Router servido en `/voluntarios` del dominio de
+> SEP. Compatible con App Router; no requiere MF. (El checklist MF quedó
+> descartado; ver apéndice de `SEP_INTEGRATION.md`.)
 
 - [ ] SISMO API: `SISMO_SEP_PROXY_SECRET` configurado igual que en el proxy SEP.
-- [ ] `x-sismo-sep-user`/`x-sismo-sep-sig` verificados (firma HMAC correcta).
+- [ ] `x-sismo-sep-user`/`x-sismo-sep-sig` verificados (firma HMAC correcta, receta B.1–B.3).
 - [ ] Usuario SEP entra a `/voluntarios` → sesión de SISMO emitida, sin login.
-- [ ] Usuario externo → login Google de SISMO funciona (proxy lo permite).
+- [ ] Usuario externo → login Google de SISMO funciona (proxy no inyecta header en login).
 - [ ] Logout de SEP limpia `sismo_session`.
 - [ ] `basePath: "/voluntarios"` y `NEXT_PUBLIC_API_URL` apuntan al mismo origen.
+- [ ] SEP agrega enlace "Voluntariados" en su sidebar y proxy `/voluntarios*` → SISMO.
+- [ ] Header de SEP muestra `unread` desde la Partner API.
+- [ ] SISMO usa su propia BD; usuarios `auth_source=sep`.
