@@ -8,6 +8,14 @@ export function ThemeSync() {
 
   useEffect(() => {
     try {
+      // Honor a ?theme=dark|light override (used when Sismo is embedded
+      // inside the SEP platform: SEP appends its current theme so the
+      // embedded view matches SEP's own chrome). Persist it so later
+      // navigations inside the iframe keep the chosen theme.
+      const fromUrl = new URLSearchParams(window.location.search).get("theme");
+      if (fromUrl === "dark" || fromUrl === "light") {
+        localStorage.setItem("theme", fromUrl);
+      }
       const t = localStorage.getItem("theme");
       const root = document.documentElement;
       if (t === "dark" || (!t && window.matchMedia("(prefers-color-scheme: dark)").matches)) {

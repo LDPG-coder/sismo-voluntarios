@@ -91,10 +91,11 @@ export async function GET(request: Request) {
     }; Path=/; Max-Age=${refreshMaxAge}${domain ? `; Domain=${domain}` : ""}`,
   );
   // Marks this session as rendered inside SEP (embedded shell, no SISMO chrome).
+  // Sent cross-site so it survives being loaded inside SEP's <iframe>.
   headers.append(
     "Set-Cookie",
     `sismo_ctx=sep;${secure ? " Secure;" : ""} SameSite=${
-      sameSite === "none" ? "None" : "Lax"
+      secure ? "None" : "Lax"
     }; Path=/; Max-Age=${accessMaxAge}${domain ? `; Domain=${domain}` : ""}`,
   );
   return new Response(html, { status: 200, headers });
