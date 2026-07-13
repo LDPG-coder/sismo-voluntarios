@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { MisActividadesSkeleton } from "@/components/skeletons";
+import { ActivityStatusBadges } from "@/components/activity-status-badges";
+import { CedeDialog } from "@/components/cede-dialog";
 import { csrfHeaders } from "@/lib/auth/csrf-client";
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
@@ -10,15 +12,19 @@ const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 interface Activity {
   id: string;
   title: string;
+  description: string | null;
   zone: string;
   raw_address: string;
   date_time: string;
   end_time: string | null;
   estimated_duration_min: number | null;
   max_participants: number | null;
-  requirements: string;
+  requirements: string | null;
+  contact_info: string | null;
+  creator_id: string;
   member_count: number;
   status: string;
+  my_attended?: boolean | null;
   created_at: string;
 }
 
@@ -31,7 +37,7 @@ export function MisActividadesClient() {
   const [loadingCreated, setLoadingCreated] = useState(true);
   const [loadingEnrolled, setLoadingEnrolled] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [confirmAction, setConfirmAction] = useState<{ id: string; title: string; action: "cancel" | "archive" | "leave" } | null>(null);
+  const [confirmAction, setConfirmAction] = useState<{ id: string; title: string; action: "cancel" | "archive" } | null>(null);
   const [processing, setProcessing] = useState(false);
 
   useEffect(() => {
@@ -52,27 +58,17 @@ export function MisActividadesClient() {
     if (!confirmAction) return;
     setProcessing(true);
     try {
-      if (confirmAction.action === "leave") {
-        const res = await fetch(`${API}/api/v1/activities/${confirmAction.id}/leave`, {
-          method: "POST",
-          credentials: "include",
-          headers: csrfHeaders("POST"),
-        });
-        if (!res.ok) throw new Error("Error al salir");
-        setEnrolled((prev) => prev.filter((a) => a.id !== confirmAction.id));
-      } else {
-        const res = await fetch(`${API}/api/v1/activities/${confirmAction.id}`, {
-          method: "DELETE",
-          credentials: "include",
-          headers: { "Content-Type": "application/json", ...csrfHeaders("DELETE") },
-          body: JSON.stringify({ archive: confirmAction.action === "archive" }),
-        });
-        if (!res.ok) throw new Error("Error al procesar");
-        const newStatus = confirmAction.action === "archive" ? "archived" : "cancelled";
-        setCreated((prev) =>
-          prev.map((a) => (a.id === confirmAction.id ? { ...a, status: newStatus } : a))
-        );
-      }
+      const res = await fetch(`${API}/api/v1/activities/${confirmAction.id}`, {
+        method: "DELETE",
+        credentials: "include",
+        headers: { "Content-Type": "application/json", ...csrfHeaders("DELETE") },
+        body: JSON.stringify({ archive: confirmAction.action === "archive" }),
+      });
+      if (!res.ok) throw new Error("Error al procesar");
+      const newStatus = confirmAction.action === "archive" ? "archived" : "cancelled";
+      setCreated((prev) =>
+        prev.map((a) => (a.id === confirmAction.id ? { ...a, status: newStatus } : a))
+      );
     } catch (e: any) {
       setError(e.message);
     } finally {
@@ -87,6 +83,12 @@ export function MisActividadesClient() {
   const archived = activities.filter((a) => a.status === "archived");
   const cancelled = activities.filter((a) => a.status === "cancelled");
   const isCreated = tab === "created";
+  const pendingConfirm =
+    tab === "created"
+      ? created.filter(
+          (a) => a.status === "active" && new Date(a.date_time) < new Date(),
+        )
+      : [];
 
   return (
     <div className="min-h-screen">
@@ -129,13 +131,19 @@ export function MisActividadesClient() {
         ) : (
           <>
             <Section
+              title="Pendientes por confirmar"
+              count={pendingConfirm.length}
+              items={pendingConfirm}
+              isCreated={isCreated}
+            />
+            <Section
               title="Activas"
               count={active.length}
               items={active}
               isCreated={isCreated}
               onArchive={(id, title) => setConfirmAction({ id, title, action: "archive" })}
               onCancel={(id, title) => setConfirmAction({ id, title, action: "cancel" })}
-              onLeave={(id, title) => setConfirmAction({ id, title, action: "leave" })}
+              onCeded={(id) => setEnrolled((prev) => prev.filter((a) => a.id !== id))}
             />
             <Section
               title="Realizadas"
@@ -157,16 +165,12 @@ export function MisActividadesClient() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
           <div className="mx-4 w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl dark:bg-[#18181b]">
             <h3 className="mb-2 text-lg font-bold">
-              {confirmAction.action === "leave"
-                ? "Salir de la actividad"
-                : confirmAction.action === "archive"
+              {confirmAction.action === "archive"
                 ? "Marcar como realizada"
                 : "Cancelar actividad"}
             </h3>
             <p className="mb-4 text-sm text-zinc-600 dark:text-zinc-400">
-              {confirmAction.action === "leave"
-                ? `¿Seguro que quieres salir de "${confirmAction.title}"?`
-                : confirmAction.action === "archive"
+              {confirmAction.action === "archive"
                 ? `"${confirmAction.title}" sera marcada como realizada. Los inscritos seran notificados.`
                 : `"${confirmAction.title}" sera cancelada. Los inscritos seran notificados.`}
             </p>
@@ -181,17 +185,13 @@ export function MisActividadesClient() {
                 onClick={handleAction}
                 disabled={processing}
                 className={`flex-1 rounded-md px-4 py-2 text-sm font-semibold text-white transition ${
-                  confirmAction.action === "leave"
-                    ? "bg-zinc-600 hover:bg-emerald-700"
-                    : confirmAction.action === "archive"
+                  confirmAction.action === "archive"
                     ? "bg-amber-600 hover:bg-amber-700"
                     : "bg-rose-600 hover:bg-rose-700"
                 } disabled:opacity-50`}
               >
                 {processing
                   ? "Procesando..."
-                  : confirmAction.action === "leave"
-                  ? "Salir"
                   : confirmAction.action === "archive"
                   ? "Marcar realizada"
                   : "Cancelar"}
@@ -245,7 +245,7 @@ function Section({
   isCreated,
   onArchive,
   onCancel,
-  onLeave,
+  onCeded,
 }: {
   title: string;
   count: number;
@@ -253,7 +253,7 @@ function Section({
   isCreated: boolean;
   onArchive?: (id: string, title: string) => void;
   onCancel?: (id: string, title: string) => void;
-  onLeave?: (id: string, title: string) => void;
+  onCeded?: (id: string) => void;
 }) {
   if (count === 0) return null;
   return (
@@ -269,7 +269,7 @@ function Section({
             isCreated={isCreated}
             onArchive={onArchive}
             onCancel={onCancel}
-            onLeave={onLeave}
+            onCeded={onCeded}
           />
         ))}
       </div>
@@ -282,14 +282,15 @@ function ActivityCard({
   isCreated,
   onArchive,
   onCancel,
-  onLeave,
+  onCeded,
 }: {
   activity: Activity;
   isCreated: boolean;
   onArchive?: (id: string, title: string) => void;
   onCancel?: (id: string, title: string) => void;
-  onLeave?: (id: string, title: string) => void;
+  onCeded?: (id: string) => void;
 }) {
+  const [ceding, setCeding] = useState(false);
   const date = a.date_time
     ? new Date(a.date_time).toLocaleDateString("es-VE", { weekday: "short", day: "numeric", month: "short" })
     : "";
@@ -320,24 +321,15 @@ function ActivityCard({
           >
             {isCreated ? "Creador" : "Inscrito"}
           </span>
-          {isActive && (
-            <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-medium text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">
-              Activa
-            </span>
-          )}
-          {!isActive && (
-            <span className="rounded-full bg-[#eaebed] px-2 py-0.5 text-[10px] font-medium text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400">
-              {a.status === "archived" ? "Realizada" : "Cancelada"}
-            </span>
-          )}
         </div>
       </div>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_auto] sm:items-start">
-        <div className="flex flex-wrap gap-3 text-xs text-zinc-500 dark:text-zinc-400">
+        <div className="flex flex-wrap items-center gap-3 text-xs text-zinc-500 dark:text-zinc-400">
           <span>{a.zone}</span>
           {date && <span>{date}</span>}
           {time && <span>{time}</span>}
           <span>{a.member_count} inscritos</span>
+          <ActivityStatusBadges activity={a} isEnrolled={!isCreated} />
         </div>
         {isActive && (
           <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:justify-end sm:gap-2">
@@ -372,19 +364,28 @@ function ActivityCard({
                 </button>
               )}
             </>
-          ) : (
-            onLeave && (
+            ) : (
+            onCeded && (
               <button
-                onClick={() => onLeave(a.id, a.title)}
+                onClick={() => setCeding(true)}
                 className="rounded-md bg-[#eaebed] px-3 py-1.5 text-xs font-medium text-zinc-600 shadow-sm transition hover:brightness-95 dark:bg-zinc-700 dark:text-zinc-300"
               >
-                Salir
+                Ceder cupo
               </button>
             )
           )}
         </div>
         )}
       </div>
+      <CedeDialog
+        open={ceding}
+        activity={{ id: a.id, title: a.title, date_time: a.date_time, zone: a.zone }}
+        onCancel={() => setCeding(false)}
+        onCeded={() => {
+          setCeding(false);
+          onCeded?.(a.id);
+        }}
+      />
     </div>
   );
 }

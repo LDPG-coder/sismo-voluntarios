@@ -13,6 +13,7 @@ export type Activity = {
   creator_id: string;
   status: string;
   member_count: number;
+  my_attended?: boolean | null;
   creator?: {
     id: string;
     name: string | null;

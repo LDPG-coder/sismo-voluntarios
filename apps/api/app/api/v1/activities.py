@@ -26,7 +26,12 @@ router = APIRouter(prefix="/activities", tags=["activities"])
 _log = get_logger("app.api.v1.activities")
 
 
-def _serialize_activity(a: Activity, member_count: int = 0, creator: User | None = None) -> dict:
+def _serialize_activity(
+    a: Activity,
+    member_count: int = 0,
+    creator: User | None = None,
+    my_attended: bool | None = None,
+) -> dict:
     result = {
         "id": str(a.id),
         "title": a.title,
@@ -42,6 +47,7 @@ def _serialize_activity(a: Activity, member_count: int = 0, creator: User | None
         "creator_id": str(a.creator_id),
         "status": a.status,
         "member_count": member_count,
+        "my_attended": my_attended,
         "created_at": a.created_at.isoformat() if a.created_at else None,
     }
     if creator:
@@ -54,7 +60,9 @@ def _serialize_activity(a: Activity, member_count: int = 0, creator: User | None
     return result
 
 
-def _serialize_activities_batch(activities: list[Activity], db: Session) -> list[dict]:
+def _serialize_activities_batch(
+    activities: list[Activity], db: Session, user_id: UUID | None = None
+) -> list[dict]:
     if not activities:
         return []
 
@@ -64,10 +72,21 @@ def _serialize_activities_batch(activities: list[Activity], db: Session) -> list
     count_rows = db.execute(
         select(ActivityMember.activity_id, func.count())
         .select_from(ActivityMember)
-        .where(ActivityMember.activity_id.in_(activity_ids))
+        .where(ActivityMember.activity_id.in_(activity_ids), ActivityMember.status == "active")
         .group_by(ActivityMember.activity_id)
     ).all()
     member_counts = {row[0]: row[1] for row in count_rows}
+
+    attendance_map: dict[UUID, bool] = {}
+    if user_id is not None:
+        att_rows = db.execute(
+            select(ActivityMember.activity_id, ActivityMember.attended)
+            .where(
+                ActivityMember.activity_id.in_(activity_ids),
+                ActivityMember.user_id == user_id,
+            )
+        ).all()
+        attendance_map = {row[0]: row[1] for row in att_rows}
 
     creators = db.execute(
         select(User).where(User.id.in_(creator_ids))
@@ -75,7 +94,12 @@ def _serialize_activities_batch(activities: list[Activity], db: Session) -> list
     creator_map = {c.id: c for c in creators}
 
     return [
-        _serialize_activity(a, member_count=member_counts.get(a.id, 0), creator=creator_map.get(a.creator_id))
+        _serialize_activity(
+            a,
+            member_count=member_counts.get(a.id, 0),
+            creator=creator_map.get(a.creator_id),
+            my_attended=attendance_map.get(a.id),
+        )
         for a in activities
     ]
 
@@ -97,7 +121,7 @@ def list_activities(
         q = q.where(Activity.status == status)
     q = q.order_by(Activity.date_time.desc())
     activities = db.execute(q).scalars().all()
-    return _serialize_activities_batch(activities, db)
+    return _serialize_activities_batch(activities, db, user_id=user.id)
 
 
 @router.get("/zones")
@@ -121,7 +145,7 @@ def my_activities(
 ) -> list[dict]:
     q = select(Activity).where(Activity.creator_id == user.id).order_by(Activity.created_at.desc())
     activities = db.execute(q).scalars().all()
-    return _serialize_activities_batch(activities, db)
+    return _serialize_activities_batch(activities, db, user_id=user.id)
 
 
 # -- Notifications -----------------------------------------------------
@@ -135,11 +159,11 @@ def enrolled_activities(
     q = (
         select(Activity)
         .join(ActivityMember, ActivityMember.activity_id == Activity.id)
-        .where(ActivityMember.user_id == user.id)
+        .where(ActivityMember.user_id == user.id, ActivityMember.status == "active")
         .order_by(Activity.date_time.desc())
     )
     activities = db.execute(q).scalars().all()
-    return _serialize_activities_batch(activities, db)
+    return _serialize_activities_batch(activities, db, user_id=user.id)
 
 
 def _prune_notifications(db: Session, user_id: UUID) -> None:
@@ -226,10 +250,20 @@ def get_activity(
     if not a:
         raise ApiError(ErrorCode.activity_not_found, "activity not found")
     count = db.execute(
-        select(func.count()).select_from(ActivityMember).where(ActivityMember.activity_id == a.id)
+        select(func.count()).select_from(ActivityMember).where(ActivityMember.activity_id == a.id, ActivityMember.status == "active")
     ).scalar() or 0
     creator = db.get(User, a.creator_id)
-    return _serialize_activity(a, member_count=count, creator=creator)
+    member = db.execute(
+        select(ActivityMember.attended).where(
+            ActivityMember.activity_id == a.id,
+            ActivityMember.user_id == user.id,
+            ActivityMember.status == "active",
+        )
+    ).first()
+    my_attended = member[0] if member else None
+    return _serialize_activity(
+        a, member_count=count, creator=creator, my_attended=my_attended
+    )
 
 
 @router.get("/{activity_id}/membership")
@@ -242,7 +276,11 @@ def check_membership(
     if not a:
         raise ApiError(ErrorCode.activity_not_found, "activity not found")
     member = db.execute(
-        select(ActivityMember).where(ActivityMember.activity_id == a.id, ActivityMember.user_id == user.id)
+        select(ActivityMember).where(
+            ActivityMember.activity_id == a.id,
+            ActivityMember.user_id == user.id,
+            ActivityMember.status == "active",
+        )
     ).scalar_one_or_none()
     return {"is_member": member is not None}
 
@@ -348,7 +386,7 @@ def cancel_activity(
 
     # Notify all attendees
     members = db.execute(
-        select(ActivityMember).where(ActivityMember.activity_id == a.id)
+        select(ActivityMember).where(ActivityMember.activity_id == a.id, ActivityMember.status == "active")
     ).scalars().all()
 
     status_label = "realizada" if archive else "cancelada"
@@ -386,7 +424,15 @@ def join_activity(
         select(ActivityMember).where(ActivityMember.activity_id == a.id, ActivityMember.user_id == user.id)
     ).scalar_one_or_none()
     if existing:
-        raise ApiError(ErrorCode.activity_already_joined, "ya estás inscrito")
+        if existing.status == "active":
+            raise ApiError(ErrorCode.activity_already_joined, "ya estás inscrito")
+        # Reactivar una cesión previa del mismo becario
+        existing.status = "active"
+        existing.attended = None
+        existing.ceded_at = None
+        db.commit()
+        _log.info("activity.rejoined", activity_id=str(a.id), user_id=str(user.id))
+        return {"ok": True}
 
     # Overbooking check: atomic insert with count check
     result = db.execute(
@@ -442,6 +488,70 @@ def leave_activity(
     return {"ok": True}
 
 
+class _TransferBody(BaseModel):
+    to_user_id: str
+
+
+@router.post("/{activity_id}/transfer")
+def transfer_membership(
+    activity_id: str,
+    body: _TransferBody,
+    user: Annotated[User, Depends(require_session)],
+    db: Annotated[Session, Depends(get_db)],
+) -> dict:
+    a = db.get(Activity, UUID(activity_id))
+    if not a:
+        raise ApiError(ErrorCode.activity_not_found, "activity not found")
+    try:
+        to_uuid = UUID(body.to_user_id)
+    except ValueError:
+        raise ApiError(ErrorCode.validation_invalid, "user_id inválido")
+
+    to_user = db.get(User, to_uuid)
+    if not to_user:
+        raise ApiError(ErrorCode.user_not_found, "usuario no encontrado")
+    if str(to_user.id) == str(user.id):
+        raise ApiError(ErrorCode.validation_invalid, "no puedes cederte el cupo a ti mismo")
+
+    src = db.execute(
+        select(ActivityMember).where(
+            ActivityMember.activity_id == a.id,
+            ActivityMember.user_id == user.id,
+            ActivityMember.status == "active",
+        )
+    ).scalar_one_or_none()
+    if not src:
+        raise ApiError(ErrorCode.activity_not_member, "no estás inscrito activamente")
+
+    existing = db.execute(
+        select(ActivityMember).where(
+            ActivityMember.activity_id == a.id,
+            ActivityMember.user_id == to_user.id,
+            ActivityMember.status == "active",
+        )
+    ).scalar_one_or_none()
+    if existing:
+        raise ApiError(ErrorCode.activity_already_joined, "ese becario ya está inscrito")
+
+    src.status = "ceded"
+    src.ceded_at = datetime.now(UTC)
+    db.add(ActivityMember(activity_id=a.id, user_id=to_user.id, status="active", attended=None))
+
+    n = Notification(
+        user_id=to_user.id,
+        activity_id=a.id,
+        type="activity_transferred",
+        title=f"Te cedieron un cupo en {a.title}",
+        message=f"{user.name or user.email} te cedió su cupo en la actividad '{a.title}'.",
+    )
+    n.tenant_id = MVP_TENANT_ID
+    db.add(n)
+
+    db.commit()
+    _log.info("activity.transferred", activity_id=str(a.id), from_user=str(user.id), to_user=str(to_user.id))
+    return {"ok": True}
+
+
 @router.get("/{activity_id}/attendees")
 def list_attendees(
     activity_id: str,
@@ -455,7 +565,9 @@ def list_attendees(
     is_creator = str(a.creator_id) == str(user.id)
 
     members = db.execute(
-        select(ActivityMember, User).join(User, ActivityMember.user_id == User.id).where(ActivityMember.activity_id == a.id)
+        select(ActivityMember, User)
+        .join(User, ActivityMember.user_id == User.id)
+        .where(ActivityMember.activity_id == a.id)
     ).all()
     return [
         {
@@ -464,6 +576,7 @@ def list_attendees(
             "email": u.email if is_creator else None,
             "photo_url": u.photo_url,
             "attended": m.attended,
+            "status": m.status,
             "joined_at": m.created_at.isoformat() if m.created_at else None,
         }
         for m, u in members

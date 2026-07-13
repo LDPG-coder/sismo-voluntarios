@@ -3,6 +3,7 @@
 import { useEffect, useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Activity } from "@/lib/types";
+import { CedeDialog } from "@/components/cede-dialog";
 
 type User = { id: string; role: string; status: string } | null;
 
@@ -13,7 +14,7 @@ type ActivityDetailModalProps = {
   isOpen: boolean;
   onClose: () => void;
   onJoin?: (activityId: string) => void;
-  onLeave?: (activityId: string) => void;
+  onCeded?: (activityId: string) => void;
 };
 
 export function ActivityDetailModal({
@@ -23,8 +24,9 @@ export function ActivityDetailModal({
   isOpen,
   onClose,
   onJoin,
-  onLeave,
+  onCeded,
 }: ActivityDetailModalProps) {
+  const [ceding, setCeding] = useState(false);
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
@@ -147,14 +149,12 @@ export function ActivityDetailModal({
                 Esta es tu actividad
               </p>
             ) : isEnrolled ? (
-              <>
-                <button
-                  onClick={() => onLeave?.(activity.id)}
-                  className="flex-1 rounded-lg border border-zinc-200 px-4 py-2.5 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
-                >
-                  Abandonar
-                </button>
-              </>
+              <button
+                onClick={() => setCeding(true)}
+                className="flex-1 rounded-lg border border-zinc-200 px-4 py-2.5 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
+              >
+                Ceder cupo
+              </button>
             ) : (
               <button
                 onClick={() => onJoin?.(activity.id)}
@@ -166,6 +166,23 @@ export function ActivityDetailModal({
           </div>
         </div>
       </div>
+
+      {activity && (
+        <CedeDialog
+          open={ceding}
+          activity={{
+            id: activity.id,
+            title: activity.title,
+            date_time: activity.date_time,
+            zone: activity.zone,
+          }}
+          onCancel={() => setCeding(false)}
+          onCeded={() => {
+            setCeding(false);
+            onCeded?.(activity.id);
+          }}
+        />
+      )}
     </div>
   );
 }

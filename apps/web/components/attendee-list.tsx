@@ -3,7 +3,7 @@
 type Attendee = {
   user_id: string;
   name: string;
-  email: string;
+  email: string | null;
   attended: boolean | null;
 };
 

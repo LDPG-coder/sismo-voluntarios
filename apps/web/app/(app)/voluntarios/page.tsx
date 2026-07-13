@@ -98,6 +98,14 @@ export default function VoluntariosPage() {
     setPendingJoin(activityId);
   };
 
+  const handleCeded = (activityId: string) => {
+    setEnrolledIds((prev) => {
+      const next = new Set(prev);
+      next.delete(activityId);
+      return next;
+    });
+  };
+
   const handleJoin = (activityId: string) => {
     const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
     fetch(`${API}/api/v1/activities/${activityId}/join`, {
@@ -111,29 +119,6 @@ export default function VoluntariosPage() {
         prev.map((a) =>
           a.id === activityId
             ? { ...a, member_count: a.member_count + 1 }
-            : a
-        )
-      );
-    });
-  };
-
-  const handleLeave = (activityId: string) => {
-    const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
-    fetch(`${API}/api/v1/activities/${activityId}/leave`, {
-      method: "POST",
-      credentials: "include",
-      headers: csrfHeaders("POST"),
-    }).then((res) => {
-      if (!res.ok) return;
-      setEnrolledIds((prev) => {
-        const next = new Set(prev);
-        next.delete(activityId);
-        return next;
-      });
-      setActivities((prev) =>
-        prev.map((a) =>
-          a.id === activityId
-            ? { ...a, member_count: Math.max(0, a.member_count - 1) }
             : a
         )
       );
@@ -230,7 +215,7 @@ export default function VoluntariosPage() {
                     activity={a}
                     isEnrolled={enrolledIds.has(a.id)}
                     onJoin={requestJoin}
-                    onLeave={handleLeave}
+                    onCeded={handleCeded}
                   />
                 ))}
               </div>
@@ -295,15 +280,7 @@ export default function VoluntariosPage() {
           setModalActivity(null);
         }}
         onJoin={requestJoin}
-        onLeave={(activityId) => {
-          handleLeave(activityId);
-          if (modalActivity) {
-            setModalActivity({
-              ...modalActivity,
-              member_count: Math.max(0, modalActivity.member_count - 1),
-            });
-          }
-        }}
+        onCeded={handleCeded}
       />
 
       <ConfirmJoinDialog

@@ -1,14 +1,18 @@
 import Link from "next/link";
+import { useState } from "react";
 import type { Activity } from "@/lib/types";
+import { ActivityStatusBadges } from "@/components/activity-status-badges";
+import { CedeDialog } from "@/components/cede-dialog";
 
 type ActivityCardProps = {
   activity: Activity;
   isEnrolled?: boolean;
   onJoin?: (id: string) => void;
-  onLeave?: (id: string) => void;
+  onCeded?: (id: string) => void;
 };
 
-export function ActivityCard({ activity, isEnrolled, onJoin, onLeave }: ActivityCardProps) {
+export function ActivityCard({ activity, isEnrolled, onJoin, onCeded }: ActivityCardProps) {
+  const [ceding, setCeding] = useState(false);
   const activityDate = new Date(activity.date_time);
   const endDate = activity.end_time ? new Date(activity.end_time) : null;
 
@@ -27,20 +31,13 @@ export function ActivityCard({ activity, isEnrolled, onJoin, onLeave }: Activity
   };
 
   return (
-    <Link href={`/voluntarios/${activity.id}`} className="block">
+    <>
+      <Link href={`/voluntarios/${activity.id}`} className="block">
       <div className={`relative rounded-lg border bg-white p-4 shadow-sm transition hover:shadow-md dark:bg-[#18181b] ${
         isEnrolled
           ? "border-emerald-200 dark:border-emerald-900"
           : "border-zinc-200 dark:border-zinc-800"
       }`}>
-        {isEnrolled && (
-          <span className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-medium text-emerald-600 dark:bg-emerald-950 dark:text-emerald-400">
-            <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-            </svg>
-            Inscrito
-          </span>
-        )}
         <div className="mb-2">
           <span className="inline-block rounded-full bg-[#eaebed] px-2.5 py-0.5 text-xs font-medium text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400">
             {activity.zone}
@@ -69,6 +66,8 @@ export function ActivityCard({ activity, isEnrolled, onJoin, onLeave }: Activity
             <span className="line-clamp-1">{activity.raw_address}</span>
           </div>
         </div>
+
+        <ActivityStatusBadges activity={activity} isEnrolled={isEnrolled} />
 
         <div className="mt-3 flex items-end justify-between gap-3 border-t border-zinc-100 pt-3 dark:border-zinc-800">
           {activity.creator ? (
@@ -101,11 +100,11 @@ export function ActivityCard({ activity, isEnrolled, onJoin, onLeave }: Activity
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                onLeave?.(activity.id);
+                setCeding(true);
               }}
-              className="rounded-lg border border-rose-200 bg-white px-3 py-1 text-xs font-medium text-rose-600 transition hover:bg-rose-50 dark:border-rose-800 dark:bg-[#18181b] dark:text-rose-400 dark:hover:bg-rose-950"
+              className="rounded-lg border border-zinc-300 bg-white px-3 py-1 text-xs font-medium text-zinc-700 transition hover:bg-zinc-50 dark:border-zinc-600 dark:bg-[#18181b] dark:text-zinc-300 dark:hover:bg-zinc-800"
             >
-              Abandonar
+              Ceder cupo
             </button>
           ) : (
             <button
@@ -121,6 +120,22 @@ export function ActivityCard({ activity, isEnrolled, onJoin, onLeave }: Activity
           )}
         </div>
       </div>
-    </Link>
+      </Link>
+
+      <CedeDialog
+        open={ceding}
+        activity={{
+          id: activity.id,
+          title: activity.title,
+          date_time: activity.date_time,
+          zone: activity.zone,
+        }}
+        onCancel={() => setCeding(false)}
+        onCeded={() => {
+          setCeding(false);
+          onCeded?.(activity.id);
+        }}
+      />
+    </>
   );
 }

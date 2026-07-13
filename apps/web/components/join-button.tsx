@@ -3,10 +3,14 @@
 import { useState, useEffect } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ConfirmJoinDialog } from "@/components/confirm-join-dialog";
+import { CedeDialog } from "@/components/cede-dialog";
 import { csrfHeaders } from "@/lib/auth/csrf-client";
 
 type Activity = {
   id: string;
+  title?: string;
+  date_time?: string;
+  zone?: string;
   max_participants: number | null;
   member_count: number;
   creator_id?: string | number | null;
@@ -14,10 +18,19 @@ type Activity = {
 
 type User = { id: string } | null;
 
-export function JoinButton({ activity, user }: { activity: Activity; user: User }) {
+export function JoinButton({
+  activity,
+  user,
+  onChange,
+}: {
+  activity: Activity;
+  user: User;
+  onChange?: () => void;
+}) {
   const [status, setStatus] = useState<"loading" | "idle" | "done" | "left">("loading");
   const [memberCount, setMemberCount] = useState(activity.member_count);
   const [confirming, setConfirming] = useState(false);
+  const [ceding, setCeding] = useState(false);
 
   const confirmJoin = async () => {
     setConfirming(false);
@@ -30,6 +43,7 @@ export function JoinButton({ activity, user }: { activity: Activity; user: User 
     if (res.ok) {
       setMemberCount((c) => c + 1);
       setStatus("done");
+      onChange?.();
     } else {
       setStatus("idle");
     }
@@ -79,20 +93,25 @@ export function JoinButton({ activity, user }: { activity: Activity; user: User 
       <div className="flex items-center gap-3">
         <span className="text-sm font-medium text-emerald-700">Inscrito</span>
         <button
-          onClick={async () => {
-            setStatus("loading");
-            await fetch(`${API}/api/v1/activities/${activity.id}/leave`, {
-              method: "POST",
-              credentials: "include",
-              headers: csrfHeaders("POST"),
-            });
-            setMemberCount((c) => c - 1);
-            setStatus("left");
-          }}
+          onClick={() => setCeding(true)}
           className="text-xs text-zinc-500 underline hover:text-zinc-700"
         >
-          Abandonar
+          Ceder cupo
         </button>
+        <CedeDialog
+          open={ceding}
+          activity={{
+            id: activity.id,
+            title: activity.title ?? "",
+            date_time: activity.date_time ?? "",
+            zone: activity.zone ?? "",
+          }}
+          onCancel={() => setCeding(false)}
+          onCeded={() => {
+            onChange?.();
+            setStatus("left");
+          }}
+        />
       </div>
     );
   }

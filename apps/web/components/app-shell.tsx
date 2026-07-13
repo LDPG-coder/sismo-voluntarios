@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Sidebar } from "@/components/sidebar";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -10,7 +10,9 @@ import { useSession, type SessionUser } from "@/components/session-provider";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
+  const [headerHidden, setHeaderHidden] = useState(false);
   const { user, setUser } = useSession();
+  const lastScroll = useRef(0);
 
   useEffect(() => {
     const unsub = onPhotoChanged((photoUrl) => {
@@ -21,19 +23,37 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     return unsub;
   }, [setUser]);
 
+  useEffect(() => {
+    const onScroll = () => {
+      const y = window.scrollY;
+      if (y > lastScroll.current && y > 80) {
+        setHeaderHidden(true);
+      } else if (y < lastScroll.current) {
+        setHeaderHidden(false);
+      }
+      lastScroll.current = y;
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
   return (
     <div className="flex min-h-screen bg-[#f4f5f7] dark:bg-[#0c0b0a]">
       <Sidebar user={user} open={open} onClose={() => setOpen(false)} />
 
       <div className="flex min-w-0 flex-1 flex-col shadow-[0_0_60px_-28px_rgba(15,23,42,0.14)] dark:shadow-[-10px_0_24px_-12px_rgba(0,0,0,0.5)]">
-        <header className="sticky top-0 z-30 flex items-center justify-between border-b border-zinc-200/70 bg-[#f4f5f7]/80 px-4 py-2 backdrop-blur dark:border-zinc-800/70 dark:bg-[#0c0b0a]/80 lg:hidden">
+        {/* TODO(prueba): header visible en escritorio durante la simulacion
+            SEP (top + side bar a la vez). Revertir: volver a `lg:hidden`. */}
+        <header className={`sticky top-0 z-30 flex items-center justify-between border-b border-zinc-200/70 bg-[#f4f5f7]/80 px-4 py-2 backdrop-blur transition-transform duration-300 dark:border-zinc-800/70 dark:bg-[#0c0b0a]/80 ${
+          headerHidden ? "-translate-y-full" : "translate-y-0"
+        }`}>
           <button
             type="button"
             onClick={() => setOpen(true)}
             aria-label="Abrir menu"
-            className="flex h-9 w-9 items-center justify-center rounded-lg border border-zinc-200 text-zinc-700 transition hover:bg-[#eaebed] dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
+            className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#e9eaec] text-zinc-700 transition hover:bg-[#f1f2f4] dark:bg-transparent dark:text-zinc-300 dark:hover:bg-zinc-800"
           >
-            <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+              <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
             </svg>
           </button>
@@ -62,7 +82,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </div>
         </header>
 
-        <div className="flex-1">{children}</div>
+        {/* TODO(prueba): deja espacio a la derecha para el panel flotante
+            del modo SEP durante la simulacion. Quitar al restaurar modo real. */}
+        <div className="flex-1 lg:pr-24">{children}</div>
       </div>
     </div>
   );

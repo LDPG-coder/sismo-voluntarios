@@ -15,7 +15,7 @@ from app.core.logging import get_logger
 from app.core.utils import serialize_user, validate_enum
 from app.db.base import get_db
 from app.db.enums import UserRole, UserStatus
-from app.db.models import User
+from app.db.models import Activity, ActivityMember, User
 from app.pipeline.dependencies import require_admin_session, require_session
 
 router = APIRouter(prefix="/users", tags=["users"])
@@ -48,6 +48,44 @@ def list_users(
         "page": page,
         "page_size": page_size,
     }
+
+
+@router.get("/directory")
+def user_directory(
+    user: Annotated[User, Depends(require_session)],
+    db: Annotated[Session, Depends(get_db)],
+    search: str | None = None,
+    limit: int = Query(10, ge=1, le=50),
+    activity_id: str | None = None,
+) -> list[dict]:
+    q = select(User).where(User.id != user.id)
+
+    if activity_id:
+        try:
+            a = db.get(Activity, UUID(activity_id))
+        except ValueError:
+            a = None
+        if a:
+            member_ids = db.execute(
+                select(ActivityMember.user_id).where(
+                    ActivityMember.activity_id == a.id,
+                    ActivityMember.status == "active",
+                )
+            ).scalars().all()
+            exclude = {UUID(str(m)) for m in member_ids}
+            if a.creator_id is not None:
+                exclude.add(UUID(str(a.creator_id)))
+            if exclude:
+                q = q.where(User.id.notin_(exclude))
+
+    if search:
+        like = f"%{search.strip()}%"
+        q = q.where(User.name.ilike(like) | User.email.ilike(like))
+    users = db.execute(q.order_by(User.name.asc()).limit(limit)).scalars().all()
+    return [
+        {"id": str(u.id), "name": u.name or u.email, "photo_url": u.photo_url}
+        for u in users
+    ]
 
 
 @router.get("/{user_id}")
