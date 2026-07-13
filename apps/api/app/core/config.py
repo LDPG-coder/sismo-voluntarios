@@ -64,7 +64,9 @@ class Settings(BaseSettings):
 
     openai_api_key: str | None = None
     openai_model: str = "north-mini-code-free"
-    ai_rate_limit_per_user_per_hour: int = 100
+    ai_rate_limit_per_user_per_hour: int = 5000
+    ai_rate_limit_per_min: int = 600
+    ai_rate_limit_burst: int = 200
 
     timezone_offset_hours: int = -4
 

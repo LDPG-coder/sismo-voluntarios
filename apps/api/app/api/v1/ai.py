@@ -100,11 +100,13 @@ async def ai_suggest_stream(
     rate_key = f"ai_suggest:{user_id}"
     limit = settings.ai_rate_limit_per_user_per_hour
 
-    current = await redis.incr(rate_key)
-    if current == 1:
-        await redis.expire(rate_key, 3600)
-
-    if current > limit:
+    # Solo contabilizamos las sugerencias que se ENTREGAN de verdad (evento
+    # "result"). El autocompletado dispara una peticion por cada pausa de
+    # escritura y el front cancella la anterior al seguir tecleando; si
+    # cobraramos cada intento, escribir una descripcion completa agotaria el
+    # tope. Por eso el "charge" ocurre dentro del stream, al emitir el result.
+    current = int(await redis.get(rate_key) or 0)
+    if current >= limit:
         ttl = await redis.ttl(rate_key)
         raise ApiError(
             ErrorCode.rate_limit_exceeded,
@@ -112,10 +114,26 @@ async def ai_suggest_stream(
         )
 
     def generate():
-        for event in suggest_activity_stream(body.description):
-            event_type = event["event"]
-            data = event["data"]
-            yield f"event: {event_type}\ndata: {data}\n\n"
+        import redis as redis_sync
+
+        counted = False
+        sync_redis = None
+        try:
+            for event in suggest_activity_stream(body.description):
+                event_type = event["event"]
+                data = event["data"]
+                if event_type == "result" and not counted:
+                    # Cobra el tope una unica vez, solo si hubo sugerencia util.
+                    try:
+                        sync_redis = redis_sync.from_url(settings.redis_url, decode_responses=True)
+                        if sync_redis.incr(rate_key) == 1:
+                            sync_redis.expire(rate_key, 3600)
+                    except Exception:
+                        pass
+                    counted = True
+                yield f"event: {event_type}\ndata: {data}\n\n"
+        except GeneratorExit:
+            raise
 
     return StreamingResponse(
         generate(),

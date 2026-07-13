@@ -9,6 +9,12 @@ from typing import Any
 
 from app.db.constants import DEFAULT_TIMEZONE_OFFSET
 
+_MESES_ES = [
+    "enero", "febrero", "marzo", "abril", "mayo", "junio",
+    "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre",
+]
+_DIAS_ES = ["lunes", "martes", "miercoles", "jueves", "viernes", "sabado", "domingo"]
+
 
 def generate_referral_code() -> str:
     return secrets.token_urlsafe(6).upper()[:8]
@@ -38,6 +44,17 @@ def ensure_timezone(dt: datetime, offset: timedelta | None = None) -> datetime:
             offset = DEFAULT_TIMEZONE_OFFSET
         return dt.replace(tzinfo=timezone(offset))
     return dt
+
+
+def format_venezuela_now(offset_hours: int = -4) -> tuple[str, datetime]:
+    """Return (human-readable Spanish date string, aware datetime) for Venezuela."""
+    now = datetime.now(timezone(timedelta(hours=offset_hours)))
+    human = (
+        f"{_DIAS_ES[now.weekday()]} {now.day} de {_MESES_ES[now.month - 1]} "
+        f"de {now.year}, {now.hour:02d}:{now.minute:02d} "
+        f"(hora de Venezuela, UTC{offset_hours:+d})"
+    )
+    return human, now
 
 
 def validate_enum(value: str, enum_class: type[Enum], field_name: str) -> None:

@@ -177,7 +177,7 @@ export function CrearActivityClient() {
 
   const callAi = useCallback(
     async (desc: string) => {
-      if (!aiEnabledRef.current || desc.length < 15) return;
+      if (!aiEnabledRef.current || desc.length < 30) return;
       if (abortRef.current) abortRef.current.abort();
       const ctrl = new AbortController();
       abortRef.current = ctrl;
@@ -257,7 +257,7 @@ export function CrearActivityClient() {
       setAiThinking(false);
       return;
     }
-    const t = setTimeout(() => callAi(description), 800);
+    const t = setTimeout(() => callAi(description), 1500);
     return () => clearTimeout(t);
   }, [description, callAi, aiEnabled, draftReady]);
 

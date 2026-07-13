@@ -5,13 +5,13 @@ from __future__ import annotations
 import json
 import re
 from dataclasses import dataclass, asdict
-from datetime import datetime, timedelta, timezone
 from typing import Generator
 
 from openai import OpenAI
 
 from app.core.config import get_settings
 from app.core.logging import get_logger
+from app.core.utils import format_venezuela_now
 
 _log = get_logger("app.ai.stream")
 
@@ -21,14 +21,20 @@ SYSTEM_PROMPT = (
     "Eres un asistente de voluntariado para una plataforma en Venezuela. "
     "Toda la informacion, direcciones, zonas y referencias son de Venezuela. "
     "Responde SIEMPRE en espanol. "
-    "Responde SOLO JSON valido (sin markdown, sin texto extra). "
-    "Si falta info, haz suposicion razonable basada en contexto venezolano. "
-    "Si menciona fechas relativas ('mañana', 'el lunes'), calcula con la fecha actual provista.\n"
-    '{"title":"max 60 chars","zone":"Caracas|Guatire|Guarenas|La Guaira|Altos Mirandinos|Caucagua",'
-    '"raw_address":"direccion en Venezuela","date_time_suggestion":"ISO 8601 o null",'
+    "Responde SOLO JSON valido (sin markdown, sin texto extra) y con TODAS las claves presentes. "
+    "El usuario escribe la descripcion poco a poco: en cada respuesta completa UNICAMENTE "
+    "los campos para los que la descripcion ya aporta informacion clara. "
+    "Si para un campo no hay informacion en la descripcion, dejalo vacio "
+    "(null para objetos, \"\" para texto, [] para listas). "
+    "NO inventes ni supongas datos que el usuario no haya escrito. "
+    "Si menciona fechas relativas ('mañana', 'el lunes'), calcula con la fecha actual provista. "
+    "En 'requirements' incluye SOLO lo que el usuario pida explicitamente "
+    "(materiales, condiciones, edad, etc.); si no menciona nada, usa [].\n"
+    '{"title":"max 60 chars o null","zone":"Caracas|Guatire|Guarenas|La Guaira|Altos Mirandinos|Caucagua o null",'
+    '"raw_address":"direccion en Venezuela o null","date_time_suggestion":"ISO 8601 o null",'
     '"end_time_suggestion":"ISO 8601 o null","estimated_duration_min":minutos o null,'
     '"max_participants":num o null,'
-    '"contact_info":"medio de contacto para coordinar: telefono, WhatsApp, Instagram u otro, o null",'
+    '"contact_info":"medio de contacto para coordinar o null",'
     '"requirements":["item"]}'
 )
 
@@ -82,8 +88,7 @@ def suggest_activity_stream(description: str) -> Generator[dict, None, None]:
         timeout=30.0,
     )
 
-    now_venezuela = datetime.now(timezone(timedelta(hours=-4)))
-    now_str = now_venezuela.strftime("%A %d de %B de %Y, %H:%M (hora de Venezuela, UTC-4)")
+    now_str, _ = format_venezuela_now(settings.timezone_offset_hours)
 
     try:
         stream = client.chat.completions.create(

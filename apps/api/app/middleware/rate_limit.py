@@ -57,6 +57,16 @@ def _bucket_for(request: Request) -> tuple[str, str, int, int]:
     path = request.url.path
     if path.startswith("/api/v1/auth"):
         return ("auth", _get_remote_address(request), settings.rate_limit_auth_per_min, 0)
+    if path.startswith("/api/v1/ai"):
+        # El autocompletado con IA dispara una peticion por cada pausa de
+        # escritura, por lo que necesita un tope de corto plazo mas generoso
+        # para no cortar las consultas frecuentes del usuario.
+        return (
+            "ai",
+            _get_remote_address(request),
+            settings.ai_rate_limit_per_min,
+            settings.ai_rate_limit_burst,
+        )
     return (
         "public",
         _get_remote_address(request),
