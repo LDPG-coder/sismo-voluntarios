@@ -51,6 +51,9 @@ def _serialize_activity(
         "created_at": a.created_at.isoformat() if a.created_at else None,
     }
     if creator:
+        # The activity creator's phone is public on the activity itself
+        # (auto-exposed when they publish), so volunteers can reach them.
+        # It is NOT exposed anywhere else (directory / manual contacts).
         result["creator"] = {
             "id": str(creator.id),
             "name": creator.name,
@@ -119,6 +122,9 @@ def list_activities(
         q = q.where(Activity.zone == zone)
     if status:
         q = q.where(Activity.status == status)
+    # The discovery feed shows activities published by *others*; the user's own
+    # creations live under "Mis actividades" (Creadas), not here.
+    q = q.where(Activity.creator_id != user.id)
     q = q.order_by(Activity.date_time.desc())
     activities = db.execute(q).scalars().all()
     return _serialize_activities_batch(activities, db, user_id=user.id)
@@ -533,7 +539,18 @@ def transfer_membership(
     if not to_user:
         raise ApiError(ErrorCode.user_not_found, "usuario no encontrado")
     if str(to_user.id) == str(user.id):
-        raise ApiError(ErrorCode.validation_invalid, "no puedes cederte el cupo a ti mismo")
+                raise ApiError(ErrorCode.validation_invalid_format, "no puedes cederte el cupo a ti mismo")
+
+    # Ceder cupo rules:
+    #  - SEP users and admins can cede to anyone.
+    #  - External (Google) users can only cede to other external users.
+    #  - Anyone may *receive* a cupo (including from SEP users).
+    can_cede_to_anyone = user.role == UserRole.admin.value or user.auth_source == "sep"
+    if not can_cede_to_anyone and to_user.auth_source != "google":
+        raise ApiError(
+            ErrorCode.auth_forbidden,
+            "solo puedes ceder cupo a otros usuarios externos",
+        )
 
     src = db.execute(
         select(ActivityMember).where(
@@ -579,20 +596,24 @@ def list_attendees(
     activity_id: str,
     user: Annotated[User, Depends(require_session)],
     db: Annotated[Session, Depends(get_db)],
-) -> dict:
-    # Ceder cupo to arbitrary users requires browsing all accounts, which is
-    # restricted to SEP users and admins; public accounts cannot do this.
-    if user.auth_source != "sep" and user.role != UserRole.admin.value:
-        raise ApiError(
-            ErrorCode.auth_forbidden,
-            "las cuentas publicas no pueden ceder cupo",
-        )
-
+) -> list[dict]:
     a = db.get(Activity, UUID(activity_id))
     if not a:
         raise ApiError(ErrorCode.activity_not_found, "activity not found")
 
+    # The creator must be able to see their own attendees to administer the
+    # activity. Other external (public) accounts cannot browse attendees, to
+    # protect PII; SEP users and SISMO admins may.
     is_creator = str(a.creator_id) == str(user.id)
+    if (
+        not is_creator
+        and user.auth_source != "sep"
+        and user.role != UserRole.admin.value
+    ):
+        raise ApiError(
+            ErrorCode.auth_forbidden,
+            "no tienes permiso para ver los inscritos de esta actividad",
+        )
 
     members = db.execute(
         select(ActivityMember, User)

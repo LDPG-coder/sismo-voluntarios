@@ -58,15 +58,15 @@ def user_directory(
     limit: int = Query(10, ge=1, le=50),
     activity_id: str | None = None,
 ) -> list[dict]:
-    # The directory powers "ceder cupo" and lists all accounts. Restricted to
-    # SEP users and admins; public accounts cannot browse all users.
-    if user.auth_source != "sep" and user.role != UserRole.admin.value:
-        raise ApiError(
-            ErrorCode.auth_forbidden,
-            "las cuentas publicas no pueden listar todos los usuarios",
-        )
+    # The directory powers "ceder cupo". SEP users and admins can browse every
+    # account; external (Google) users can only ceder among other externals,
+    # so they only see external accounts here. (Ceder to an ineligible target
+    # is also enforced server-side in POST /activities/{id}/transfer.)
+    is_external = user.auth_source == "google" and user.role != UserRole.admin.value
 
     q = select(User).where(User.id != user.id)
+    if is_external:
+        q = q.where(User.auth_source == "google")
 
     if activity_id:
         try:
