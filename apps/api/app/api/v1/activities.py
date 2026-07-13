@@ -135,8 +135,14 @@ def list_zones(
     user: Annotated[User, Depends(require_session)],
     db: Annotated[Session, Depends(get_db)],
 ) -> list[dict]:
+    # Counts must mirror the discovery feed (GET /activities): exclude the
+    # user's own activities so the filter tags don't advertise counts that the
+    # list itself hides.
     rows = db.execute(
-        select(Activity.zone, func.count()).where(Activity.status == ActivityStatus.active.value).group_by(Activity.zone)
+        select(Activity.zone, func.count())
+        .where(Activity.status == ActivityStatus.active.value)
+        .where(Activity.creator_id != user.id)
+        .group_by(Activity.zone)
     ).all()
     return [{"name": r[0], "count": r[1]} for r in rows]
 

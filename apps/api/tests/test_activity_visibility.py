@@ -106,3 +106,19 @@ def test_sep_can_view_attendees(client, db):
         headers=auth_headers(),
     )
     assert resp.status_code == 200
+
+
+def test_zones_exclude_own_activity(client, db):
+    admin = make_user(db, role="admin", status="active")
+    other = make_user(db, auth_source="google", status="active")
+    own_id = _create_activity(client, admin)  # zona "Caracas"
+    # Creator (admin) must not see their own in the zone counts.
+    resp = client.get("/api/v1/activities/zones", cookies=auth_cookies(admin), headers=auth_headers())
+    assert resp.status_code == 200
+    zones = {z["name"]: z["count"] for z in resp.json()}
+    assert zones.get("Caracas", 0) == 0
+    # Another user DOES see it counted.
+    resp = client.get("/api/v1/activities/zones", cookies=auth_cookies(other), headers=auth_headers())
+    zones = {z["name"]: z["count"] for z in resp.json()}
+    assert zones.get("Caracas", 0) >= 1
+
