@@ -284,3 +284,4 @@ GET /partner/v1/users/{sep_user_id}/notifications
   SISMO, Next 15.5 → React 19).
 - Elegir la vía de compatibilidad MF (§12) y entonces aplicar §3.1–3.2 en SISMO.
 - Origen/dominio final y dónde SEP sirve el static del remote.
+
