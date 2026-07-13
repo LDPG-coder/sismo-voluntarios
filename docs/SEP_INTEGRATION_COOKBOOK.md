@@ -127,7 +127,11 @@ def resolve_session(request, db):
 > El mecanismo de cookie (`encode_session`/`verify_session`) ya existe y usa
 > `SISMO_SESSION_SECRET`; el proxy model lo reusa sin cambios de formato.
 
-### B.4 Partner API — `apps/api/app/api/v1/partner.py` (nuevo)
+### B.4 Partner API — `apps/api/app/api/v1/partner.py` (RECETA, NO APLICADA)
+
+> **Estado:** esta sección es una receta. **No está aplicada en el repo**
+> (`partner.py` no existe aún). Es la única pieza backend de SISMO pendiente
+> para que SEP muestre las notificaciones en su header.
 
 ```python
 from fastapi import APIRouter, Depends, Header, HTTPException
