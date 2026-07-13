@@ -220,74 +220,75 @@ de sesión de SISMO sea first-party y no haya CORS.
 
 ---
 
-## C. Lado SEP (pseudocódigo, stack-agnóstico)
+## C. Lado SEP (especificación, stack-agnóstico)
+
+Lo que SEP debe implementar, descrito como contrato y algoritmo (independiente
+del lenguaje o del proxy que SEP use).
 
 ### C.1 Firmar e inyectar la identidad en el proxy  **[PENDIENTE]**
 
-El proxy de SEP, solo si el usuario tiene sesión SEP, arma e inyecta los
-headers. Ejemplo en Python (portable a cualquier proxy/backend):
+Solo cuando el usuario tiene sesión SEP, el proxy de SEP arma un "pase" firmado
+y lo inyecta en cada request al subpath de SISMO. Algoritmo de firma:
 
-```python
-import base64, hashlib, hmac, json
+1. Construir el payload JSON con separadores compactos (`,` entre campos y `:`
+   entre clave y valor) y los campos: `sep_user_id` (string estable y único de
+   SEP), `email`, `name`, `role`.
+2. Codificar el JSON en **base64url sin padding** (quitar los `=` finales).
+   Resultado = valor del header `x-sismo-sep-user`.
+3. Calcular `x-sismo-sep-sig` = HMAC-SHA256 en hexadecimal, con clave
+   `SISMO_SEP_PROXY_SECRET`, sobre el **texto** resultante del paso 2.
+4. Inyectar ambos headers (`x-sismo-sep-user`, `x-sismo-sep-sig`) en la request
+   a `/voluntarios*`.
+5. No inyectarlos en las rutas de login/OAuth de SISMO (ver C.2).
 
-SEP_PROXY_SECRET = os.environ["SISMO_SEP_PROXY_SECRET"]  # compartido con SISMO
+Flujo:
 
-def make_sep_identity_headers(user) -> dict:
-    payload = {
-        "sep_user_id": str(user["id"]),
-        "email": user["email"],
-        "name": user.get("name"),
-        "role": user.get("role"),
-    }
-    user_b64 = base64.urlsafe_b64encode(
-        json.dumps(payload, separators=(",", ":")).encode()
-    ).decode().rstrip("=")
-    sig = hmac.new(SEP_PROXY_SECRET.encode(), user_b64.encode(), hashlib.sha256).hexdigest()
-    return {"x-sismo-sep-user": user_b64, "x-sismo-sep-sig": sig}
 ```
-
-Config del proxy (nginx/Caddy) — se inyectan los headers en las requests al
-subpath `/voluntarios`. El proxy llama a `make_sep_identity_headers` usando la
-sesión SEP ya validada, y no las inyecta en las rutas de login/OAuth de SISMO.
+browser ──GET /voluntarios──▶ proxy SEP
+                                │ si hay sesión SEP:
+                                │   arma x-sismo-sep-user + x-sismo-sep-sig
+                                ▼
+                         ┌──────────────────────┐
+                         │ SISMO api verifica    │── firma ok ──▶ emite cookie sismo_session
+                         │ HMAC (SISMO_SEP_       │
+                         │ PROXY_SECRET)         │── firma falla ──▶ ignora header (login normal)
+                         └──────────────────────┘
+                                │
+                                ▼
+                         SISMO web responde la página autenticada
+```
 
 ### C.2 Rutas en el proxy de SEP  **[PENDIENTE]**
 
-```
-/voluntarios            -> SISMO web   (inyectar header si hay sesión SEP)
-/voluntarios/api        -> SISMO api   (inyectar header si hay sesión SEP)
-/voluntarios/login*     -> SISMO web   (SIN auth SEP: es para usuarios externos)
-/voluntarios/api/v1/auth/* -> SISMO api (SIN auth SEP: login Google/OAuth)
-```
+| Ruta (prefijo) | Destino | Identidad SEP inyectada |
+|---|---|---|
+| `/voluntarios` | web de SISMO | sí (si hay sesión SEP) |
+| `/voluntarios/api` | api de SISMO | sí (si hay sesión SEP) |
+| `/voluntarios/login*` | web de SISMO | no (usuarios externos) |
+| `/voluntarios/api/v1/auth/*` | api de SISMO | no (login Google/OAuth) |
 
 ### C.3 Backend de SEP: campana en el header general  **[PENDIENTE]**
 
-El backend de SEP, para el usuario actual, consulta la Partner API de SISMO y
-pinta la campana en el header que SEP ya usa en todo el sitio:
+Para el usuario actual, SEP consulta la Partner API de SISMO y pinta el contador
+en su header. Contrato HTTP:
 
-```python
-import os, requests
-
-SISMO_API = os.environ["SISMO_API_URL"]          # https://sep.org/voluntarios/api
-SEP_TOKEN  = os.environ["SISMO_SEP_API_TOKEN"]   # mismo Bearer que SISMO
-
-def sismo_notifications_for(sep_user_id: str) -> dict:
-    r = requests.get(
-        f"{SISMO_API}/partner/v1/users/{sep_user_id}/notifications/summary",
-        headers={"Authorization": f"Bearer {SEP_TOKEN}"},
-        timeout=3,
-    )
-    return r.json() if r.ok else {"unread": 0, "items": []}
+```
+GET {SISMO_API}/partner/v1/users/{sep_user_id}/notifications/summary
+Authorization: Bearer {SISMO_SEP_API_TOKEN}
 ```
 
-Se renderiza el badge (count de `unread`) en el header de SEP igual que las
-demás notificaciones. Al hacer clic, se enlaza a `/voluntarios` o a un panel que
-consuma `/partner/v1/users/{sep_user_id}/notifications`.
+- `{SISMO_API}` = origen de la api de SISMO (p. ej. `https://sep.org/voluntarios/api`).
+- Respuesta: `{ "unread": <int>, "items": [...] }`.
+- Si la llamada falla, usar `{ "unread": 0, "items": [] }` para no romper el header.
+
+El badge muestra `unread`; al hacer clic se enlaza a `/voluntarios` o a un panel
+que consuma `/partner/v1/users/{sep_user_id}/notifications`.
 
 ### C.4 Logout  **[PENDIENTE]**
 
 En el logout global de SEP, además de limpiar la sesión SEP, se borra la cookie
-`sismo_session` (mismo origen `sep.org`, con `Set-Cookie` y `Max-Age=0` o
-`Expires` pasado). Así SISMO queda también deslogueado.
+`sismo_session` (mismo origen, con `Set-Cookie` y `Max-Age=0` o `Expires`
+pasado). Así SISMO queda también deslogueado.
 
 ---
 
