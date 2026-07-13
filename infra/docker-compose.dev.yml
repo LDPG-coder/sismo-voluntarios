@@ -60,7 +60,7 @@ services:
       SISMO_DB_PORT: "5432"
       SISMO_REDIS_URL: redis://redis:6379/0
       SISMO_API_PORT: ${SISMO_API_PORT:-8000}
-      SISMO_API_CORS_ORIGINS: http://localhost:${SISMO_WEB_PORT:-3001}
+      SISMO_API_CORS_ORIGINS: http://localhost:${SISMO_WEB_PORT:-3001},http://127.0.0.1:${SISMO_WEB_PORT:-3001}
       SISMO_WEB_ORIGIN: http://localhost:${SISMO_WEB_PORT:-3001}
     ports:
       - "127.0.0.1:${SISMO_API_PORT:-8000}:${SISMO_API_PORT:-8000}"
@@ -80,6 +80,11 @@ services:
       context: ../apps/web
       dockerfile: Dockerfile.dev
     restart: unless-stopped
+    # Comparte el mismo .env de la API para que el web firme la cookie de
+    # sesión con el mismo SISMO_SESSION_SECRET que la API verifica. Sin esto,
+    # el web usaba el fallback de dev y el login fallaba por mismatch de firma.
+    env_file:
+      - ../apps/api/.env
     environment:
       NEXT_PUBLIC_API_URL: http://localhost:${SISMO_API_PORT:-8000}
       NEXT_PUBLIC_WEB_ORIGIN: http://localhost:${SISMO_WEB_PORT:-3001}

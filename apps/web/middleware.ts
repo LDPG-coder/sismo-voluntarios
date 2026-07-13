@@ -29,16 +29,22 @@ export function middleware(request: NextRequest) {
     // 'unsafe-inline' is required for Next.js App Router RSC payloads;
     // remote scripts are locked to first-party + Google OAuth + Cloudflare
     // Insights (auto-injected by the Cloudflare Tunnel / Web Analytics).
-    "script-src 'self' 'unsafe-inline' https://accounts.google.com https://static.cloudflareinsights.com https://cdn.cloudflareinsights.com",
+    isDev
+      ? "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://accounts.google.com https://static.cloudflareinsights.com https://cdn.cloudflareinsights.com"
+      : "script-src 'self' 'unsafe-inline' https://accounts.google.com https://static.cloudflareinsights.com https://cdn.cloudflareinsights.com",
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: https:",
     "font-src 'self' data:",
-    "connect-src 'self' https: wss: https://*.cloudflareinsights.com",
+    isDev
+      ? "connect-src 'self' http://localhost:* http://127.0.0.1:* https: wss: https://*.cloudflareinsights.com"
+      : "connect-src 'self' https: wss: https://*.cloudflareinsights.com",
     "frame-ancestors 'none'",
     "base-uri 'self'",
     "form-action 'self' https://accounts.google.com",
     "object-src 'none'",
-    "upgrade-insecure-requests",
+    // En dev (localhost/http) no se necesita upgrade-insecure-requests;
+    // fuerza https y rompe las rutas internas que usan http.
+    ...(isDev ? [] : ["upgrade-insecure-requests"]),
   ].join("; ");
 
   const response = NextResponse.next();

@@ -28,6 +28,7 @@ Commands:
   logs-web    Tail web logs only
   migrate     Run alembic migrations
   migrate-make MSG  Create new migration (e.g. ./dev.sh migrate-make "add field")
+  seed        Seed dev admin user + sample activities
   shell       Shell into API container
   db          Open psql shell
   status      Show service status
@@ -81,6 +82,10 @@ case "${1:-help}" in
         ;;
     shell)
         docker compose -f docker-compose.dev.yml exec api bash
+        ;;
+    seed)
+        echo "Seeding dev data (admin user + sample activities)..."
+        docker compose -f docker-compose.dev.yml exec api env PYTHONPATH=/app python scripts/seed.py
         ;;
     db)
         docker compose -f docker-compose.dev.yml exec postgres psql -U sismo -d sismo

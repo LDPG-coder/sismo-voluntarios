@@ -261,6 +261,187 @@ según tu objetivo.
 
 ---
 
+## Desarrollo Local — ver todas las secciones
+
+Esta guía explica cómo un dev puede levantar el proyecto y visualizar **todas**
+las secciones (públicas + protegidas + modo SEP), sin depender de Google OAuth
+ni de invitaciones. Incluye los cambios mínimos de código que ya vienen
+implementados en el branch (bypass de login dev + script de seed).
+
+> **Solo desarrollo.** El bypass de login y el secreto de dev **nunca** deben
+> estar en producción. La ruta `dev-login` retorna 404 si `NODE_ENV=production`.
+
+### Resumen de pasos (quickstart)
+
+Para ver **todas** las páginas en local (públicas + protegidas + modo SEP) en
+un dev limpio, basta con esto:
+
+```bash
+cp .env.example .env                # o usa apps/api/.env ya existente
+cp infra/.env.example infra/.env
+./dev.sh up                         # api + web + postgres + redis
+./dev.sh migrate                    # alembic upgrade head
+./dev.sh seed                       # crea admin dev (11111111-…) + 5 actividades
+```
+
+Luego, en el navegador (Safari/Chrome), abre **exactamente esta URL**:
+
+```
+http://localhost:3001/auth/dev-login
+```
+
+Te redirige a `/voluntarios` ya logueado como admin. Desde ahí navega a
+`/mis-actividades`, `/perfil`, `/voluntarios/crear`, `/admin/usuarios`, etc.
+
+> **Regla de oro del host:** usa siempre `localhost`, **nunca `127.0.0.1`**,
+> en navegador, API y CORS. La cookie de sesión es *host-only* para el host que
+> usaste; si entras por `127.0.0.1:3001` pero la API corre en `localhost:8000`,
+> el navegador no envía la cookie y las actividades quedan en "cargando"
+> eterno. Los cambios de CSP/middleware que permiten esto ya vienen en el
+> código (relajados solo cuando `NODE_ENV !== "production"`), así que **no**
+> requieren pasos manuales.
+
+### Gates que bloqueaban ver todo en local (y cómo se resolvieron)
+
+1. **Login OAuth + invitaciones**: `/login` redirige a Google y el callback
+   exige que el usuario ya exista en BD. → Se crea el usuario dev por seed.
+2. **Secciones protegidas** (cookie de sesión): `/mis-actividades`, `/perfil`,
+   `/voluntarios/crear`, `/voluntarios/[id]/editar`, `/voluntarios/[id]/admin`,
+   `/admin/usuarios`, sugerencias IA. → Se habilita vía bypass de login dev.
+3. **Mismatch de `SISMO_SESSION_SECRET` en dev (bug corregido)**: el web dev
+   **no** recibía `apps/api/.env`, así que firmaba la cookie con el fallback de
+   dev mientras la API verificaba con el secret real → login siempre fallaba.
+   → `infra/docker-compose.dev.yml` ahora inyecta `env_file: ../apps/api/.env`
+   al servicio `web`, alineando ambos secretos.
+4. **Toggle `TODO(prueba)` / `SEP_EMBED`**: alterna chrome completo vs.
+   simulación SEP embebido (ver subsección D).
+5. **IA**: requiere `SISMO_OPENAI_API_KEY` (la UI se ve igual; el endpoint 500ea
+   sin key).
+
+### A. Base
+
+```bash
+cp .env.example .env                # o usa apps/api/.env ya existente
+cp infra/.env.example infra/.env
+./dev.sh up
+./dev.sh migrate                    # alembic upgrade head
+```
+
+### B. Crear el usuario admin dev
+
+Responde al "gate 1". El web (`dev-login`) usa un UUID fijo que **debe** existir
+en BD: `11111111-1111-1111-1111-111111111111`, email `dev@sismo.local`,
+`role=admin`, `status=active`, `referral_code=DEVADMIN`, `tenant_id` = `MVP_TENANT_ID`.
+
+**Opción script (recomendada):**
+
+```bash
+./dev.sh seed
+```
+
+Crea el admin dev (idempotente: skip si ya existe) e inserta 5 actividades de
+ejemplo para poblar Lista/Semana/Mes/Gantt.
+
+**Opción SQL manual (alternativa):**
+
+```bash
+./dev.sh db
+INSERT INTO users (id, email, role, status, referral_code, tenant_id, created_at)
+VALUES ('11111111-1111-1111-1111-111111111111', 'dev@sismo.local', 'admin',
+        'active', 'DEVADMIN', '00000000-0000-0000-0000-000000000001', now());
+```
+
+### C. Login sin Google (bypass dev)
+
+Una sola vez, abre en el navegador:
+
+```
+http://localhost:3001/auth/dev-login
+```
+
+Esto setea la cookie de sesión de admin fijo (`sismo_session` HttpOnly +
+`XSRF-TOKEN`) y redirige a `/voluntarios` ya logueado. **Solo existe si
+`NODE_ENV !== "production"`** (la ruta retorna 404 en prod, no se compila).
+
+> **No uses el botón de Google** en `/login`: inicia el flujo OAuth real, que
+> no opera en local. El bypass `dev-login` es la única vía de login en dev.
+>
+> **Usa `localhost`, no `127.0.0.1`** (ver regla de oro arriba). Si tras entrar
+> ves el skeleton "cargando" para siempre o botones que no responden, casi
+> siempre es porque se entró por `127.0.0.1` o el navegador cacheó un CSP
+> viejo: haz un *hard refresh* (`Cmd/Ctrl+Shift+R`).
+>
+> Los detalles de implementación que hacen posible esto (cookie seteada en un
+> `200` + `meta-refresh` relativo, y el CSP de dev relajado para `unsafe-eval`
+> y `connect-src http://localhost:*`) ya están en el código y no requieren
+> acción manual.
+
+### D. Alternar chrome completo ↔ simulación SEP
+
+El proyecto lee el contexto con `getEmbedContext()` (`apps/web/lib/auth/embed.ts`):
+prioriza `SEP_EMBED` env → header `x-sismo-context: sep` → cookie `sismo_ctx=sep`.
+
+- **Sin tocar código** (recomendado para probar): en
+  `infra/docker-compose.dev.yml`, servicio `web`, agrega:
+  ```yaml
+  environment:
+    SEP_EMBED: "1"
+  ```
+  y reinicia con `./dev.sh restart web`. Quita la variable para volver al chrome
+  completo.
+- **Editando código** (líneas exactas): en `apps/web/app/(app)/layout.tsx`
+  importa `getEmbedContext` y `EmbeddedShell`, y reemplaza
+  `<AppShell>{children}</AppShell>` por una selección según contexto
+  (`sep` → `EmbeddedShell`, sino `AppShell`):
+  ```tsx
+  import { getEmbedContext } from "@/lib/auth/embed";
+  import { EmbeddedShell } from "@/components/embedded-shell";
+  // ...
+  const ctx = await getEmbedContext();
+  return (
+    <SessionProvider initialUser={user}>
+      {ctx === "sep" ? <EmbeddedShell>{children}</EmbeddedShell> : <AppShell>{children}</AppShell>}
+      <FloatingNav />
+      <MobileFabNav />
+    </SessionProvider>
+  );
+  ```
+  - `components/app-shell.tsx` línea ~47: para el modo real agrega `lg:hidden`
+    al `className` del `<header>` (oculta el header en escritorio durante la
+    simulación).
+  - `components/app-shell.tsx` línea ~87: quita `lg:pr-24` del `<div>`
+    contenedor (`<div className="flex-1 lg:pr-24">{children}</div>`).
+
+### E. Datos de ejemplo
+
+El seed ya inserta actividades de ejemplo. Si no ejecutaste `./dev.sh seed`
+(completo), las vistas de calendario quedarán vacías pero **las secciones se
+ven** igual.
+
+### F. IA (opcional)
+
+Para que `/ai/suggest` funcione, define `SISMO_OPENAI_API_KEY` en
+`apps/api/.env`. Sin la key la UI aparece igual pero el endpoint responde 500.
+
+### G. Solución de problemas comunes (dev)
+
+Síntomas reales encontrados al levantar el proyecto en local y su causa:
+
+| Síntoma | Causa | Solución |
+|---|---|---|
+| `/login` con un botón gigante de Google y no entras | Usaste el flujo OAuth en vez del bypass | Entra por `http://localhost:3001/auth/dev-login` |
+| Safari: "no se pudo encontrar `https://localhost:3001/…`" | CSP `upgrade-insecure-requests` (ya quitado en dev) o se usó `127.0.0.1` | Usa `localhost`; el fix ya está en `middleware.ts` |
+| Skeleton "cargando" eterno en `/voluntarios` | Cookie host-only no coincide: entraste por `127.0.0.1` pero la API está en `localhost` | Usa `http://localhost:3001/…` en todo el flujo |
+| Botones/no hay interacción (solo HTML estático) | `script-src` bloqueaba `eval` de React Refresh (ya relajado en dev) o CSP cacheado | *Hard refresh*; el fix ya está en `middleware.ts` |
+| Actividades no cargan pero el resto sí | `connect-src` bloqueaba el fetch HTTP a la API (ya relajado en dev) | *Hard refresh*; el fix ya está en `middleware.ts` |
+| `403/401` en llamadas a la API desde el navegador | CORS no incluía el origen usado | El compose dev ya permite `localhost:3001` y `127.0.0.1:3001`; usa `localhost` |
+
+Todos los fixes mencionados arriba son **código que ya viene en el branch** y
+se aplican solo cuando `NODE_ENV !== "production"` (ver `middleware.ts` y
+`docker-compose.dev.yml`). En producción el CSP y el bypass quedan intactos.
+
+---
+
 ## Despliegue en Producción
 
 ### Configuración Inicial del Servidor
