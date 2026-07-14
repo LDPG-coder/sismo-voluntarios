@@ -248,7 +248,7 @@ export function CrearPropuestaClient({
             </CardHeader>
             <CardContent className="space-y-4">
               <Field label="Descripcion completa">
-                <ProposalAiEditor value={description} onChange={setDescription} />
+                <ProposalAiEditor value={description} onChange={setDescription} kind="description" />
               </Field>
               <Field label="Problematica que busca resolver">
                 <Textarea
@@ -280,6 +280,7 @@ export function CrearPropuestaClient({
                   value={plan}
                   onChange={setPlan}
                   placeholder="Explica como ejecutaras el proyecto."
+                  kind="plan"
                 />
               </Field>
               <Field label="Cronograma">

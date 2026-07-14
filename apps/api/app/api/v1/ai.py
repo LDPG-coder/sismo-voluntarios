@@ -92,6 +92,7 @@ async def ai_suggest(
 class FormatRequest(BaseModel):
     description: str = Field(..., min_length=10, max_length=20000)
     specs: str | None = Field(default=None, max_length=2000)
+    kind: str | None = Field(default=None, max_length=32)
 
 
 class FormatResponse(BaseModel):
@@ -121,7 +122,7 @@ async def ai_format_text(
             f"Limite de {limit} generaciones por hora alcanzado. Intenta en {ttl} minutos.",
         )
 
-    result = format_text(body.description, body.specs)
+    result = format_text(body.description, body.specs, body.kind)
     if result is None:
         raise ApiError(ErrorCode.internal_unexpected, "No se pudo generar el texto. Intenta de nuevo.")
 

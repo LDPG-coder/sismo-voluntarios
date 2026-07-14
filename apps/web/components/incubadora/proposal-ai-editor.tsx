@@ -96,11 +96,13 @@ export function ProposalAiEditor({
   onChange,
   placeholder = "Escribe libremente todo lo que quieras contar sobre tu proyecto. No te preocupes por el orden ni el formato…",
   specsPlaceholder = "Opcional: ¿cómo quieres el resultado? Ej. tono formal, con secciones, resaltar los objetivos…",
+  kind,
 }: {
   value: string;
   onChange: (markdown: string) => void;
   placeholder?: string;
   specsPlaceholder?: string;
+  kind?: "description" | "plan";
 }) {
   const [mode, setMode] = useState<Mode>(() => (value && value.trim().length > 0 ? 1 : 0));
   const [slideDir, setSlideDir] = useState<"left" | "right">("right");
@@ -145,7 +147,7 @@ export function ProposalAiEditor({
       const res = await fetch("/api/ai/format-text", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ description: draft, specs: specs || null }),
+        body: JSON.stringify({ description: draft, specs: specs || null, kind: kind ?? null }),
       });
       const data = await res.json();
       if (!res.ok) {
