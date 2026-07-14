@@ -14,7 +14,7 @@ import TableRow from "@tiptap/extension-table-row";
 import TableHeader from "@tiptap/extension-table-header";
 import TableCell from "@tiptap/extension-table-cell";
 import { Markdown } from "tiptap-markdown";
-import { ProposalEditor } from "@/components/incubadora/proposal-editor";
+import { MarkdownSourceEditor } from "@/components/incubadora/markdown-source-editor";
 import { cn } from "@/lib/utils";
 
 type Mode = 0 | 1 | 2;
@@ -234,7 +234,7 @@ export function ProposalAiEditor({
           )}
 
           {mode === 2 && (
-            <ProposalEditor value={value} onChange={onChange} placeholder={placeholder} />
+            <MarkdownSourceEditor value={value} onChange={onChange} placeholder={placeholder} />
           )}
         </div>
       </div>
