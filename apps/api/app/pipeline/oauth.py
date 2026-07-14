@@ -108,7 +108,6 @@ def build_google_authorize_url(settings: Settings, *, state: str) -> str:
         "response_type": "code",
         "scope": " ".join(settings.google_oauth_scopes),
         "state": state,
-        "access_type": "offline",
         "include_granted_scopes": "true",
         "prompt": "select_account",
     }
