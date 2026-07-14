@@ -85,9 +85,10 @@ def format_text(description: str, specs: str | None = None) -> str | None:
             temperature=0.2,
         )
 
-        content = (resp.choices[0].message.content or "").strip()
+        message = resp.choices[0].message
+        content = (message.content or "").strip()
         if not content:
-            reasoning = (resp.choices[0].message.reasoning_content or "").strip()
+            reasoning = (getattr(message, "reasoning_content", None) or "").strip()
             content = reasoning
 
         content = content.strip()

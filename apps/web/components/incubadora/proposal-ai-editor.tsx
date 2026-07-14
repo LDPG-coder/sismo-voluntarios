@@ -68,41 +68,24 @@ function MarkdownPreview({ markdown }: { markdown: string }) {
 
 function TabButton({
   active,
-  done,
-  disabled,
   onClick,
-  index,
   label,
 }: {
   active: boolean;
-  done: boolean;
-  disabled?: boolean;
   onClick: () => void;
-  index: number;
   label: string;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      disabled={disabled}
       className={cn(
-        "flex items-center gap-2 rounded-md px-3 py-1.5 text-xs transition-colors disabled:cursor-not-allowed disabled:opacity-40",
+        "flex items-center gap-2 rounded-md px-3 py-1.5 text-xs transition-colors",
         active
           ? "bg-emerald-600 text-white"
-          : done
-            ? "bg-emerald-50 text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-900/40 dark:text-emerald-300"
-            : "text-zinc-500 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800",
+          : "text-zinc-500 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800",
       )}
     >
-      <span
-        className={cn(
-          "flex h-5 w-5 items-center justify-center rounded-full text-[11px]",
-          active ? "bg-white/25" : "bg-zinc-200 dark:bg-zinc-700",
-        )}
-      >
-        {index}
-      </span>
       {label}
     </button>
   );
@@ -183,25 +166,9 @@ export function ProposalAiEditor({
   return (
     <div className="rounded-md border border-zinc-200 dark:border-zinc-800">
       <div className="flex flex-wrap items-center gap-1 border-b border-zinc-200 bg-[#f7f8f9] p-1.5 dark:border-zinc-800 dark:bg-zinc-900">
-        <TabButton index={1} label="Escribir" active={mode === 0} done={hasResult} onClick={() => goTo(0)} />
-        <span className="text-zinc-300 dark:text-zinc-600">›</span>
-        <TabButton
-          index={2}
-          label="Resultado"
-          active={mode === 1}
-          done={hasResult}
-          disabled={!hasResult}
-          onClick={() => hasResult && goTo(1)}
-        />
-        <span className="text-zinc-300 dark:text-zinc-600">›</span>
-        <TabButton
-          index={3}
-          label="Editar"
-          active={mode === 2}
-          done={false}
-          disabled={!hasResult}
-          onClick={() => hasResult && goTo(2)}
-        />
+        <TabButton label="Escribir con IA" active={mode === 0} onClick={() => goTo(0)} />
+        <TabButton label="Resultado" active={mode === 1} onClick={() => goTo(1)} />
+        <TabButton label="Editar a mano" active={mode === 2} onClick={() => goTo(2)} />
       </div>
 
       <div className="overflow-hidden p-3">
@@ -244,45 +211,30 @@ export function ProposalAiEditor({
                 )}
               </div>
               <p className="text-xs text-zinc-400 dark:text-zinc-500">
-                Escribe con tus palabras; la IA organizará el texto y le dará
-                formato. Luego podrás revisarlo y editarlo a mano.
+                Usar la IA es opcional: escribe con tus palabras y ella
+                organizará el texto, o pasa directamente a
+                <span className="font-semibold"> Editar a mano</span> si
+                prefieres redactarlo tú. Puedes moverte entre las secciones
+                cuando quieras.
               </p>
             </div>
           )}
 
           {mode === 1 && (
             <div className="space-y-3">
-              <MarkdownPreview markdown={value} />
-              <div className="flex items-center justify-between">
-                <button
-                  type="button"
-                  onClick={() => goTo(0)}
-                  className="text-xs text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200"
-                >
-                  ‹ Volver a escribir
-                </button>
-                <button
-                  type="button"
-                  onClick={() => goTo(2)}
-                  className="rounded-md border border-emerald-600 px-3 py-1.5 text-xs text-emerald-700 transition-colors hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-900/30"
-                >
-                  Editar a mano ›
-                </button>
-              </div>
+              {value.trim().length > 0 ? (
+                <MarkdownPreview markdown={value} />
+              ) : (
+                <div className="flex min-h-[220px] items-center justify-center rounded-md border border-dashed border-zinc-200 px-4 text-center text-sm text-zinc-400 dark:border-zinc-800 dark:text-zinc-500">
+                  Aún no hay contenido. Genera un texto con IA o escríbelo en
+                  «Editar a mano» para verlo aquí.
+                </div>
+              )}
             </div>
           )}
 
           {mode === 2 && (
-            <div className="space-y-3">
-              <ProposalEditor value={value} onChange={onChange} placeholder={placeholder} />
-              <button
-                type="button"
-                onClick={() => goTo(1)}
-                className="text-xs text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200"
-              >
-                ‹ Ver resultado
-              </button>
-            </div>
+            <ProposalEditor value={value} onChange={onChange} placeholder={placeholder} />
           )}
         </div>
       </div>
