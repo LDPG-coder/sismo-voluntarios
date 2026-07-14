@@ -282,6 +282,17 @@ export default function ActivityDetailPage() {
                 {activity.description}
               </InfoRow>
             )}
+            <InfoRow icon={<BadgeIcon />} label="Tipo de voluntariado">
+              {activity.is_external_official ? (
+                <span className="font-medium text-emerald-700 dark:text-[#079669]">
+                  Voluntariado externo oficial
+                </span>
+              ) : (
+                <span className="font-medium text-zinc-600 dark:text-zinc-400">
+                  Voluntariado no oficial
+                </span>
+              )}
+            </InfoRow>
             {activity.requirements && (
               <InfoRow icon={<ClipboardIcon />} label="Requisitos">
                 {activity.requirements}
@@ -606,6 +617,24 @@ function DocumentIcon() {
         strokeLinecap="round"
         strokeLinejoin="round"
         d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.125A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625A3.375 3.375 0 0 0 2.25 7.125v10.5A3.375 3.375 0 0 0 5.625 21h10.5A3.375 3.375 0 0 0 19.5 17.625V14.25Z"
+      />
+    </svg>
+  );
+}
+
+function BadgeIcon() {
+  return (
+    <svg
+      className="h-4 w-4"
+      fill="none"
+      viewBox="0 0 24 24"
+      strokeWidth={1.8}
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
       />
     </svg>
   );
