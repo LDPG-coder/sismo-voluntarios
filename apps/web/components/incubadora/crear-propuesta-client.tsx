@@ -114,7 +114,7 @@ export function CrearPropuestaClient({
   const [budget, setBudget] = useState<BudgetRow[]>(initial?.budget ?? []);
   const [images, setImages] = useState<Attachment[]>([]);
   const [documents, setDocuments] = useState<Attachment[]>([]);
-  const [isAnonymous, setIsAnonymous] = useState(false);
+  const [isAnonymous, setIsAnonymous] = useState(initial?.is_anonymous ?? false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
