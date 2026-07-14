@@ -53,3 +53,19 @@ cualquiera que no sea `role = admin` ni `auth_source = google`.
   autorización al backend.
 - Migración relacionada pero **independiente**: `011_add_external_official`
   (campos de "voluntariado oficial externo"). No afecta este cambio.
+
+## Secciones del SEP para usuarios externos (OAuth)
+
+Ahora SISMO renderiza su propio sidebar y su propio header para mostrar las
+páginas del SEP. Por ese motivo, las secciones que pertenecen al SEP no deben
+mostrarse cuando se registra un usuario de cuentas OAuth (los que entran por
+invitación con token o agregando su correo).
+
+Para estos usuarios se aplica lo siguiente:
+
+- No se muestra el sidebar, ni en modo escritorio ni en modo responsive; el botón
+  hamburguesa tampoco aparece. El usuario usa el panel y el botón en teléfono con
+  las distribuciones actuales.
+- En el menú que se abre al pulsar la foto del perfil del usuario, solo aparecen
+  el acceso al perfil propio de SISMO y el logout. Las demás opciones que
+  pertenecen a configuraciones del SEP no se muestran.
