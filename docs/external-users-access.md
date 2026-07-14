@@ -69,3 +69,15 @@ Para estos usuarios se aplica lo siguiente:
 - En el menú que se abre al pulsar la foto del perfil del usuario, solo aparecen
   el acceso al perfil propio de SISMO y el logout. Las demás opciones que
   pertenecen a configuraciones del SEP no se muestran.
+
+## Logout según el tipo de usuario
+
+El logout que se muestra depende del tipo de cuenta, y cada uno tiene un
+alcance y un destino distintos:
+
+- **Usuario del SEP:** ve el logout del SEP. Al pulsarlo se cierra la sesión en
+  ambas plataformas (la de SEP y la de SISMO-Voluntarios) y se redirige a la
+  página de login del SEP.
+- **Usuario OAuth (externo):** ve el logout de SISMO. Al pulsarlo solo se cierra
+  la sesión de SISMO-Voluntarios y se redirige a la página de login de SISMO. No
+  afecta la sesión del SEP.
