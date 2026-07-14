@@ -57,18 +57,25 @@ cualquiera que no sea `role = admin` ni `auth_source = google`.
 ## Secciones del SEP para usuarios externos (OAuth)
 
 Ahora SISMO renderiza su propio sidebar y su propio header para mostrar las
-páginas del SEP. Por ese motivo, las secciones que pertenecen al SEP no deben
-mostrarse cuando se registra un usuario de cuentas OAuth (los que entran por
-invitación con token o agregando su correo).
+páginas del SEP. El sidebar pertenece al SEP y no debe mostrarse a los usuarios
+de cuentas OAuth (los que entran por invitación con token o agregando su correo),
+pero el header sí se muestra a todos.
 
 Para estos usuarios se aplica lo siguiente:
 
+- Sí se muestra el mismo header superior que ven los usuarios SEP, con todo lo
+  que ya trae (crear actividad, notificaciones, cambio de tema y el menú de la
+  foto de perfil).
 - No se muestra el sidebar, ni en modo escritorio ni en modo responsive; el botón
-  hamburguesa tampoco aparece. El usuario usa el panel y el botón en teléfono con
-  las distribuciones actuales.
-- En el menú que se abre al pulsar la foto del perfil del usuario, solo aparecen
-  el acceso al perfil propio de SISMO y el logout. Las demás opciones que
-  pertenecen a configuraciones del SEP no se muestran.
+  hamburguesa tampoco aparece (el header no incluye ese botón para ellos). El
+  usuario navega con el panel flotante y el botón (FAB) en teléfono.
+- En el menú que se abre al pulsar la foto del perfil del usuario aparecen el
+  acceso al perfil propio de SISMO y el logout (que solo cierra la sesión de
+  SISMO y redirige al login de SISMO).
+
+Implementación: el header vive en `components/header-bar.tsx` y lo comparten
+`AppShell` (usuarios SEP: le pasa el botón hamburguesa que abre el sidebar) y
+`ExternalShell` (usuarios OAuth: lo renderiza sin botón de menú).
 
 ## Logout según el tipo de usuario
 
