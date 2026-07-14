@@ -1,15 +1,16 @@
 # Integración SISMO-Voluntarios ⇄ SEP
 
-> **Dominios de ejemplo:** en este documento se usa `voluntarios.sep.org` como
-> la URL del servidor propio de SISMO-Voluntarios y `sep.org` como el sitio del
-> SEP. Sustituir por las URLs reales en cada caso.
+> **URL:** SISMO-Voluntarios se sirve bajo el dominio del SEP, en la ruta
+> `https://sep.org/voluntarios-becarios/`. SISMO corre en su propio servidor
+> detrás del proxy del SEP; el sitio del SEP es `sep.org`.
 
 ## 1. Arquitectura
 
-SISMO-Voluntarios se despliega como un servidor independiente (su propio
-dominio o subdominio de SEP). Ese servidor renderiza su propio header y su
-propio sidebar. La apariencia de ese header y de ese sidebar imita la del sitio
-del SEP.
+SISMO-Voluntarios corre en su propio servidor, pero se expone bajo el dominio
+del SEP en la ruta `/voluntarios-becarios` (por ejemplo
+`https://sep.org/voluntarios-becarios/`), servido a través del proxy del SEP.
+Ese servidor renderiza su propio header y su propio sidebar. La apariencia de
+ese header y de ese sidebar imita la del sitio del SEP.
 
 El sidebar de SISMO-Voluntarios reproduce la navegación del sitio del SEP:
 muestra las mismas páginas que contiene el SEP. Esas páginas del SEP pueden
@@ -33,7 +34,7 @@ ejemplo, cuando se cancela una inscripción).
 ### 2.1 Agregar el enlace en el sidebar del SEP
 
 El SEP agrega un ítem de menú "Voluntariados" que apunta a la URL de
-SISMO-Voluntarios (`https://voluntarios.sep.org/`). Es un enlace normal del
+SISMO-Voluntarios (`https://sep.org/voluntarios-becarios/`). Es un enlace normal del
 sitio; no se embebe código de SISMO.
 
 ### 2.2 Coordinar la navegación del sidebar de SISMO-Voluntarios con el SEP
@@ -57,7 +58,7 @@ siguiente:
 1. El backend del SEP llama a SISMO de servidor a servidor:
 
    ```
-   POST https://voluntarios.sep.org/api/v1/auth/sep-login
+   POST https://sep.org/voluntarios-becarios/api/v1/auth/sep-login
    Authorization: Bearer <SISMO_SEP_API_TOKEN>
    Content-Type: application/json
 
@@ -74,7 +75,7 @@ siguiente:
 2. El backend del SEP redirige al navegador a:
 
    ```
-   https://voluntarios.sep.org/auth/sep?code=<codigo_una_vez>
+   https://sep.org/voluntarios-becarios/auth/sep?code=<codigo_una_vez>
    ```
 
 3. SISMO canjea el código, crea o actualiza el usuario y entrega la cookie de
@@ -88,7 +89,7 @@ crea otra cuenta distinta.
 El backend del SEP consulta, para el usuario actual, la Partner API de SISMO:
 
 ```
-GET https://voluntarios.sep.org/partner/v1/users/{sep_user_id}/notifications/summary
+GET https://sep.org/voluntarios-becarios/partner/v1/users/{sep_user_id}/notifications/summary
 Authorization: Bearer <SISMO_SEP_API_TOKEN>
 ```
 
@@ -97,13 +98,14 @@ La respuesta es `{ "unread": <int>, "items": [...] }`. El SEP pinta el contador
 notificaciones de inscripciones a las actividades de la persona (por ejemplo,
 cuando se cancela una inscripción). Si la llamada falla, el SEP muestra `0` para
 no romper el header. Al hacer clic en la campana, el SEP enlaza a
-`https://voluntarios.sep.org/`.
+`https://sep.org/voluntarios-becarios/`.
 
 ### 2.5 Cerrar la sesión de SISMO al salir del SEP
 
 Cuando el usuario cierra sesión en el SEP, el SEP también termina la sesión de
-SISMO-Voluntarios. Como SISMO se sirve en un subdominio de SEP, el SEP elimina
-la cookie `sismo_session` con `Set-Cookie` y `Max-Age=0` (o `Expires` pasado).
+SISMO-Voluntarios. Como SISMO se sirve bajo el dominio del SEP, el SEP elimina
+la cookie `sismo_session` (con `Domain=sep.org` y `Path=/`) mediante
+`Set-Cookie` y `Max-Age=0` (o `Expires` pasado).
 
 ## 3. Tokens y endpoints
 
@@ -125,5 +127,5 @@ la cookie `sismo_session` con `Set-Cookie` y `Max-Age=0` (o `Expires` pasado).
 - Al cerrar sesión en el SEP, la cookie `sismo_session` se elimina y la sesión de
   SISMO-Voluntarios también se cierra.
 - Un usuario sin sesión en el SEP (externo) accede a
-  `https://voluntarios.sep.org/login` e inicia sesión con su cuenta propia de
+  `https://sep.org/voluntarios-becarios/login` e inicia sesión con su cuenta propia de
   SISMO.

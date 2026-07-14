@@ -1,13 +1,13 @@
 # Integración SISMO-Voluntarios ⇄ SEP — Cookbook y contrato
 
-> **Dominios de ejemplo:** en este documento se usa `voluntarios.sep.org` como
-> la URL del servidor propio de SISMO-Voluntarios y `sep.org` como el sitio del
-> SEP. Sustituir por las URLs reales en cada caso.
+> **URL:** SISMO-Voluntarios se sirve bajo el dominio del SEP, en la ruta
+> `https://sep.org/voluntarios-becarios/`. SISMO corre en su propio servidor
+> detrás del proxy del SEP.
 
 Documento complementario de `docs/SEP_INTEGRATION.md`. Contiene los bloques de
-código que debe implementar el servidor del SEP. SISMO-Voluntarios se despliega
-como un servidor independiente (su propio dominio o subdominio de SEP) con su
-propio header y sidebar que imitan la apariencia del SEP; el contenido se
+código que debe implementar el servidor del SEP. SISMO-Voluntarios corre en su
+propio servidor pero se expone bajo el dominio del SEP en `/voluntarios-becarios`,
+con su propio header y sidebar que imitan la apariencia del SEP; el contenido se
 administra desde el panel de SISMO.
 
 Cada bloque indica su estado: **[IMPLEMENTADA]** si ya está en el repositorio de
@@ -26,7 +26,7 @@ la sesión de SISMO. El flujo ya está implementado en SISMO.
 **Request:**
 
 ```
-POST https://voluntarios.sep.org/api/v1/auth/sep-login
+POST https://sep.org/voluntarios-becarios/api/v1/auth/sep-login
 Authorization: Bearer <SISMO_SEP_API_TOKEN>
 Content-Type: application/json
 
@@ -40,7 +40,7 @@ Content-Type: application/json
 
 **Response:** `{ "code": "<codigo_una_vez>" }`
 
-**Redirect del navegador:** `https://voluntarios.sep.org/auth/sep?code=<codigo_una_vez>`
+**Redirect del navegador:** `https://sep.org/voluntarios-becarios/auth/sep?code=<codigo_una_vez>`
 
 - `sep_user_id` debe ser estable y único en SEP (PK o UUID). Si cambia, SISMO
   crea otra cuenta.
@@ -60,14 +60,14 @@ Cuando un usuario con sesión SEP hace clic en "Voluntariados", el backend de SE
 1. Llama a `POST /api/v1/auth/sep-login` con el `SISMO_SEP_API_TOKEN` y los datos
    del usuario (`sep_user_id`, `email`, `name`, `role`).
 2. Recibe `{ "code": "..." }`.
-3. Redirige al navegador a `https://voluntarios.sep.org/auth/sep?code=<code>`.
+3. Redirige al navegador a `https://sep.org/voluntarios-becarios/auth/sep?code=<code>`.
 
 Pseudocódigo (stack-agnóstico):
 
 ```
 function onVoluntariosClick(sepUser):
     resp = http.post(
-        "https://voluntarios.sep.org/api/v1/auth/sep-login",
+        "https://sep.org/voluntarios-becarios/api/v1/auth/sep-login",
         headers = { "Authorization": "Bearer " + SISMO_SEP_API_TOKEN,
                     "Content-Type": "application/json" },
         body   = { "sep_user_id": sepUser.id,
@@ -75,7 +75,7 @@ function onVoluntariosClick(sepUser):
                    "name": sepUser.name,
                    "role": sepUser.role })
     code = resp.json["code"]
-    redirect("https://voluntarios.sep.org/auth/sep?code=" + code)
+    redirect("https://sep.org/voluntarios-becarios/auth/sep?code=" + code)
 ```
 
 ### B.3 Backend de SEP: campana en el header general  **[PENDIENTE]**
@@ -84,21 +84,21 @@ Para el usuario actual, SEP consulta la Partner API de SISMO y pinta el
 contador en su header. Contrato HTTP:
 
 ```
-GET https://voluntarios.sep.org/partner/v1/users/{sep_user_id}/notifications/summary
+GET https://sep.org/voluntarios-becarios/partner/v1/users/{sep_user_id}/notifications/summary
 Authorization: Bearer <SISMO_SEP_API_TOKEN>
 ```
 
 - Respuesta: `{ "unread": <int>, "items": [...] }`.
 - Si la llamada falla, usar `{ "unread": 0, "items": [] }` para no romper el
   header.
-- Al hacer clic en la campana, el SEP enlaza a `https://voluntarios.sep.org/`.
+- Al hacer clic en la campana, el SEP enlaza a `https://sep.org/voluntarios-becarios/`.
 
 ### B.4 Logout  **[PENDIENTE]**
 
 En el logout global de SEP, además de limpiar la sesión SEP, se termina la
-sesión de SISMO-Voluntarios. Como SISMO se sirve en un subdominio de SEP, el SEP
-elimina la cookie `sismo_session` con `Set-Cookie` y `Max-Age=0` (o `Expires`
-pasado).
+sesión de SISMO-Voluntarios. Como SISMO se sirve bajo el dominio del SEP, el SEP
+elimina la cookie `sismo_session` (con `Domain=sep.org` y `Path=/`) mediante
+`Set-Cookie` y `Max-Age=0` (o `Expires` pasado).
 
 ---
 
