@@ -1,5 +1,7 @@
-import { CrearPropuestaClient } from "@/components/incubadora/crear-propuesta-client";
+// [INCUBADORA] Seccion desactivada temporalmente: no debe verse en prod.
+// Ver nota en app/(app)/incubadora/page.tsx para reactivar la seccion.
+import { notFound } from "next/navigation";
 
-export default function CrearPage() {
-  return <CrearPropuestaClient />;
+export default function IncubadoraCrearDisabled() {
+  notFound();
 }

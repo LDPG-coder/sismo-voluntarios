@@ -17,5 +17,8 @@
     "paths": { "@/*": ["./*"] }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
-  "exclude": ["node_modules"]
+  // [INCUBADORA] components/incubadora esta excluido mientras la seccion este
+  // desactivada (sus componentes usan tiptap, cuyas dependencias se comentaron
+  // en package.json). Reactivar quitando esta exclusion.
+  "exclude": ["node_modules", "components/incubadora"]
 }

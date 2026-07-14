@@ -10,7 +10,10 @@ from fastapi import APIRouter, Depends, Request
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
-from app.ai.format_text import format_text
+# [INCUBADORA] format_text solo lo usa el editor de propuestas de la
+# Incubadora (seccion desactivada). Reactivar descomentando este import y el
+# endpoint /format-text mas abajo.
+# from app.ai.format_text import format_text
 from app.ai.suggest import ActivitySuggestion, suggest_activity
 from app.ai.suggest_stream import suggest_activity_stream
 from app.core.config import Settings, get_settings
@@ -89,45 +92,49 @@ async def ai_suggest(
     )
 
 
-class FormatRequest(BaseModel):
-    description: str = Field(..., min_length=10, max_length=20000)
-    specs: str | None = Field(default=None, max_length=2000)
-    kind: str | None = Field(default=None, max_length=32)
-
-
-class FormatResponse(BaseModel):
-    markdown: str
-
-
-@router.post("/format-text", response_model=FormatResponse)
-async def ai_format_text(
-    body: FormatRequest,
-    request: Request,
-    settings: Annotated[Settings, Depends(get_settings)],
-    redis: Annotated[aioredis.Redis, Depends(_get_redis)],
-    user: Annotated[User, Depends(require_session)],
-) -> FormatResponse:
-    user_id = user.id
-    rate_key = f"ai_format:{user_id}"
-    limit = settings.ai_rate_limit_per_user_per_hour
-
-    current = await redis.incr(rate_key)
-    if current == 1:
-        await redis.expire(rate_key, 3600)
-
-    if current > limit:
-        ttl = await redis.ttl(rate_key)
-        raise ApiError(
-            ErrorCode.rate_limit_exceeded,
-            f"Limite de {limit} generaciones por hora alcanzado. Intenta en {ttl} minutos.",
-        )
-
-    result = format_text(body.description, body.specs, body.kind)
-    if result is None:
-        raise ApiError(ErrorCode.internal_unexpected, "No se pudo generar el texto. Intenta de nuevo.")
-
-    _log.info("ai.format.success", user_id=user_id, remaining=limit - current)
-    return FormatResponse(markdown=result)
+# [INCUBADORA] Endpoint /format-text desactivado: solo lo usa el editor de
+# propuestas de la Incubadora (seccion oculta en prod). Para reactivar, quita
+# este bloque de comentario y descomenta el import de format_text arriba.
+#
+# class FormatRequest(BaseModel):
+#     description: str = Field(..., min_length=10, max_length=20000)
+#     specs: str | None = Field(default=None, max_length=2000)
+#     kind: str | None = Field(default=None, max_length=32)
+#
+#
+# class FormatResponse(BaseModel):
+#     markdown: str
+#
+#
+# @router.post("/format-text", response_model=FormatResponse)
+# async def ai_format_text(
+#     body: FormatRequest,
+#     request: Request,
+#     settings: Annotated[Settings, Depends(get_settings)],
+#     redis: Annotated[aioredis.Redis, Depends(_get_redis)],
+#     user: Annotated[User, Depends(require_session)],
+# ) -> FormatResponse:
+#     user_id = user.id
+#     rate_key = f"ai_format:{user_id}"
+#     limit = settings.ai_rate_limit_per_user_per_hour
+#
+#     current = await redis.incr(rate_key)
+#     if current == 1:
+#         await redis.expire(rate_key, 3600)
+#
+#     if current > limit:
+#         ttl = await redis.ttl(rate_key)
+#         raise ApiError(
+#             ErrorCode.rate_limit_exceeded,
+#             f"Limite de {limit} generaciones por hora alcanzado. Intenta en {ttl} minutos.",
+#         )
+#
+#     result = format_text(body.description, body.specs, body.kind)
+#     if result is None:
+#         raise ApiError(ErrorCode.internal_unexpected, "No se pudo generar el texto. Intenta de nuevo.")
+#
+#     _log.info("ai.format.success", user_id=user_id, remaining=limit - current)
+#     return FormatResponse(markdown=result)
 
 
 @router.post("/suggest/stream")
