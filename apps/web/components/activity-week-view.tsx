@@ -368,8 +368,8 @@ export function ActivityWeekView({
                           height: BLOCK_HEIGHT,
                         }}
                       >
-                        {it.activity.is_external_official && <ExternalOfficialGem />}
-                        <div className={`flex items-center gap-1 ${it.activity.is_external_official ? "pl-3" : ""}`}>
+                        {(it.activity.is_external_official || it.activity.is_internal) && <ExternalOfficialGem />}
+                        <div className={`flex items-center gap-1 ${it.activity.is_external_official || it.activity.is_internal ? "pl-5" : ""}`}>
                           {it.conflict === "emergency" && (
                             <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-rose-500" />
                           )}

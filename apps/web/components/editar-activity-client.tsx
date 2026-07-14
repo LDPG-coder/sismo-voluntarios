@@ -39,6 +39,8 @@ export function EditarActivityClient() {
   const [maxParticipants, setMaxParticipants] = useState("");
   const [contactInfo, setContactInfo] = useState("");
   const [requirements, setRequirements] = useState("");
+  // Voluntariado interno: suma horas al programa. Excluyente con externo oficial.
+  const [isInternal, setIsInternal] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -59,6 +61,7 @@ export function EditarActivityClient() {
         setRequirements(a.requirements || "");
         setEstimatedDuration(a.estimated_duration_min ? String(a.estimated_duration_min) : "");
         setMaxParticipants(a.max_participants ? String(a.max_participants) : "");
+        setIsInternal(!!a.is_internal);
         const start = toVenezuelaParts(a.date_time);
         setDateTime(start.date ? `${start.date}T${start.time}` : "");
         const end = toVenezuelaParts(a.end_time);
@@ -87,6 +90,7 @@ export function EditarActivityClient() {
       max_participants: maxParticipants ? parseInt(maxParticipants) : null,
       contact_info: contactInfo || null,
       requirements,
+      is_internal: isInternal,
     };
 
     const res = await fetch(`${API}/api/v1/activities/${params.id}`, {
@@ -228,6 +232,46 @@ export function EditarActivityClient() {
             <label className="mb-1 block text-sm font-medium">Descripción</label>
             <textarea rows={4} value={description} onChange={(e) => setDescription(e.target.value)} className={INPUT_cls} />
           </div>
+
+          {/* Voluntariado interno: suma horas al programa. Excluyente con externo oficial. */}
+          {/* TODO (control por rol): de momento visible para el creador; si se
+              restringe por rol (coordinadores/staff/becarios de AVAA), condicionar. */}
+          <button
+            type="button"
+            onClick={() => setIsInternal((v) => !v)}
+            className={`flex w-full items-start gap-3 rounded-lg border px-4 py-3 text-left transition ${
+              isInternal
+                ? "border-emerald-400 bg-emerald-50 dark:border-emerald-500/60 dark:bg-emerald-950/30"
+                : "border-zinc-200 hover:border-zinc-300 dark:border-zinc-700 dark:hover:border-zinc-600"
+            }`}
+          >
+            <span
+              className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border transition ${
+                isInternal
+                  ? "border-emerald-500 bg-emerald-500 text-white dark:border-emerald-400 dark:bg-emerald-400 dark:text-emerald-950"
+                  : "border-zinc-300 bg-white dark:border-zinc-600 dark:bg-zinc-800"
+              }`}
+            >
+              {isInternal && (
+                <svg className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                  <path
+                    fillRule="evenodd"
+                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+              )}
+            </span>
+            <span className="min-w-0">
+              <span className="block text-sm font-medium text-zinc-800 dark:text-zinc-100">
+                Voluntariado interno
+              </span>
+              <span className="mt-0.5 block text-xs text-zinc-500 dark:text-zinc-400">
+                Suma horas de voluntariado al programa. Para tareas rápidas publicadas por
+                coordinadores y becarios de AVAA.
+              </span>
+            </span>
+          </button>
 
           {error && <p className="text-sm text-rose-600">{error}</p>}
 

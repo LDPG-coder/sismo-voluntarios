@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from sqlalchemy import Column, DateTime, Float, ForeignKey, Integer, String, Text, func
+from sqlalchemy import Boolean, Column, DateTime, Float, ForeignKey, Integer, String, Text, func
 from sqlalchemy.dialects.postgresql import UUID
 
 from app.db.models._base import Base, IdMixin, TimestampMixin, TenantMixin
@@ -25,5 +25,9 @@ class Activity(Base, IdMixin, TimestampMixin, TenantMixin):
     external_supervisor_email = Column(String(255), nullable=True)
     external_assigned_hours = Column(Float, nullable=True)
     external_certificate = Column(Text, nullable=True)
+    # Voluntariado interno: tareas rapidas publicadas por coordinadores/becarios
+    # de AVAA que SUMAN horas al programa. Excluyente con el voluntariado externo
+    # oficial (si is_internal=True, los campos external_* van vacios).
+    is_internal = Column(Boolean, nullable=False, default=False, server_default="false")
     creator_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False, index=True)
     status = Column(String(20), nullable=False, default=ActivityStatus.active.value)

@@ -11,6 +11,7 @@ export type Activity = {
   requirements: string | null;
   contact_info: string | null;
   is_external_official?: boolean;
+  is_internal?: boolean;
   creator_id: string;
   status: string;
   member_count: number;

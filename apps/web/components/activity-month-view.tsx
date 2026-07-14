@@ -213,13 +213,13 @@ export function ActivityMonthView({
                             title={activity.title}
                             className={cn(
                               "relative cursor-pointer truncate rounded-md px-1.5 py-1 text-[11px] leading-tight text-white transition",
-                              activity.is_external_official && "pl-4",
+                              (activity.is_external_official || activity.is_internal) && "pl-6",
                               isEnrolled
                                 ? "bg-emerald-600 hover:bg-emerald-500 dark:bg-emerald-500 dark:hover:bg-emerald-400"
                                 : "bg-zinc-600 hover:bg-zinc-500 dark:bg-zinc-700 dark:hover:bg-zinc-600"
                             )}
                           >
-                            {activity.is_external_official && <ExternalOfficialGem />}
+                            {(activity.is_external_official || activity.is_internal) && <ExternalOfficialGem />}
                             <span className="opacity-80">{time}</span>{" "}
                             {activity.title}
                           </div>

@@ -38,6 +38,9 @@ export function CrearActivityClient() {
   const [extSupervisorEmail, setExtSupervisorEmail] = useState("");
   const [extHours, setExtHours] = useState("");
 
+  // Voluntariado interno: suma horas al programa. Excluyente con externo oficial.
+  const [isInternal, setIsInternal] = useState(false);
+
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [aiThinking, setAiThinking] = useState(false);
@@ -77,6 +80,7 @@ export function CrearActivityClient() {
           if (saved.extSupervisor) setExtSupervisor(saved.extSupervisor);
           if (saved.extSupervisorEmail) setExtSupervisorEmail(saved.extSupervisorEmail);
           if (saved.extHours) setExtHours(saved.extHours);
+          if (typeof saved.isInternal === "boolean") setIsInternal(saved.isInternal);
         }
       }
     } catch {}
@@ -108,6 +112,7 @@ export function CrearActivityClient() {
             extSupervisor,
             extSupervisorEmail,
             extHours,
+            isInternal,
           }),
         );
       } catch {}
@@ -115,7 +120,7 @@ export function CrearActivityClient() {
     return () => {
       if (draftTimerRef.current) clearTimeout(draftTimerRef.current);
     };
-  },     [description, title, zone, rawAddress, dateTime, endDateTime, estimatedDuration, maxParticipants, contactInfo, requirements, aiEnabled, showExternal, extBeneficiary, extSupervisor, extSupervisorEmail, extHours]);
+  },     [description, title, zone, rawAddress, dateTime, endDateTime, estimatedDuration, maxParticipants, contactInfo, requirements, aiEnabled, showExternal, extBeneficiary, extSupervisor, extSupervisorEmail, extHours, isInternal]);
 
   useEffect(() => {
     if (!aiEnabled) return;
@@ -330,10 +335,11 @@ export function CrearActivityClient() {
       max_participants: maxParticipants ? parseInt(maxParticipants) : null,
       requirements: requirements.join(", "),
       contact_info: contactInfo || null,
-      external_beneficiary: extBeneficiary || null,
-      external_supervisor: extSupervisor || null,
-      external_supervisor_email: extSupervisorEmail || null,
-      external_assigned_hours: extHours ? parseFloat(extHours) : null,
+      external_beneficiary: isInternal ? null : extBeneficiary || null,
+      external_supervisor: isInternal ? null : extSupervisor || null,
+      external_supervisor_email: isInternal ? null : extSupervisorEmail || null,
+      external_assigned_hours: isInternal ? null : extHours ? parseFloat(extHours) : null,
+      is_internal: isInternal,
     };
 
     const res = await fetch(`${API}/api/v1/activities`, {
@@ -588,11 +594,68 @@ export function CrearActivityClient() {
             />
           </div>
 
-          <div className="rounded-lg border border-zinc-200 dark:border-zinc-700">
+          {/* Voluntariado interno: suma horas al programa. Excluyente con externo oficial. */}
+          {/* TODO (control por rol): de momento este checkbox es visible para
+              cualquier usuario con permiso de crear actividades. Si en el futuro
+              solo deben poder marcarlo ciertos roles (coordinadores, staff,
+              becarios de AVAA), condicionar este bloque al rol del usuario, p.ej.
+              envolverlo en {(user.role === "admin" || user.role === "coordinator" || ...) && (...)}. */}
+          <button
+            type="button"
+            onClick={() =>
+              setIsInternal((v) => {
+                const next = !v;
+                if (next) {
+                  // Exclusividad: al marcar interno se descarta lo externo oficial.
+                  setShowExternal(false);
+                  setExtBeneficiary("");
+                  setExtSupervisor("");
+                  setExtSupervisorEmail("");
+                  setExtHours("");
+                }
+                return next;
+              })
+            }
+            className={`flex w-full items-start gap-3 rounded-lg border px-4 py-3 text-left transition ${
+              isInternal
+                ? "border-emerald-400 bg-emerald-50 dark:border-emerald-500/60 dark:bg-emerald-950/30"
+                : "border-zinc-200 hover:border-zinc-300 dark:border-zinc-700 dark:hover:border-zinc-600"
+            }`}
+          >
+            <span
+              className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border transition ${
+                isInternal
+                  ? "border-emerald-500 bg-emerald-500 text-white dark:border-emerald-400 dark:bg-emerald-400 dark:text-emerald-950"
+                  : "border-zinc-300 bg-white dark:border-zinc-600 dark:bg-zinc-800"
+              }`}
+            >
+              {isInternal && (
+                <svg className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                  <path
+                    fillRule="evenodd"
+                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+              )}
+            </span>
+            <span className="min-w-0">
+              <span className="block text-sm font-medium text-zinc-800 dark:text-zinc-100">
+                Voluntariado interno
+              </span>
+              <span className="mt-0.5 block text-xs text-zinc-500 dark:text-zinc-400">
+                Suma horas de voluntariado al programa. Para tareas rápidas publicadas por
+                coordinadores y becarios de AVAA.
+              </span>
+            </span>
+          </button>
+
+          <div className={`rounded-lg border border-zinc-200 transition dark:border-zinc-700 ${isInternal ? "pointer-events-none opacity-50" : ""}`}>
             <button
               type="button"
               onClick={() => setShowExternal((v) => !v)}
-              className="flex w-full items-center justify-between px-4 py-3 text-sm font-medium"
+              disabled={isInternal}
+              className="flex w-full items-center justify-between px-4 py-3 text-sm font-medium disabled:cursor-not-allowed"
             >
               <span>Voluntariados oficiales Externos</span>
               <svg

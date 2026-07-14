@@ -26,6 +26,7 @@ type Activity = {
   member_count: number;
   my_attended?: boolean | null;
   is_external_official?: boolean;
+  is_internal?: boolean;
   has_attendance?: boolean;
   external_certificate?: string | null;
   creator?: {
@@ -286,6 +287,10 @@ export default function ActivityDetailPage() {
               {activity.is_external_official ? (
                 <span className="font-medium text-emerald-700 dark:text-[#079669]">
                   Voluntariado externo oficial
+                </span>
+              ) : activity.is_internal ? (
+                <span className="font-medium text-emerald-700 dark:text-[#079669]">
+                  Voluntariado interno
                 </span>
               ) : (
                 <span className="font-medium text-zinc-600 dark:text-zinc-400">

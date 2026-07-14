@@ -125,8 +125,12 @@ export function ActivityDetailModal({
               <svg className="mt-0.5 h-4 w-4 shrink-0 text-zinc-400" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
               </svg>
-              <span className={activity.is_external_official ? "font-medium text-emerald-700 dark:text-[#079669]" : ""}>
-                {activity.is_external_official ? "Voluntariado externo oficial" : "Voluntariado no oficial"}
+              <span className={activity.is_external_official || activity.is_internal ? "font-medium text-emerald-700 dark:text-[#079669]" : ""}>
+                {activity.is_external_official
+                  ? "Voluntariado externo oficial"
+                  : activity.is_internal
+                    ? "Voluntariado interno"
+                    : "Voluntariado no oficial"}
               </span>
             </div>
           </div>

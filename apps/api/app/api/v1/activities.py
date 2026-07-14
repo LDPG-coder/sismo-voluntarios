@@ -45,6 +45,7 @@ def _serialize_activity(
         "requirements": a.requirements,
         "contact_info": a.contact_info,
         "is_external_official": bool(a.external_beneficiary),
+        "is_internal": bool(a.is_internal),
         "creator_id": str(a.creator_id),
         "status": a.status,
         "member_count": member_count,
@@ -346,6 +347,8 @@ class _CreateActivityBody(BaseModel):
     external_supervisor: str | None = Field(None, max_length=255)
     external_supervisor_email: str | None = Field(None, max_length=255)
     external_assigned_hours: float | None = Field(None, ge=0, le=100000)
+    # Voluntariado interno: suma horas al programa. Excluyente con externo oficial.
+    is_internal: bool = Field(False)
 
 
 @router.post("")
@@ -386,6 +389,15 @@ def create_activity(
         except (ValueError, TypeError):
             pass
 
+    # Voluntariado interno y externo oficial son excluyentes: si se marca interno,
+    # se descartan los datos de externo oficial.
+    # TODO (control por rol): de momento cualquier usuario con permiso de crear
+    # puede marcar `is_internal`. Si en el futuro solo coordinadores/staff/becarios
+    # de AVAA deben poder crearlo, validar aqui el rol del usuario, p.ej.:
+    #   if body.is_internal and user.role not in {UserRole.admin.value, "coordinator", "staff"}:
+    #       raise ApiError(ErrorCode.auth_forbidden, "solo coordinadores/staff pueden crear voluntariado interno")
+    is_internal = bool(body.is_internal)
+
     a = Activity(
         title=title,
         description=body.description,
@@ -397,10 +409,11 @@ def create_activity(
         max_participants=body.max_participants,
         requirements=body.requirements,
         contact_info=body.contact_info,
-        external_beneficiary=body.external_beneficiary,
-        external_supervisor=body.external_supervisor,
-        external_supervisor_email=body.external_supervisor_email,
-        external_assigned_hours=body.external_assigned_hours,
+        external_beneficiary=None if is_internal else body.external_beneficiary,
+        external_supervisor=None if is_internal else body.external_supervisor,
+        external_supervisor_email=None if is_internal else body.external_supervisor_email,
+        external_assigned_hours=None if is_internal else body.external_assigned_hours,
+        is_internal=is_internal,
         creator_id=user.id,
         status=ActivityStatus.active.value,
     )
@@ -428,6 +441,17 @@ def update_activity(
     _apply_text_fields(a, body)
     _apply_datetime_fields(a, body)
     _apply_numeric_fields(a, body)
+
+    # Voluntariado interno y externo oficial son excluyentes.
+    # TODO (control por rol): ver create_activity; si se restringe por rol,
+    # validar aqui tambien antes de permitir marcar `is_internal`.
+    if body.is_internal is not None:
+        a.is_internal = bool(body.is_internal)
+        if a.is_internal:
+            a.external_beneficiary = None
+            a.external_supervisor = None
+            a.external_supervisor_email = None
+            a.external_assigned_hours = None
 
     db.commit()
     db.refresh(a)
@@ -703,6 +727,7 @@ class _UpdateActivityBody(BaseModel):
     external_supervisor: str | None = None
     external_supervisor_email: str | None = None
     external_assigned_hours: float | None = None
+    is_internal: bool | None = None
 
 
 def _apply_text_fields(a: Activity, body: _UpdateActivityBody) -> None:

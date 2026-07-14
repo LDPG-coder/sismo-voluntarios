@@ -14,6 +14,14 @@ type ActivityCardProps = {
 export function ActivityCard({ activity, isEnrolled, onJoin, onCeded }: ActivityCardProps) {
   const [ceding, setCeding] = useState(false);
   const isExternalOfficial = activity.is_external_official;
+  const isInternal = activity.is_internal;
+  // Ambos tipos que suman horas comparten el mismo tratamiento visual (borde + gema).
+  const isHoursType = isExternalOfficial || isInternal;
+  const hoursTypeLabel = isExternalOfficial
+    ? "Voluntariado externo oficial"
+    : isInternal
+      ? "Voluntariado interno"
+      : "Voluntariado no oficial";
   const activityDate = new Date(activity.date_time);
   const endDate = activity.end_time ? new Date(activity.end_time) : null;
 
@@ -32,7 +40,7 @@ export function ActivityCard({ activity, isEnrolled, onJoin, onCeded }: Activity
   };
 
   const innerCls = `relative rounded-lg bg-white p-4 shadow-sm transition hover:shadow-md dark:bg-[#18181b] ${
-    isExternalOfficial
+    isHoursType
       ? ""
       : isEnrolled
         ? "border border-emerald-200 dark:border-emerald-900"
@@ -42,7 +50,7 @@ export function ActivityCard({ activity, isEnrolled, onJoin, onCeded }: Activity
   return (
     <>
       <Link href={`/voluntarios/${activity.id}`} className="block">
-      <div className={isExternalOfficial ? "emerald-border-animated rounded-lg p-[2px]" : ""}>
+      <div className={isHoursType ? "emerald-border-animated rounded-lg p-[2px]" : ""}>
       <div className={innerCls}>
         <div className="mb-2">
           <span className="inline-block rounded-full bg-[#eaebed] px-2.5 py-0.5 text-xs font-medium text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400">
@@ -76,8 +84,8 @@ export function ActivityCard({ activity, isEnrolled, onJoin, onCeded }: Activity
             <svg className="h-3.5 w-3.5 shrink-0 text-zinc-400" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
             </svg>
-            <span className={isExternalOfficial ? "font-medium text-emerald-700 dark:text-[#079669]" : ""}>
-              {isExternalOfficial ? "Voluntariado externo oficial" : "Voluntariado no oficial"}
+            <span className={isHoursType ? "font-medium text-emerald-700 dark:text-[#079669]" : ""}>
+              {hoursTypeLabel}
             </span>
           </div>
         </div>
