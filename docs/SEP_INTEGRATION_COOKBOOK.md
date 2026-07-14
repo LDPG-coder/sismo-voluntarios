@@ -78,13 +78,6 @@ function onVoluntariosClick(sepUser):
     redirect("https://voluntarios.sep.org/auth/sep?code=" + code)
 ```
 
-### B.2 Entregar la referencia visual de SEP  **[PENDIENTE]**
-
-El equipo de SEP entrega a SISMO el markup y el CSS del header y del sidebar del
-sitio del SEP (o una especificación de diseño equivalente). SISMO construye con
-ellos el header y el sidebar de SISMO-Voluntarios para imitar la apariencia del
-SEP. No se embebe la UI de SISMO dentro del SEP.
-
 ### B.3 Backend de SEP: campana en el header general  **[PENDIENTE]**
 
 Para el usuario actual, SEP consulta la Partner API de SISMO y pinta el
@@ -103,11 +96,9 @@ Authorization: Bearer <SISMO_SEP_API_TOKEN>
 ### B.4 Logout  **[PENDIENTE]**
 
 En el logout global de SEP, además de limpiar la sesión SEP, se termina la
-sesión de SISMO-Voluntarios. Dos opciones:
-
-- Redirigir al navegador a `https://voluntarios.sep.org/auth/logout`, o
-- si SISMO se sirve en un subdominio de SEP, eliminar la cookie
-  `sismo_session` con `Set-Cookie` y `Max-Age=0` (o `Expires` pasado).
+sesión de SISMO-Voluntarios. Como SISMO se sirve en un subdominio de SEP, el SEP
+elimina la cookie `sismo_session` con `Set-Cookie` y `Max-Age=0` (o `Expires`
+pasado).
 
 ---
 
@@ -131,9 +122,10 @@ sesión de SISMO-Voluntarios. Dos opciones:
 - [x] Partner API implementada en SISMO (`partner.py`, registrada, con tests).
 - [x] Flujo `sep-login` / `exchange` implementado en SISMO (identidad SEP por
       one-time code).
-- [ ] SEP: entregar a SISMO el markup/CSS del header y sidebar del SEP (B.2).
 - [ ] SEP: agregar enlace "Voluntariados" en su sidebar apuntando al servidor de
-      SISMO-Voluntarios.
+      SISMO-Voluntarios (B.1).
+- [ ] SEP: coordinar con SISMO qué páginas del SEP aparecen en el sidebar de
+      SISMO-Voluntarios y que el SEP gestione su sesión (B.2).
 - [ ] SEP: generar el `code` vía `sep-login` y redirigir a `/auth/sep?code=`
       (B.1).
 - [ ] SEP: campana en header vía Partner API (B.3).
