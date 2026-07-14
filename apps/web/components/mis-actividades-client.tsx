@@ -10,7 +10,11 @@ import { useSession } from "@/components/session-provider";
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
-interface Activity {
+// Tope de actividades visibles por sección en la pestaña "Creadas". Al superar
+// el tope, el título de la sección enlaza a la página de "ver todas".
+const MAX_CREATED_PER_SECTION = 5;
+
+export interface Activity {
   id: string;
   title: string;
   description: string | null;
@@ -144,12 +148,14 @@ export function MisActividadesClient() {
               count={pendingConfirm.length}
               items={pendingConfirm}
               isCreated={isCreated}
+              estado="pending"
             />
             <Section
               title="Activas"
               count={active.length}
               items={active}
               isCreated={isCreated}
+              estado="active"
               onArchive={(id, title) => setConfirmAction({ id, title, action: "archive" })}
               onCancel={(id, title) => setConfirmAction({ id, title, action: "cancel" })}
               onCeded={(id) => setEnrolled((prev) => prev.filter((a) => a.id !== id))}
@@ -159,12 +165,14 @@ export function MisActividadesClient() {
               count={archived.length}
               items={archived}
               isCreated={isCreated}
+              estado="archived"
             />
             <Section
               title="Canceladas"
               count={cancelled.length}
               items={cancelled}
               isCreated={isCreated}
+              estado="cancelled"
             />
           </>
         )}
@@ -252,6 +260,7 @@ function Section({
   count,
   items,
   isCreated,
+  estado,
   onArchive,
   onCancel,
   onCeded,
@@ -260,18 +269,32 @@ function Section({
   count: number;
   items: Activity[];
   isCreated: boolean;
+  estado: string;
   onArchive?: (id: string, title: string) => void;
   onCancel?: (id: string, title: string) => void;
   onCeded?: (id: string) => void;
 }) {
   if (count === 0) return null;
+  const limited =
+    isCreated && count > MAX_CREATED_PER_SECTION;
+  const visible = limited ? items.slice(0, MAX_CREATED_PER_SECTION) : items;
+  const allHref = `/mis-actividades/todas?tab=created&estado=${estado}`;
+  const titleEl = isCreated ? (
+    <Link href={allHref} className="hover:underline">
+      {title} ({count})
+    </Link>
+  ) : (
+    <>
+      {title} ({count})
+    </>
+  );
   return (
     <section className="mb-8">
       <h2 className="mb-3 text-sm font-semibold uppercase text-zinc-400">
-        {title} ({count})
+        {titleEl}
       </h2>
       <div className="space-y-3">
-        {items.map((a) => (
+        {visible.map((a) => (
           <ActivityCard
             key={a.id}
             activity={a}
@@ -282,11 +305,19 @@ function Section({
           />
         ))}
       </div>
+      {limited && (
+        <Link
+          href={allHref}
+          className="mt-2 inline-block text-xs font-medium text-emerald-600 hover:underline dark:text-emerald-400"
+        >
+          Ver todas ({count})
+        </Link>
+      )}
     </section>
   );
 }
 
-function ActivityCard({
+export function ActivityCard({
   activity: a,
   isCreated,
   onArchive,
