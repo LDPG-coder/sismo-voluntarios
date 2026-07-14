@@ -95,6 +95,31 @@ body {
   );
 }
 
+/* Transiciones deslizables entre los modos del editor de propuestas */
+@keyframes slide-in-right {
+  0% { opacity: 0; transform: translateX(24px); }
+  100% { opacity: 1; transform: translateX(0); }
+}
+@keyframes slide-in-left {
+  0% { opacity: 0; transform: translateX(-24px); }
+  100% { opacity: 1; transform: translateX(0); }
+}
+.animate-slide-in-right {
+  animation: slide-in-right 0.28s ease-out;
+}
+.animate-slide-in-left {
+  animation: slide-in-left 0.28s ease-out;
+}
+
+/* Punto de estado pulsante mientras la IA formatea el texto */
+@keyframes ai-status-fade {
+  0% { opacity: 0; transform: translateY(4px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+.animate-ai-status {
+  animation: ai-status-fade 0.4s ease-out;
+}
+
 /* Todos los botones con texto en negrita */
 button {
   font-weight: 600 !important;

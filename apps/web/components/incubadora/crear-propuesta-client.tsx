@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ProposalEditor } from "@/components/incubadora/proposal-editor";
+import { ProposalAiEditor } from "@/components/incubadora/proposal-ai-editor";
 import { BudgetBuilder, type BudgetRow } from "@/components/incubadora/budget-builder";
 import {
   readFileAsDataURL,
@@ -248,7 +248,7 @@ export function CrearPropuestaClient({
             </CardHeader>
             <CardContent className="space-y-4">
               <Field label="Descripcion completa">
-                <ProposalEditor value={description} onChange={setDescription} />
+                <ProposalAiEditor value={description} onChange={setDescription} />
               </Field>
               <Field label="Problematica que busca resolver">
                 <Textarea
@@ -276,7 +276,7 @@ export function CrearPropuestaClient({
             </CardHeader>
             <CardContent className="space-y-4">
               <Field label="Plan de ejecucion">
-                <ProposalEditor
+                <ProposalAiEditor
                   value={plan}
                   onChange={setPlan}
                   placeholder="Explica como ejecutaras el proyecto."
