@@ -85,7 +85,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 type="button"
                 onClick={() => setProfileOpen(!profileOpen)}
                 aria-label="Mi perfil"
-                className="group relative flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-[#eaebed] transition dark:bg-zinc-800"
+                className="group relative flex h-9 w-9 items-center justify-center overflow-hidden rounded-md bg-[#eaebed] transition dark:bg-zinc-800"
               >
                 {user?.photo_url ? (
                   <img src={user.photo_url} alt="" className="h-full w-full object-cover" />
@@ -94,7 +94,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                     <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
                   </svg>
                 )}
-                <span className="pointer-events-none absolute inset-0 rounded-full bg-black opacity-0 transition-opacity duration-200 group-hover:opacity-20" />
+                <span className="pointer-events-none absolute inset-0 rounded-md bg-black opacity-0 transition-opacity duration-200 group-hover:opacity-20" />
               </button>
 
               {profileOpen && (

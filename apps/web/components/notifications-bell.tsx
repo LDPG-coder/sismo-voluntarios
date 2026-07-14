@@ -145,8 +145,8 @@ export function NotificationsBell() {
               {notifications.map((n) => (
                 <button
                   key={n.id}
-                  onClick={() => {
-                    markRead(n.id);
+                  onClick={async () => {
+                    if (!n.read) await markRead(n.id);
                     if (n.activity_id) {
                       window.location.href = `/voluntarios/${n.activity_id}`;
                     }
