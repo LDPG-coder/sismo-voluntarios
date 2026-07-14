@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useEffect } from "react";
 import { useEditor, EditorContent, type Editor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Link from "@tiptap/extension-link";
@@ -97,6 +97,23 @@ export function ProposalEditor({
     onUpdate: ({ editor }) => onChange(getMarkdown(editor)),
   });
 
+  // Sincroniza el contenido cuando el valor llega desde afuera (p. ej. al
+  // cargar una propuesta existente en modo edición) sin disparar un bucle con
+  // onUpdate. Se omite la primera ejecución (el editor ya carga `value`).
+  const mounted = useRef(false);
+  useEffect(() => {
+    if (!editor) return;
+    if (!mounted.current) {
+      mounted.current = true;
+      return;
+    }
+    if (editor.isFocused) return;
+    const current = getMarkdown(editor);
+    if (value !== current) {
+      editor.commands.setContent(value ?? "", false);
+    }
+  }, [value, editor]);
+
   const insertImage = async (file: File) => {
     if (!editor) return;
     if (imageTooLarge(file)) {
@@ -120,6 +137,13 @@ export function ProposalEditor({
   return (
     <div className="rounded-md border border-zinc-200 dark:border-zinc-800">
       <div className="flex flex-wrap items-center gap-0.5 rounded-t-md border-b border-zinc-200 bg-[#f7f8f9] p-1 dark:border-zinc-800 dark:bg-zinc-900">
+        <ToolbarButton title="Deshacer" disabled={!editor.can().undo()} onClick={() => editor.chain().focus().undo().run()}>
+          ↶
+        </ToolbarButton>
+        <ToolbarButton title="Rehacer" disabled={!editor.can().redo()} onClick={() => editor.chain().focus().redo().run()}>
+          ↷
+        </ToolbarButton>
+        <Divider />
         <ToolbarButton title="Negrita" active={editor.isActive("bold")} onClick={() => editor.chain().focus().toggleBold().run()}>
           <span className="font-bold">B</span>
         </ToolbarButton>
@@ -181,6 +205,10 @@ export function ProposalEditor({
         </ToolbarButton>
       </div>
       <EditorContent editor={editor} />
+      <p className="px-3 py-1.5 text-xs text-zinc-400 dark:text-zinc-500">
+        Selecciona el texto para aplicar formato. Cita y Código se aplican al
+        párrafo donde estás; vuelve a pulsar el botón para salir.
+      </p>
       <input
         ref={fileRef}
         type="file"
