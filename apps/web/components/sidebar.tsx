@@ -71,7 +71,7 @@ export function Sidebar({ user, open, onClose }: { user: User; open: boolean; on
                 <SubLink href="#" label="Subir voluntariado externo" active={false} onClick={onClose} />
               </div>
             )}
-            <NavLink href="#" label="Oferta de actividades" Icon={CalendarIcon} active bold onClick={onClose} />
+            <NavLink href="#" label="Oferta de actividades" Icon={CalendarIcon} active={false} iconActive bold onClick={onClose} />
           </div>
         </div>
 
@@ -136,6 +136,7 @@ function NavLink({
   Icon,
   active,
   bold,
+  iconActive,
   onClick,
 }: {
   href: string;
@@ -143,6 +144,7 @@ function NavLink({
   Icon: ComponentType<SVGProps<SVGSVGElement>>;
   active: boolean;
   bold: boolean;
+  iconActive?: boolean;
   onClick: () => void;
 }) {
   return (
@@ -157,7 +159,7 @@ function NavLink({
           : "text-[#333333] hover:bg-zinc-100 dark:text-[#E0E0E0] dark:hover:bg-zinc-800"
       )}
     >
-      <Icon className="h-5 w-5 shrink-0" />
+      <Icon className={cn("h-5 w-5 shrink-0", iconActive && "text-[#00A650]")} />
       {label}
     </Link>
   );
