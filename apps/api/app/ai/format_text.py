@@ -75,6 +75,11 @@ _COMMON_RULES = (
     "ubicalas en el lugar mas adecuado.\n"
     "- Si el usuario aporta especificaciones, respetalas siempre que no impliquen "
     "inventar datos.\n"
+    "- NO agregues comentarios meta ni frases sobre el propio documento (por "
+    "ejemplo: 'Este documento refleja fielmente el contenido del borrador', "
+    "'organizado para facilitar su lectura', notas al redactor, disclaimers o "
+    "conclusiones sobre el formato). Entrega unicamente el contenido de la "
+    "propuesta, sin hablar del texto ni del proceso.\n"
     "- Responde SOLO con el Markdown final, sin explicaciones, sin bloques de "
     "codigo, sin comillas alrededor."
 )
