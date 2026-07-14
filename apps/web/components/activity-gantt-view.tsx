@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import type { Activity } from "@/lib/types";
+import { ExternalOfficialGem } from "@/components/external-official-gem";
 
 type ActivityGanttViewProps = {
   activities: Activity[];
@@ -283,6 +284,7 @@ export function ActivityGanttView({
                       top: index * 84 + 6,
                     }}
                   >
+                    {block.activity.is_external_official && <ExternalOfficialGem />}
                     <span className="line-clamp-2 leading-tight">{block.activity.title}</span>
                     {conflict === "emergency" && (
                       <span className="ml-1 text-xs">⚠</span>

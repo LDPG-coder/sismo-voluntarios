@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, Text, func
+from sqlalchemy import Column, DateTime, Float, ForeignKey, Integer, String, Text, func
 from sqlalchemy.dialects.postgresql import UUID
 
 from app.db.models._base import Base, IdMixin, TimestampMixin, TenantMixin
@@ -20,5 +20,9 @@ class Activity(Base, IdMixin, TimestampMixin, TenantMixin):
     max_participants = Column(Integer, nullable=True)
     requirements = Column(Text, nullable=True)
     contact_info = Column(Text, nullable=True)
+    external_beneficiary = Column(String(255), nullable=True)
+    external_supervisor = Column(String(255), nullable=True)
+    external_supervisor_email = Column(String(255), nullable=True)
+    external_assigned_hours = Column(Float, nullable=True)
     creator_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False, index=True)
     status = Column(String(20), nullable=False, default=ActivityStatus.active.value)

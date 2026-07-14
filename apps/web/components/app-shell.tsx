@@ -16,7 +16,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const { user, setUser } = useSession();
   const lastScroll = useRef(0);
 
-  const canCreate = user?.auth_source === "sep" || user?.role === "admin";
+  // TEMPORAL (ver docs/external-users-access.md): también los usuarios externos
+  // (google) pueden crear actividades.
+  // const canCreate = user?.auth_source === "sep" || user?.role === "admin";
+  const canCreate =
+    user?.auth_source === "sep" || user?.role === "admin" || user?.auth_source === "google";
 
   useEffect(() => {
     const unsub = onPhotoChanged((photoUrl) => {

@@ -10,6 +10,7 @@ export type Activity = {
   max_participants: number | null;
   requirements: string | null;
   contact_info: string | null;
+  is_external_official?: boolean;
   creator_id: string;
   status: string;
   member_count: number;

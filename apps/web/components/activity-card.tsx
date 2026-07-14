@@ -13,6 +13,7 @@ type ActivityCardProps = {
 
 export function ActivityCard({ activity, isEnrolled, onJoin, onCeded }: ActivityCardProps) {
   const [ceding, setCeding] = useState(false);
+  const isExternalOfficial = activity.is_external_official;
   const activityDate = new Date(activity.date_time);
   const endDate = activity.end_time ? new Date(activity.end_time) : null;
 
@@ -30,14 +31,19 @@ export function ActivityCard({ activity, isEnrolled, onJoin, onCeded }: Activity
     return start;
   };
 
+  const innerCls = `relative rounded-lg bg-white p-4 shadow-sm transition hover:shadow-md dark:bg-[#18181b] ${
+    isExternalOfficial
+      ? ""
+      : isEnrolled
+        ? "border border-emerald-200 dark:border-emerald-900"
+        : "border border-zinc-200 dark:border-zinc-800"
+  }`;
+
   return (
     <>
       <Link href={`/voluntarios/${activity.id}`} className="block">
-      <div className={`relative rounded-lg border bg-white p-4 shadow-sm transition hover:shadow-md dark:bg-[#18181b] ${
-        isEnrolled
-          ? "border-emerald-200 dark:border-emerald-900"
-          : "border-zinc-200 dark:border-zinc-800"
-      }`}>
+      <div className={isExternalOfficial ? "emerald-border-animated rounded-lg p-[2px]" : ""}>
+      <div className={innerCls}>
         <div className="mb-2">
           <span className="inline-block rounded-full bg-[#eaebed] px-2.5 py-0.5 text-xs font-medium text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400">
             {activity.zone}
@@ -119,6 +125,7 @@ export function ActivityCard({ activity, isEnrolled, onJoin, onCeded }: Activity
             </button>
           )}
         </div>
+      </div>
       </div>
       </Link>
 

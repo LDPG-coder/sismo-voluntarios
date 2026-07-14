@@ -62,11 +62,13 @@ def user_directory(
     # account; external (Google) users can only ceder among other externals,
     # so they only see external accounts here. (Ceder to an ineligible target
     # is also enforced server-side in POST /activities/{id}/transfer.)
+    # TEMPORAL (ver docs/external-users-access.md): se muestra el directorio
+    # completo a usuarios externos (google), no solo cuentas google.
     is_external = user.auth_source == "google" and user.role != UserRole.admin.value
 
     q = select(User).where(User.id != user.id)
-    if is_external:
-        q = q.where(User.auth_source == "google")
+    # if is_external:
+    #     q = q.where(User.auth_source == "google")
 
     if activity_id:
         try:

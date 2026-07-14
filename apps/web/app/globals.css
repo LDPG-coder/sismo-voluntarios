@@ -55,6 +55,45 @@ body {
   --sh-base: #a1a1aa;
 }
 
+/* Borde esmeralda animado para voluntariados oficiales externos (vista de lista).
+   El borde es transparente (como el fondo) y solo una banda de reflejo
+   esmeralda lo recorre de forma lenta y discreta. */
+@keyframes emerald-sheen {
+  0% { background-position: 220% 0; }
+  100% { background-position: -220% 0; }
+}
+
+.emerald-border-animated {
+  background-image: linear-gradient(
+    110deg,
+    rgba(16, 185, 129, 0) 0%,
+    rgba(16, 185, 129, 0) 25%,
+    rgba(52, 211, 153, 0.9) 33%,
+    rgba(236, 253, 245, 0.95) 50%,
+    rgba(52, 211, 153, 0.9) 67%,
+    rgba(16, 185, 129, 0) 75%,
+    rgba(16, 185, 129, 0) 100%
+  );
+  background-size: 220% 100%;
+  animation: emerald-sheen 4s linear infinite;
+}
+
+/* En modo oscuro el reflejo usa un verde mas oscuro (familia esmeralda de
+   los botones de seleccion de vista) en los hombros y se aclara al blanco en
+   el centro. El resto del borde queda transparente. */
+.dark .emerald-border-animated {
+  background-image: linear-gradient(
+    110deg,
+    rgba(5, 150, 105, 0) 0%,
+    rgba(5, 150, 105, 0) 36%,
+    rgba(5, 150, 105, 0.85) 43%,
+    rgba(167, 243, 208, 0.95) 50%,
+    rgba(5, 150, 105, 0.85) 57%,
+    rgba(5, 150, 105, 0) 64%,
+    rgba(5, 150, 105, 0) 100%
+  );
+}
+
 /* Todos los botones con texto en negrita */
 button {
   font-weight: 600 !important;

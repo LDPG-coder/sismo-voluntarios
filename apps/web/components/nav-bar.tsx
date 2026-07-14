@@ -46,7 +46,11 @@ export function NavBar() {
     return unsub;
   }, []);
 
-  const canCreate = user?.auth_source === "sep" || user?.role === "admin";
+  // TEMPORAL (ver docs/external-users-access.md): también los usuarios externos
+  // (google) pueden crear actividades.
+  // const canCreate = user?.auth_source === "sep" || user?.role === "admin";
+  const canCreate =
+    user?.auth_source === "sep" || user?.role === "admin" || user?.auth_source === "google";
 
   return (
     <nav className="border-b border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950">

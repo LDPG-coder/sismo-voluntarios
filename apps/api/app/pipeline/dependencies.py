@@ -82,9 +82,13 @@ def make_require_session(
         user = _user_or_404(db, payload.user_id)
         _user_active(user)
         if role == UserRole.admin and user.role != UserRole.admin:
-            if optional:
-                return None
-            raise ApiError(ErrorCode.auth_forbidden, "admin role required")
+            # TEMPORAL (ver docs/external-users-access.md): se permite que
+            # usuarios externos (google) accedan a las rutas de admin, no solo
+            # los roles admin.
+            if user.auth_source != "google":
+                if optional:
+                    return None
+                raise ApiError(ErrorCode.auth_forbidden, "admin role required")
         return user
 
     return _dependency

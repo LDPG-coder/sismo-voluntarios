@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import type { Activity } from "@/lib/types";
+import { ExternalOfficialGem } from "@/components/external-official-gem";
 
 type ActivityWeekViewProps = {
   activities: Activity[];
@@ -367,6 +368,7 @@ export function ActivityWeekView({
                           height: BLOCK_HEIGHT,
                         }}
                       >
+                        {it.activity.is_external_official && <ExternalOfficialGem />}
                         <div className="flex items-center gap-1">
                           {it.conflict === "emergency" && (
                             <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-rose-500" />

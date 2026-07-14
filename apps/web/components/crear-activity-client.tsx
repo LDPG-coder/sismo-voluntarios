@@ -10,10 +10,10 @@ const DRAFT_DEBOUNCE_MS = 800;
 const ZONES = ["Caracas", "Guatire", "Guarenas", "La Guaira", "Altos Mirandinos", "Caucagua"];
 
 const INPUT_cls =
-  "w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm placeholder:text-zinc-400 focus:border-zinc-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-700 dark:bg-zinc-800 dark:placeholder:text-zinc-500";
+  "w-full rounded-md bg-white px-3 py-2 text-sm placeholder:text-zinc-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-zinc-800 dark:placeholder:text-zinc-500";
 
 const INPUT_LOADING_cls =
-  "w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm animate-shimmer relative overflow-hidden disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-700 dark:bg-zinc-800";
+  "w-full rounded-md bg-white px-3 py-2 text-sm animate-shimmer relative overflow-hidden disabled:cursor-not-allowed disabled:opacity-50 dark:bg-zinc-800";
 
 export function CrearActivityClient() {
   const router = useRouter();
@@ -31,6 +31,13 @@ export function CrearActivityClient() {
   const [contactInfo, setContactInfo] = useState("");
   const [requirements, setRequirements] = useState<string[]>([]);
   const [reqInput, setReqInput] = useState("");
+
+  const [showExternal, setShowExternal] = useState(false);
+  const [extBeneficiary, setExtBeneficiary] = useState("");
+  const [extSupervisor, setExtSupervisor] = useState("");
+  const [extSupervisorEmail, setExtSupervisorEmail] = useState("");
+  const [extHours, setExtHours] = useState("");
+
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [aiThinking, setAiThinking] = useState(false);
@@ -46,18 +53,6 @@ export function CrearActivityClient() {
 
   const mountedRef = useRef(false);
   const draftTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const resetAiFields = () => {
-    setTitle("");
-    setZone("");
-    setRawAddress("");
-    setDateTime("");
-    setEndDateTime("");
-    setEstimatedDuration("");
-    setMaxParticipants("");
-    setContactInfo("");
-    setRequirements([]);
-  };
 
   useEffect(() => {
     try {
@@ -77,6 +72,11 @@ export function CrearActivityClient() {
           if (saved.maxParticipants) setMaxParticipants(saved.maxParticipants);
           if (saved.contactInfo) setContactInfo(saved.contactInfo);
           if (saved.requirements?.length) setRequirements(saved.requirements);
+          if (typeof saved.showExternal === "boolean") setShowExternal(saved.showExternal);
+          if (saved.extBeneficiary) setExtBeneficiary(saved.extBeneficiary);
+          if (saved.extSupervisor) setExtSupervisor(saved.extSupervisor);
+          if (saved.extSupervisorEmail) setExtSupervisorEmail(saved.extSupervisorEmail);
+          if (saved.extHours) setExtHours(saved.extHours);
         }
       }
     } catch {}
@@ -103,6 +103,11 @@ export function CrearActivityClient() {
             contactInfo,
             requirements,
             aiEnabled,
+            showExternal,
+            extBeneficiary,
+            extSupervisor,
+            extSupervisorEmail,
+            extHours,
           }),
         );
       } catch {}
@@ -110,7 +115,7 @@ export function CrearActivityClient() {
     return () => {
       if (draftTimerRef.current) clearTimeout(draftTimerRef.current);
     };
-  }, [description, title, zone, rawAddress, dateTime, endDateTime, estimatedDuration, maxParticipants, contactInfo, requirements, aiEnabled]);
+  },     [description, title, zone, rawAddress, dateTime, endDateTime, estimatedDuration, maxParticipants, contactInfo, requirements, aiEnabled, showExternal, extBeneficiary, extSupervisor, extSupervisorEmail, extHours]);
 
   useEffect(() => {
     if (!aiEnabled) return;
@@ -190,7 +195,33 @@ export function CrearActivityClient() {
           body: JSON.stringify({ description: desc }),
           signal: ctrl.signal,
         });
-        if (!res.ok) {
+    const extAnyFilled = !!(
+      extBeneficiary ||
+      extSupervisor ||
+      extSupervisorEmail ||
+      extHours
+    );
+    if (extAnyFilled) {
+      const extComplete =
+        extBeneficiary.trim() &&
+        extSupervisor.trim() &&
+        extSupervisorEmail.trim() &&
+        extHours.trim();
+      if (!extComplete) {
+        setError(
+          "Si completas datos de Voluntariados oficiales Externos, todos los campos son obligatorios",
+        );
+        setSubmitting(false);
+        return;
+      }
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(extSupervisorEmail.trim())) {
+        setError("El correo del supervisor no es válido");
+        setSubmitting(false);
+        return;
+      }
+    }
+
+    if (!res.ok) {
           setAiThinking(false);
           return;
         }
@@ -299,6 +330,10 @@ export function CrearActivityClient() {
       max_participants: maxParticipants ? parseInt(maxParticipants) : null,
       requirements: requirements.join(", "),
       contact_info: contactInfo || null,
+      external_beneficiary: extBeneficiary || null,
+      external_supervisor: extSupervisor || null,
+      external_supervisor_email: extSupervisorEmail || null,
+      external_assigned_hours: extHours ? parseFloat(extHours) : null,
     };
 
     const res = await fetch(`${API}/api/v1/activities`, {
@@ -323,6 +358,13 @@ export function CrearActivityClient() {
   return (
     <div className="min-h-screen">
       <main className="mx-auto max-w-lg px-4 py-8">
+        <button
+          type="button"
+          onClick={() => router.back()}
+          className="mb-4 text-sm text-zinc-500 transition hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200"
+        >
+          &larr; Volver
+        </button>
         <h1 className="mb-2 text-xl font-bold">Crear actividad</h1>
         <p className="mb-6 text-sm text-zinc-500">
           Escribe la descripcion y los campos se rellenan solos.
@@ -340,8 +382,6 @@ export function CrearActivityClient() {
                   if (next) {
                     setTextShimmer(true);
                     setTimeout(() => setTextShimmer(false), 1300);
-                  } else {
-                    resetAiFields();
                   }
                 }}
                 className="flex items-center gap-2 text-xs text-zinc-500 transition hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200"
@@ -546,6 +586,75 @@ export function CrearActivityClient() {
               disabled={aiThinking}
               className={aiThinking ? INPUT_LOADING_cls : INPUT_cls}
             />
+          </div>
+
+          <div className="rounded-lg border border-zinc-200 dark:border-zinc-700">
+            <button
+              type="button"
+              onClick={() => setShowExternal((v) => !v)}
+              className="flex w-full items-center justify-between px-4 py-3 text-sm font-medium"
+            >
+              <span>Voluntariados oficiales Externos</span>
+              <svg
+                className={`h-4 w-4 transition-transform ${showExternal ? "rotate-180" : ""}`}
+                viewBox="0 0 20 20"
+                fill="currentColor"
+                aria-hidden="true"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M5.23 7.21a.75.75 0 011.06.02L10 11.17l3.71-3.94a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"
+                  clipRule="evenodd"
+                />
+              </svg>
+            </button>
+            {showExternal && (
+              <div className="space-y-4 border-t border-zinc-200 px-4 py-4 dark:border-zinc-700">
+                <p className="text-xs text-zinc-400">
+                  Si completas cualquier campo, todos se vuelven obligatorios al crear la actividad.
+                </p>
+                <div>
+                  <label className="mb-1 block text-sm font-medium">Beneficiario *</label>
+                  <input
+                    type="text"
+                    value={extBeneficiary}
+                    onChange={(e) => setExtBeneficiary(e.target.value)}
+                    className={INPUT_cls}
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-sm font-medium">Supervisor de la actividad *</label>
+                  <input
+                    type="text"
+                    value={extSupervisor}
+                    onChange={(e) => setExtSupervisor(e.target.value)}
+                    className={INPUT_cls}
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-sm font-medium">Correo del supervisor *</label>
+                  <input
+                    type="email"
+                    value={extSupervisorEmail}
+                    onChange={(e) => setExtSupervisorEmail(e.target.value)}
+                    placeholder="Ej: supervisor@organizacion.org"
+                    className={INPUT_cls}
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-sm font-medium">Horas asignadas *</label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.5"
+                    value={extHours}
+                    onChange={(e) => setExtHours(e.target.value)}
+                    placeholder="Ej: 4"
+                    className={INPUT_cls}
+                  />
+                </div>
+              </div>
+            )}
           </div>
 
           {error && (

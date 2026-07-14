@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { cn } from "@/lib/utils";
 import type { Activity } from "@/lib/types";
+import { ExternalOfficialGem } from "@/components/external-official-gem";
 
 type ActivityMonthViewProps = {
   activities: Activity[];
@@ -211,12 +212,14 @@ export function ActivityMonthView({
                             }}
                             title={activity.title}
                             className={cn(
-                              "cursor-pointer truncate rounded-md px-1.5 py-1 text-[11px] leading-tight text-white transition",
+                              "relative cursor-pointer truncate rounded-md px-1.5 py-1 text-[11px] leading-tight text-white transition",
+                              activity.is_external_official && "pl-4",
                               isEnrolled
                                 ? "bg-emerald-600 hover:bg-emerald-500 dark:bg-emerald-500 dark:hover:bg-emerald-400"
                                 : "bg-zinc-600 hover:bg-zinc-500 dark:bg-zinc-700 dark:hover:bg-zinc-600"
                             )}
                           >
+                            {activity.is_external_official && <ExternalOfficialGem />}
                             <span className="opacity-80">{time}</span>{" "}
                             {activity.title}
                           </div>

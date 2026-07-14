@@ -44,6 +44,7 @@ def _serialize_activity(
         "max_participants": a.max_participants,
         "requirements": a.requirements,
         "contact_info": a.contact_info,
+        "is_external_official": bool(a.external_beneficiary),
         "creator_id": str(a.creator_id),
         "status": a.status,
         "member_count": member_count,
@@ -329,6 +330,10 @@ class _CreateActivityBody(BaseModel):
     contact_info: str | None = Field(None, max_length=500)
     max_participants: int | None = Field(None, ge=1, le=100000)
     estimated_duration_min: int | None = Field(None, ge=1, le=100000)
+    external_beneficiary: str | None = Field(None, max_length=255)
+    external_supervisor: str | None = Field(None, max_length=255)
+    external_supervisor_email: str | None = Field(None, max_length=255)
+    external_assigned_hours: float | None = Field(None, ge=0, le=100000)
 
 
 @router.post("")
@@ -339,11 +344,13 @@ def create_activity(
 ) -> dict:
     # Public (non-SEP) accounts may only join activities, not create them.
     # SEP-provisioned users and SISMO admins retain full access.
-    if user.auth_source != "sep" and user.role != UserRole.admin.value:
-        raise ApiError(
-            ErrorCode.auth_forbidden,
-            "las cuentas publicas no pueden crear actividades",
-        )
+    # TEMPORAL (ver docs/external-users-access.md): se desactiva la restricción
+    # para que usuarios externos (google) también puedan crear actividades.
+    # if user.auth_source != "sep" and user.role != UserRole.admin.value:
+    #     raise ApiError(
+    #         ErrorCode.auth_forbidden,
+    #         "las cuentas publicas no pueden crear actividades",
+    #     )
 
     title = body.title.strip()
     if not title:
@@ -378,6 +385,10 @@ def create_activity(
         max_participants=body.max_participants,
         requirements=body.requirements,
         contact_info=body.contact_info,
+        external_beneficiary=body.external_beneficiary,
+        external_supervisor=body.external_supervisor,
+        external_supervisor_email=body.external_supervisor_email,
+        external_assigned_hours=body.external_assigned_hours,
         creator_id=user.id,
         status=ActivityStatus.active.value,
     )
@@ -564,12 +575,18 @@ def transfer_membership(
     #  - SEP users and admins can cede to anyone.
     #  - External (Google) users can only cede to other external users.
     #  - Anyone may *receive* a cupo (including from SEP users).
-    can_cede_to_anyone = user.role == UserRole.admin.value or user.auth_source == "sep"
-    if not can_cede_to_anyone and to_user.auth_source != "google":
-        raise ApiError(
-            ErrorCode.auth_forbidden,
-            "solo puedes ceder cupo a otros usuarios externos",
-        )
+    # TEMPORAL (ver docs/external-users-access.md): se permite que usuarios
+    # externos (google) cedan cupo a cualquiera, igual que SEP/admins.
+    can_cede_to_anyone = (
+        user.role == UserRole.admin.value
+        or user.auth_source == "sep"
+        or user.auth_source == "google"
+    )
+    # if not can_cede_to_anyone and to_user.auth_source != "google":
+    #     raise ApiError(
+    #         ErrorCode.auth_forbidden,
+    #         "solo puedes ceder cupo a otros usuarios externos",
+    #     )
 
     src = db.execute(
         select(ActivityMember).where(
@@ -623,16 +640,18 @@ def list_attendees(
     # The creator must be able to see their own attendees to administer the
     # activity. Other external (public) accounts cannot browse attendees, to
     # protect PII; SEP users and SISMO admins may.
+    # TEMPORAL (ver docs/external-users-access.md): se permite que usuarios
+    # externos (google) también vean los inscritos de cualquier actividad.
     is_creator = str(a.creator_id) == str(user.id)
-    if (
-        not is_creator
-        and user.auth_source != "sep"
-        and user.role != UserRole.admin.value
-    ):
-        raise ApiError(
-            ErrorCode.auth_forbidden,
-            "no tienes permiso para ver los inscritos de esta actividad",
-        )
+    # if (
+    #     not is_creator
+    #     and user.auth_source != "sep"
+    #     and user.role != UserRole.admin.value
+    # ):
+    #     raise ApiError(
+    #         ErrorCode.auth_forbidden,
+    #         "no tienes permiso para ver los inscritos de esta actividad",
+    #     )
 
     members = db.execute(
         select(ActivityMember, User)
@@ -668,10 +687,23 @@ class _UpdateActivityBody(BaseModel):
     max_participants: int | None = None
     estimated_duration_min: int | None = None
     contact_info: str | None = None
+    external_beneficiary: str | None = None
+    external_supervisor: str | None = None
+    external_supervisor_email: str | None = None
+    external_assigned_hours: float | None = None
 
 
 def _apply_text_fields(a: Activity, body: _UpdateActivityBody) -> None:
-    for field in ("title", "description", "zone", "raw_address", "requirements"):
+    for field in (
+        "title",
+        "description",
+        "zone",
+        "raw_address",
+        "requirements",
+        "external_beneficiary",
+        "external_supervisor",
+        "external_supervisor_email",
+    ):
         val = getattr(body, field)
         if val is not None:
             setattr(a, field, val)
@@ -700,6 +732,8 @@ def _apply_numeric_fields(a: Activity, body: _UpdateActivityBody) -> None:
         a.estimated_duration_min = body.estimated_duration_min
     if body.contact_info is not None:
         a.contact_info = body.contact_info
+    if body.external_assigned_hours is not None:
+        a.external_assigned_hours = body.external_assigned_hours
 
 
 @router.post("/{activity_id}/attendees/{target_user_id}/attended")
