@@ -24,5 +24,6 @@ class Activity(Base, IdMixin, TimestampMixin, TenantMixin):
     external_supervisor = Column(String(255), nullable=True)
     external_supervisor_email = Column(String(255), nullable=True)
     external_assigned_hours = Column(Float, nullable=True)
+    external_certificate = Column(Text, nullable=True)
     creator_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False, index=True)
     status = Column(String(20), nullable=False, default=ActivityStatus.active.value)

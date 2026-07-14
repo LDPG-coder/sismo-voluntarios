@@ -285,7 +285,7 @@ export function ActivityGanttView({
                     }}
                   >
                     {block.activity.is_external_official && <ExternalOfficialGem />}
-                    <span className="line-clamp-2 leading-tight">{block.activity.title}</span>
+                    <span className={`line-clamp-2 leading-tight ${block.activity.is_external_official ? "pl-4" : ""}`}>{block.activity.title}</span>
                     {conflict === "emergency" && (
                       <span className="ml-1 text-xs">⚠</span>
                     )}

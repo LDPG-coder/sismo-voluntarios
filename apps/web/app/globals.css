@@ -60,6 +60,7 @@ body {
    esmeralda lo recorre de forma lenta y discreta. */
 @keyframes emerald-sheen {
   0% { background-position: 220% 0; }
+  35% { background-position: -220% 0; }
   100% { background-position: -220% 0; }
 }
 
@@ -75,7 +76,7 @@ body {
     rgba(16, 185, 129, 0) 100%
   );
   background-size: 220% 100%;
-  animation: emerald-sheen 4s linear infinite;
+  animation: emerald-sheen 9s linear infinite;
 }
 
 /* En modo oscuro el reflejo usa un verde mas oscuro (familia esmeralda de

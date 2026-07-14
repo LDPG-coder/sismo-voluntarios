@@ -287,9 +287,21 @@ def get_activity(
         )
     ).first()
     my_attended = member[0] if member else None
-    return _serialize_activity(
+    result = _serialize_activity(
         a, member_count=count, creator=creator, my_attended=my_attended
     )
+    has_attendance = (
+        db.execute(
+            select(func.count()).select_from(ActivityMember).where(
+                ActivityMember.activity_id == a.id,
+                ActivityMember.attended.isnot(None),
+            )
+        ).scalar()
+        or 0
+    ) > 0
+    result["has_attendance"] = has_attendance
+    result["external_certificate"] = a.external_certificate
+    return result
 
 
 @router.get("/{activity_id}/membership")
@@ -761,6 +773,82 @@ def mark_attendance(
 
     member.attended = body.attended
     db.commit()
+    return {"ok": True}
+
+
+class _ExternalCertificateBody(BaseModel):
+    certificate: str | None = None
+
+
+_MAX_CERTIFICATE_LEN = 8 * 1024 * 1024  # ~6MB PDF en base64
+
+
+def _require_external_official_ready(
+    a: Activity, user: User, db: Session
+) -> None:
+    """Valida que el creador pueda gestionar la constancia de un voluntariado
+    oficial externo: debe ser el creador, ser externo oficial, estar 'Realizada'
+    (archived) y tener al menos una asistencia marcada."""
+    if str(a.creator_id) != str(user.id):
+        raise ApiError(ErrorCode.activity_not_creator, "solo el creador puede gestionar la constancia")
+    if not a.external_beneficiary:
+        raise ApiError(ErrorCode.validation_invalid, "la actividad no es un voluntariado oficial externo")
+    if a.status != ActivityStatus.archived.value:
+        raise ApiError(ErrorCode.validation_invalid, "la actividad debe estar marcada como realizada")
+    has_attendance = (
+        db.execute(
+            select(func.count()).select_from(ActivityMember).where(
+                ActivityMember.activity_id == a.id,
+                ActivityMember.attended.isnot(None),
+            )
+        ).scalar()
+        or 0
+    ) > 0
+    if not has_attendance:
+        raise ApiError(ErrorCode.validation_invalid, "debes marcar la asistencia antes de subir la constancia")
+
+
+@router.post("/{activity_id}/external-certificate")
+def upload_external_certificate(
+    activity_id: str,
+    body: _ExternalCertificateBody,
+    user: Annotated[User, Depends(require_session)],
+    db: Annotated[Session, Depends(get_db)],
+) -> dict:
+    a = db.get(Activity, UUID(activity_id))
+    if not a:
+        raise ApiError(ErrorCode.activity_not_found, "activity not found")
+    _require_external_official_ready(a, user, db)
+
+    cert = body.certificate
+    if not cert or not cert.startswith("data:application/pdf;base64,"):
+        raise ApiError(
+            ErrorCode.validation_invalid_format,
+            "la constancia debe ser un archivo PDF (data:application/pdf;base64,)",
+        )
+    if len(cert) > _MAX_CERTIFICATE_LEN:
+        raise ApiError(ErrorCode.validation_invalid_format, "la constancia PDF es demasiado grande")
+
+    a.external_certificate = cert
+    db.commit()
+    _log.info("activity.external_certificate.uploaded", activity_id=str(a.id), creator_id=str(user.id))
+    return {"ok": True, "external_certificate": a.external_certificate}
+
+
+@router.delete("/{activity_id}/external-certificate")
+def delete_external_certificate(
+    activity_id: str,
+    user: Annotated[User, Depends(require_session)],
+    db: Annotated[Session, Depends(get_db)],
+) -> dict:
+    a = db.get(Activity, UUID(activity_id))
+    if not a:
+        raise ApiError(ErrorCode.activity_not_found, "activity not found")
+    _require_external_official_ready(a, user, db)
+
+    a.external_certificate = None
+    db.commit()
+    _log.info("activity.external_certificate.deleted", activity_id=str(a.id), creator_id=str(user.id))
     return {"ok": True}
 
 
