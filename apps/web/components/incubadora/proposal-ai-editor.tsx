@@ -226,8 +226,8 @@ export function ProposalAiEditor({
                 <MarkdownPreview markdown={value} />
               ) : (
                 <div className="flex min-h-[220px] items-center justify-center rounded-md border border-dashed border-zinc-200 px-4 text-center text-sm text-zinc-400 dark:border-zinc-800 dark:text-zinc-500">
-                  Aún no hay contenido. Genera un texto con IA o escríbelo en
-                  «Editar a mano» para verlo aquí.
+                  Aún no hay contenido. Dale estructura a tus ideas con IA o
+                  escríbelo en «Editar a mano» para verlo aquí.
                 </div>
               )}
             </div>
