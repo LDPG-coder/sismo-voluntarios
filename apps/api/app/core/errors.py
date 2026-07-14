@@ -39,6 +39,16 @@ class ErrorCode(StrEnum):
     activity_not_creator = "activity.not_creator"
     activity_cancelled = "activity.cancelled"
 
+    project_not_found = "project.not_found"
+    project_not_creator = "project.not_creator"
+    project_not_approved = "project.not_approved"
+    project_not_evaluating = "project.not_evaluating"
+    evaluation_already_submitted = "evaluation.already_submitted"
+    evaluation_closed = "evaluation.closed"
+    budget_line_not_found = "budget_line.not_found"
+    contribution_invalid = "contribution.invalid"
+    accountability_required = "accountability.required"
+
     user_not_found = "user.not_found"
     user_email_exists = "user.email_exists"
     referral_invalid = "referral.invalid"
@@ -76,6 +86,15 @@ _DEFAULT_STATUS: dict[ErrorCode, int] = {
     ErrorCode.activity_not_member: 404,
     ErrorCode.activity_not_creator: 403,
     ErrorCode.activity_cancelled: 410,
+    ErrorCode.project_not_found: 404,
+    ErrorCode.project_not_creator: 403,
+    ErrorCode.project_not_approved: 409,
+    ErrorCode.project_not_evaluating: 409,
+    ErrorCode.evaluation_already_submitted: 409,
+    ErrorCode.evaluation_closed: 409,
+    ErrorCode.budget_line_not_found: 404,
+    ErrorCode.contribution_invalid: 422,
+    ErrorCode.accountability_required: 409,
     ErrorCode.user_not_found: 404,
     ErrorCode.user_email_exists: 409,
     ErrorCode.referral_invalid: 400,

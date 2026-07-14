@@ -26,6 +26,25 @@ export function ActivitiesIcon(props: SVGProps<SVGSVGElement>) {
   );
 }
 
+export function IncubatorIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      {...props}
+      fill="none"
+      viewBox="0 0 24 24"
+      strokeWidth={1.8}
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M12 21c-4.5 0-7.5-2.6-7.5-7 0-3.2 1.7-6.2 3.6-8.2.5-.5 1.3-.2 1.5.5.5 1.4 1.7 2.2 3.4 2.2s2.9-.8 3.4-2.2c.2-.7.9-1 1.5-.5 1.9 2 3.6 5 3.6 8.2 0 4.4-3 7-7.5 7Z"
+      />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 21v-7m0 0-2.5-2.5M12 14l2.5-2.5" />
+    </svg>
+  );
+}
+
 export function MyActivitiesIcon(props: SVGProps<SVGSVGElement>) {
   return (
     <svg
@@ -292,6 +311,7 @@ export function LogoutIcon(props: SVGProps<SVGSVGElement>) {
 
 export const navItems: NavItem[] = [
   { href: "/voluntarios", label: "Actividades", Icon: ActivitiesIcon },
+  { href: "/incubadora", label: "Incubadora", Icon: IncubatorIcon },
   { href: "/mis-actividades", label: "Mis actividades", Icon: MyActivitiesIcon },
   { href: "/voluntarios/crear", label: "Crear", Icon: CreateIcon },
   { href: "/perfil", label: "Mi perfil", Icon: ProfileIcon },
