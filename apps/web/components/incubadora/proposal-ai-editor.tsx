@@ -49,7 +49,7 @@ function MarkdownPreview({ markdown }: { markdown: string }) {
     editorProps: {
       attributes: {
         class:
-          "prose prose-sm max-w-none min-h-[220px] max-h-[520px] overflow-y-auto rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 dark:prose-invert dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100 focus:outline-none",
+          "min-h-[220px] max-h-[520px] overflow-y-auto rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100 focus:outline-none",
       },
     },
   });
