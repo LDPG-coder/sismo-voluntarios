@@ -683,8 +683,8 @@ GET    /api/v1/auth/callback        → Callback de Google
 POST   /api/v1/auth/exchange        → Intercambia código one-time por sesión
 POST   /api/v1/auth/logout          → Cierra sesión
 GET    /api/v1/auth/me              → Usuario actual
-POST   /api/v1/auth/invite          → Invitar usuario (requiere sesión)
-POST   /api/v1/auth/referral        → Validar código de invitación
+POST   /api/v1/auth/invite          → DESACTIVADO (alta de usuarios deshabilitada; ver docs/external-users-access.md)
+POST   /api/v1/auth/referral        → DESACTIVADO (alta de usuarios deshabilitada; ver docs/external-users-access.md)
 ```
 
 ### Actividades

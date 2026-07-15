@@ -1,9 +1,6 @@
-"""Integration tests for the security hardening (D1, C1, C2, refresh, referidos)."""
+"""Integration tests for the security hardening (D1, C1, C2, refresh, permisos)."""
 
-from datetime import UTC, datetime, timedelta
 from uuid import uuid4
-
-import redis
 
 from app.api.v1.auth import _resolve_or_create_sep_user
 from app.pipeline.session_store import (
@@ -144,63 +141,40 @@ def test_refresh_revoked_on_family_bump(client, db):
     assert resp.status_code == 401
 
 
-# -- Referidos / invitaciones (E1/E2) -------------------------------------
+# -- Permisos unificados SEP/externo y alta de usuarios desactivada --------
 
 
-def test_referral_valid_and_invalid(client, db):
-    pending = make_user(db, status="pending", referral_code="INVITECODE1")
-    ok = client.post("/api/v1/auth/referral", json={"code": pending.referral_code})
-    assert ok.status_code == 200
-    assert ok.json() == {"valid": True}
-
-    bad = client.post("/api/v1/auth/referral", json={"code": "NOPE-NOPE-NOPE"})
-    assert bad.status_code == 400
-    assert bad.json()["error"]["code"] == "referral.invalid"
-
-
-def test_referral_expired_is_invalid(client, db):
-    old = make_user(
-        db,
-        status="pending",
-        referral_code="OLDCODE123",
-        created_at=datetime.now(UTC) - timedelta(days=31),
-    )
-    resp = client.post("/api/v1/auth/referral", json={"code": old.referral_code})
-    assert resp.status_code == 400
-    assert resp.json()["error"]["code"] == "referral.invalid"
+def test_external_user_can_create_activity(client, db):
+    # Las cuentas externas (auth_source=google) pueden crear actividades.
+    ext = make_user(db, auth_source="google", status="active")
+    cookies = auth_cookies(ext)
+    headers = auth_headers()
+    body = {
+        "title": "Limpieza externa",
+        "zone": "Caracas",
+        "raw_address": "Av. Libertador 123",
+        "date_time": "2030-01-01T10:00:00",
+    }
+    resp = client.post("/api/v1/activities", json=body, cookies=cookies, headers=headers)
+    assert resp.status_code == 200, resp.text
+    assert resp.json()["creator_id"] == str(ext.id)
 
 
-def test_referral_rate_limit(client, db):
-    # The public validation oracle must be throttled so it cannot be brute
-    # forced to enumerate valid invitation codes.
-    r = redis.Redis.from_url("redis://redis:6379/1")
-    r.flushdb()
-    statuses = [
-        client.post("/api/v1/auth/referral", json={"code": "X"}).status_code
-        for _ in range(12)
-    ]
-    assert all(s in (200, 400) for s in statuses[:10])
-    assert 429 in statuses[10:]
+def test_referral_endpoint_disabled(client, db):
+    # El alta por token está desactivada: el endpoint no debe existir.
+    resp = client.post("/api/v1/auth/referral", json={"code": "WHATEVER"})
+    assert resp.status_code == 404
 
 
-def test_invite_reissues_expired_pending(client, db):
-    admin = make_user(db, role="admin", status="active")
-    old = make_user(
-        db,
-        status="pending",
-        email="expired@example.com",
-        referral_code="OLDINVITE01",
-        created_at=datetime.now(UTC) - timedelta(days=31),
-    )
-    cookies = auth_cookies(admin)
+def test_invite_endpoint_disabled(client, db):
+    # La invitación por email está desactivada: el endpoint no debe existir.
+    user = make_user(db, role="admin", status="active")
+    cookies = auth_cookies(user)
     headers = auth_headers()
     resp = client.post(
         "/api/v1/auth/invite",
-        json={"email": "expired@example.com"},
+        json={"email": "nuevo@example.com"},
         cookies=cookies,
         headers=headers,
     )
-    assert resp.status_code == 200, resp.text
-    data = resp.json()
-    assert data["id"] == str(old.id)
-    assert data["referral_code"] != old.referral_code
+    assert resp.status_code == 404

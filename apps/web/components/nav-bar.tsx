@@ -46,7 +46,7 @@ export function NavBar() {
     return unsub;
   }, []);
 
-  const canCreate = user?.auth_source === "sep" || user?.role === "admin";
+  const canCreate = !!user;
 
   return (
     <nav className="border-b border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950">

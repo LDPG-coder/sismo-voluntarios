@@ -18,13 +18,13 @@ from sqlalchemy.orm import Session
 from app.core.config import Settings, get_settings
 from app.core.errors import ApiError, ErrorCode
 from app.core.logging import get_logger
-from app.core.utils import generate_referral_code, is_invitation_expired, serialize_user
+from app.core.utils import generate_referral_code, serialize_user
 from app.db.base import get_db
 from app.db.constants import MVP_TENANT_ID
 from app.db.enums import UserRole, UserStatus
 from app.db.models import User
 from app.pipeline import oauth
-from app.pipeline.dependencies import SESSION_COOKIE_NAME, require_admin_session, require_session
+from app.pipeline.dependencies import SESSION_COOKIE_NAME, require_session
 from app.pipeline.session import SessionPayload, decode_session, encode_session
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -408,58 +408,68 @@ def reset_photo(
     return serialize_user(user)
 
 
-class _InviteBody(BaseModel):
-    email: str
-
-
-@router.post("/invite")
-def invite_user(
-    body: _InviteBody,
-    user: Annotated[User, Depends(require_admin_session)],
-    db: Annotated[Session, Depends(get_db)],
-    settings: Annotated[Settings, Depends(get_settings)],
-) -> dict:
-    email = body.email.lower().strip()
-    existing = db.execute(select(User).where(User.email == email)).scalar_one_or_none()
-    if existing:
-        # Allow re-issuing an *expired* pending invitation (new code, same
-        # account) so an admin can refresh a lapsed invite without dupes.
-        if is_invitation_expired(existing, settings.referral_expiry_days):
-            existing.referral_code = generate_referral_code()
-            db.commit()
-            db.refresh(existing)
-            _log.info("auth.invite.reissued", email=email, invited_by=str(user.id))
-            return {"id": str(existing.id), "email": existing.email, "referral_code": existing.referral_code}
-        raise ApiError(ErrorCode.user_email_exists, f"email {email!r} already registered")
-
-    referral_code = generate_referral_code()
-    new_user = User(
-        email=email,
-        name=None,
-        role=UserRole.volunteer.value,
-        status=UserStatus.pending.value,
-        referral_code=referral_code,
-        referred_by=user.id,
-    )
-    new_user.tenant_id = MVP_TENANT_ID
-    db.add(new_user)
-    db.commit()
-    db.refresh(new_user)
-    _log.info("auth.invite.created", email=email, invited_by=str(user.id))
-    return {"id": str(new_user.id), "email": new_user.email, "referral_code": new_user.referral_code}
-
-
-class _ReferralBody(BaseModel):
-    code: str
-
-
-@router.post("/referral")
-def validate_referral(
-    body: _ReferralBody,
-    db: Annotated[Session, Depends(get_db)],
-    settings: Annotated[Settings, Depends(get_settings)],
-) -> dict:
-    u = db.execute(select(User).where(User.referral_code == body.code.upper())).scalar_one_or_none()
-    if not u or is_invitation_expired(u, settings.referral_expiry_days):
-        raise ApiError(ErrorCode.referral_invalid, "código de referido inválido o expirado")
-    return {"valid": True}
+# ============================================================================
+# Alta de usuarios — DESACTIVADA (temporal).
+# ----------------------------------------------------------------------------
+# Se deshabilitó todo mecanismo de incorporación de usuarios desde la app:
+#   - invitación por email (POST /auth/invite)
+#   - invitación/registro por token (POST /auth/referral)
+#   - auto-registro en el callback de Google OAuth
+# Todos los usuarios se cargan manualmente en la base de datos. El código se
+# conserva comentado para facilitar su restauración cuando se reactive el
+# onboarding. Ver docs/external-users-access.md.
+# ============================================================================
+#
+# class _InviteBody(BaseModel):
+#     email: str
+#
+#
+# @router.post("/invite")
+# def invite_user(
+#     body: _InviteBody,
+#     user: Annotated[User, Depends(require_admin_session)],
+#     db: Annotated[Session, Depends(get_db)],
+#     settings: Annotated[Settings, Depends(get_settings)],
+# ) -> dict:
+#     email = body.email.lower().strip()
+#     existing = db.execute(select(User).where(User.email == email)).scalar_one_or_none()
+#     if existing:
+#         if is_invitation_expired(existing, settings.referral_expiry_days):
+#             existing.referral_code = generate_referral_code()
+#             db.commit()
+#             db.refresh(existing)
+#             _log.info("auth.invite.reissued", email=email, invited_by=str(user.id))
+#             return {"id": str(existing.id), "email": existing.email, "referral_code": existing.referral_code}
+#         raise ApiError(ErrorCode.user_email_exists, f"email {email!r} already registered")
+#
+#     referral_code = generate_referral_code()
+#     new_user = User(
+#         email=email,
+#         name=None,
+#         role=UserRole.volunteer.value,
+#         status=UserStatus.pending.value,
+#         referral_code=referral_code,
+#         referred_by=user.id,
+#     )
+#     new_user.tenant_id = MVP_TENANT_ID
+#     db.add(new_user)
+#     db.commit()
+#     db.refresh(new_user)
+#     _log.info("auth.invite.created", email=email, invited_by=str(user.id))
+#     return {"id": str(new_user.id), "email": new_user.email, "referral_code": new_user.referral_code}
+#
+#
+# class _ReferralBody(BaseModel):
+#     code: str
+#
+#
+# @router.post("/referral")
+# def validate_referral(
+#     body: _ReferralBody,
+#     db: Annotated[Session, Depends(get_db)],
+#     settings: Annotated[Settings, Depends(get_settings)],
+# ) -> dict:
+#     u = db.execute(select(User).where(User.referral_code == body.code.upper())).scalar_one_or_none()
+#     if not u or is_invitation_expired(u, settings.referral_expiry_days):
+#         raise ApiError(ErrorCode.referral_invalid, "código de referido inválido o expirado")
+#     return {"valid": True}

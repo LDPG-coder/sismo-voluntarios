@@ -45,7 +45,7 @@ export function MisActividadesClient() {
   const [confirmAction, setConfirmAction] = useState<{ id: string; title: string; action: "cancel" | "archive" } | null>(null);
   const [processing, setProcessing] = useState(false);
   const { user } = useSession();
-  const canCreate = user?.auth_source === "sep" || user?.role === "admin";
+  const canCreate = !!user;
 
   useEffect(() => {
     fetch(`${API}/api/v1/activities/mine`, { credentials: "include" })

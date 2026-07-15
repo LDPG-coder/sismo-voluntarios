@@ -1,4 +1,9 @@
-"""Google OAuth flow with invitation-only registration."""
+"""Google OAuth flow (login only for pre-loaded accounts; user onboarding disabled).
+
+El alta de usuarios está desactivada: no hay registro, invitación por token/email
+ni auto-registro. Todas las cuentas se cargan manualmente en la base de datos, por
+lo que el login solo funciona para cuentas que ya existen.
+"""
 
 from __future__ import annotations
 
@@ -276,9 +281,13 @@ def _resolve_or_create_user(
         db.refresh(user)
         return AuthenticatedUser(user=user, created=False)
 
-    # 3. Not invited — block
+    # 3. La cuenta no existe en SISMO — bloquear.
+    # El alta de usuarios (registro, invitación por token y por email, y
+    # auto-registro) está desactivada temporalmente: todos los usuarios se
+    # cargan manualmente en la base de datos. Un Google login de una cuenta
+    # que no exista previamente es rechazado.
     raise OAuthNotInvitedError(
-        f"email {email!r} no tiene invitación. Pide a un voluntario que te invite."
+        f"email {email!r} no está registrado en SISMO. Contacta al administrador."
     )
 
 

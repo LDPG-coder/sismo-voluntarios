@@ -35,7 +35,7 @@ export function TodasActividadesClient({ tab, estado }: { tab: Tab; estado: stri
   const [confirmAction, setConfirmAction] = useState<{ id: string; title: string; action: "cancel" | "archive" } | null>(null);
   const [processing, setProcessing] = useState(false);
   const { user } = useSession();
-  const canCreate = user?.auth_source === "sep" || user?.role === "admin";
+  const canCreate = !!user;
   const isCreated = tab === "created";
 
   useEffect(() => {

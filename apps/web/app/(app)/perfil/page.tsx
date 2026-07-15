@@ -1,7 +1,5 @@
 import { requireSession } from "@/lib/auth/require-session";
 import { fetchCurrentUser } from "@/lib/auth/me";
-import { ReferralBox } from "@/components/referral-box";
-import { InviteForm } from "@/components/invite-form";
 import { ProfilePhoto } from "@/components/profile-photo";
 
 export default async function PerfilPage() {
@@ -27,8 +25,6 @@ export default async function PerfilPage() {
             <p className="font-medium">{user.email}</p>
           </div>
 
-          <ReferralBox code={user.referral_code} />
-          <InviteForm />
         </div>
       </main>
     </div>

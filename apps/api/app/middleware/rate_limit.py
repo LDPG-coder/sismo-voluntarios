@@ -55,10 +55,11 @@ def _get_remote_address(request: Request) -> str:
 def _bucket_for(request: Request) -> tuple[str, str, int, int]:
     settings = get_settings()
     path = request.url.path
-    if path.startswith("/api/v1/auth/referral"):
-        # Public validation oracle: tighten hard so it cannot be brute-forced
-        # to enumerate valid invitation codes.
-        return ("referral", _get_remote_address(request), settings.rate_limit_referral_per_min, 0)
+    # La invitación por token (POST /api/v1/auth/referral) está desactivada,
+    # por lo que este bucket ya no se alcanza. Se conserva comentado por si se
+    # reactiva el onboarding.
+    # if path.startswith("/api/v1/auth/referral"):
+    #     return ("referral", _get_remote_address(request), settings.rate_limit_referral_per_min, 0)
     if path.startswith("/api/v1/auth"):
         return ("auth", _get_remote_address(request), settings.rate_limit_auth_per_min, 0)
     if path.startswith("/api/v1/ai"):

@@ -26,6 +26,8 @@ class ErrorCode(StrEnum):
     auth_oauth_code_invalid = "auth.oauth_code_invalid"
     auth_oauth_token_exchange_failed = "auth.oauth_token_exchange_failed"
     auth_oauth_id_token_invalid = "auth.oauth_id_token_invalid"
+    # auth_not_invited: se reutiliza para cuentas no registradas en SISMO
+    # (el alta de usuarios está desactivada; ver docs/external-users-access.md).
     auth_not_invited = "auth.not_invited"
     auth_sep_token_invalid = "auth.sep_token_invalid"
     auth_sep_unauthorized = "auth.sep_unauthorized"
@@ -51,6 +53,8 @@ class ErrorCode(StrEnum):
 
     user_not_found = "user.not_found"
     user_email_exists = "user.email_exists"
+    # referral_invalid: obsoleto — la invitación por token (POST /auth/referral)
+    # está desactivada. Se conserva por compatibilidad.
     referral_invalid = "referral.invalid"
 
     validation_missing_field = "validation.missing_field"

@@ -1,5 +1,3 @@
-import Link from "next/link";
-
 export default async function LoginPage({
   searchParams,
 }: {
@@ -50,15 +48,6 @@ export default async function LoginPage({
           Continuar con Google
         </a>
       </div>
-
-      <div className="mt-6">
-        <p className="text-center text-xs text-zinc-500">
-          ¿No tienes cuenta?{" "}
-          <Link href="/registro" className="underline hover:text-zinc-700">
-            Registrate con un codigo de invitacion
-          </Link>
-        </p>
-      </div>
     </main>
   );
 }
@@ -79,7 +68,7 @@ async function ErrorBanner({
   if (params.error === "not_invited") {
     return (
       <p role="alert" className="mb-4 rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700 dark:border-rose-900 dark:bg-rose-950 dark:text-rose-300">
-        Tu cuenta no tiene invitacion. Pide a un voluntario que te invite.
+        Tu cuenta no esta registrada en SISMO.
       </p>
     );
   }

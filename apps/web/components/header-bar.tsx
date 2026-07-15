@@ -18,7 +18,9 @@ export function HeaderBar({ leftSlot }: { leftSlot?: React.ReactNode }) {
   const { user, setUser } = useSession();
   const lastScroll = useRef(0);
 
-  const canCreate = user?.auth_source === "sep" || user?.role === "admin";
+  // Crear actividades está abierto a cualquier usuario autenticado (SEP o
+  // externo); la distinción de rol solo aplica a rutas de administración.
+  const canCreate = !!user;
 
   useEffect(() => {
     const unsub = onPhotoChanged((photoUrl) => {

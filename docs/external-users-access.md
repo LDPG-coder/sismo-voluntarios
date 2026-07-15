@@ -1,108 +1,122 @@
 # Acceso de usuarios externos
 
-> **Estado:** Cerrado. El cambio temporal que habilitaba a las cuentas OAuth de
-> Google (`auth_source = "google"`) crear actividades, ceder cupo a cualquiera,
-> ver inscritos ajenos, ver todo el directorio y entrar al panel de
-> administración **fue revertido**. Los usuarios externos vuelven a tener los
-> permisos originales (solo se unen a actividades; la creación, el ceder a no
-> externos, ver inscritos ajenos y el admin quedan reservados a SEP/admins).
+> **Estado:** Unificado. Los usuarios externos (OAuth de Google,
+> `auth_source = "google"`) tienen los mismos permisos de gestión que los
+> usuarios SEP voluntarios: pueden **crear actividades**, editar las propias,
+> administrar participantes y usar todas las herramientas disponibles para SEP.
+> La única diferenciación que se conserva es la estrictamente necesaria (ver
+> abajo).
 >
-> **Historial:** esta excepción se documentó originalmente como temporal (ver
-> sección "Qué se habilitó" abajo) y se mantenía con bloques marcados
-> `TEMPORAL`. Esos bloques se eliminaron; el código original es ahora el que
-> está en vigor. No requirió migración de BD.
+> **Alta de usuarios desactivada:** no existe ningún mecanismo de incorporación
+> de usuarios desde la app (ni registro, ni invitación por token, ni invitación
+> por email, ni auto-registro en el login de Google). Todas las cuentas se
+> cargan manualmente en la base de datos. El login de Google solo funciona para
+> cuentas ya existentes.
 
-## Qué se habilitó (y ya fue revertido)
+## Permisos unificados (SEP ≡ externo voluntario)
 
-Estos cinco puntos fueron la excepción temporal; **todos fueron revertidos** y
-el comportamiento original es el vigente:
+Lo que un usuario externo **puede** hacer hoy, igual que un usuario SEP:
 
-1. **Crear actividades** (`POST /api/v1/activities`) — solo SEP/admins.
-2. **Ceder cupo a cualquiera** (`POST /api/v1/activities/{id}/transfer`) — los
-   externos solo pueden ceder a otros externos.
-3. **Ver inscritos de cualquier actividad** (`GET /api/v1/activities/{id}/attendees`)
-   — solo el creador, SEP o admins.
-4. **Ver todos los voluntarios en el directorio** (`GET /api/v1/users/directory`)
-   — los externos solo ven cuentas Google.
-5. **Acceso al panel de administración** (rutas con `require_admin_session` y la
-   página `/admin/usuarios`) — solo `role = admin`.
+1. **Crear actividades** (`POST /api/v1/activities`) — cualquier sesión activa.
+2. **Editar/cancelar sus propias actividades** — por propiedad (`creator_id`), no
+   por tipo de cuenta.
+3. **Administrar participantes** de sus actividades (ver inscritos, marcar
+   asistencia, ceder cupo dentro de las reglas PII, expandir cupo).
+4. **Unirse / salir** de actividades.
+5. **Acceder a todas las herramientas** disponibles para usuarios SEP
+   voluntarios en el frontend (botón "Crear", panel flotante, etc.).
 
-El backend (`require_admin_session`) es la fuente de verdad: bloquea a cualquiera
-que no sea `role = admin`.
+## Diferenciación que se conserva (estrictamente necesaria)
+
+Estos puntos **no** se unifican, porque protegen PII o responsabilidades de
+administración, o porque dependen del portal SEP:
+
+- **Rutas de administración** (`require_admin_session`, `/admin/usuarios`,
+  `PUT /api/v1/users/{id}`): solo `role = admin`.
+- **Directorio de usuarios** (`GET /api/v1/users/directory`): los externos solo
+  ven cuentas Google. Se mantiene por privacidad de datos SEP y para la futura
+  integración SEP.
+- **Ceder cupo** (`POST /api/v1/activities/{id}/transfer`): un externo solo puede
+  ceder a otro externo. Se mantiene por lo mismo (futura integración SEP).
+- **Ver inscritos ajenos** (`GET /api/v1/activities/{id}/attendees`): solo el
+  creador, SEP o admin (cada uno gestiona sus propias actividades).
+- **Chrome SEP vs externo**: los usuarios SEP ven el header + sidebar que imita
+  al portal SEP; los externos ven `ExternalShell` (header sin sidebar + nav
+  flotante). Es una diferencia de presentación, no de permisos.
+
+## Alta de usuarios desactivada
+
+Todos los mecanismos de onboarding desde la app están desactivados
+(temporalmente, a la espera de definir el flujo definitivo). No hay forma de
+que un usuario nuevo se dé de alta por sí mismo ni sea invitado desde la
+interfaz:
+
+| Mecanismo | Estado | Archivo |
+| --- | --- | --- |
+| Registro / invitación por token (`POST /api/v1/auth/referral`) | Desconectado (ruta comentada) | `app/api/v1/auth.py` |
+| Invitación por email (`POST /api/v1/auth/invite`) | Desconectado (ruta comentada) | `app/api/v1/auth.py` |
+| Auto-registro en callback Google (`OAuthNotInvitedError`) | Bloquea cuentas no existentes | `app/pipeline/oauth.py` |
+| Página `/registro` | Redirige a `/login` | `app/registro/page.tsx` |
+| `ReferralBox` / `InviteForm` en perfil | Eliminados | `app/(app)/perfil/page.tsx` |
+
+El código desactivado se conserva **comentado** para facilitar su restauración.
+El login de Google para una cuenta que no existe previamente responde con
+`auth.not_invited` y el mensaje "Tu cuenta no está registrada en SISMO."
 
 ## Cambios en el backend (`apps/api`)
 
-> **Revertido:** los bloques `TEMPORAL` fueron eliminados; el código original
-> (que restringe a SEP/admins) es el que está en vigor.
-
 | Archivo | Estado actual |
 | --- | --- |
-| `app/api/v1/activities.py` — `create_activity` | `raise` restaurado: bloquea cuentas no-SEP/no-admin. |
-| `app/api/v1/activities.py` — `transfer_activity` | `can_cede_to_anyone` solo SEP/admins; `raise` restaurado para externos que ceden a no-externos. |
-| `app/api/v1/activities.py` — `list_attendees` | Bloqueo restaurado para cuentas externas. |
-| `app/api/v1/users.py` — `user_directory` | Filtro `q.where(User.auth_source == "google")` restaurado para externos. |
-| `app/pipeline/dependencies.py` — `make_require_session` | `require_admin_session` bloquea a cualquiera que no sea `role = admin` (sin excepción Google). |
+| `app/api/v1/activities.py` — `create_activity` | Sin restricción por `auth_source`; cualquier sesión activa crea. |
+| `app/api/v1/activities.py` — `transfer_activity` | `can_cede_to_anyone` solo SEP/admins (se mantiene PII). |
+| `app/api/v1/activities.py` — `list_attendees` | Bloqueo para no-creadores (se mantiene). |
+| `app/api/v1/users.py` — `user_directory` | Filtro `auth_source == "google"` para externos (se mantiene PII). |
+| `app/api/v1/auth.py` — `invite_user` / `validate_referral` | Rutas comentadas (alta desactivada). |
+| `app/pipeline/oauth.py` — `_resolve_or_create_user` | Paso 3 bloquea cuentas inexistentes (sin auto-registro). |
+| `app/pipeline/dependencies.py` — `make_require_session` | `require_admin_session` solo para admin. |
 
 ## Cambios en el frontend (`apps/web`)
 
-> **Revertido:** los `canCreate` y el `redirect` de admin volvieron a su valor
-> original (`auth_source === "sep" \|\| role === "admin"`, y `role !== "admin"` →
-> redirige).
-
 | Archivo | Estado actual |
 | --- | --- |
-| `components/nav-bar.tsx` | `canCreate` = `sep \|\| admin`. |
-| `components/header-bar.tsx` | `canCreate` = `sep \|\| admin`. |
-| `components/mis-actividades-client.tsx` | `canCreate` = `sep \|\| admin`. |
-| `components/todas-actividades-client.tsx` | `canCreate` = `sep \|\| admin`. |
-| `app/(app)/admin/layout.tsx` | `redirect("/voluntarios")` si `role !== "admin"`. |
+| `components/nav-bar.tsx` | `canCreate` = `!!user`. |
+| `components/header-bar.tsx` | `canCreate` = `!!user`. |
+| `components/mis-actividades-client.tsx` | `canCreate` = `!!user`. |
+| `components/todas-actividades-client.tsx` | `canCreate` = `!!user`. |
+| `app/login/page.tsx` | Sin link a `/registro`; banner `not_invited` dice "no registrada". |
+| `app/(app)/perfil/page.tsx` | Sin `ReferralBox` ni `InviteForm`. |
+| `app/registro/page.tsx` | Redirige a `/login`. |
 
 ## Notas de seguridad
 
-- Tras revertir, `require_admin_session` bloquea a cualquiera que no sea
-  `role = admin` (incluidos los usuarios externos Google). El panel de admin ya
-  no es alcanzable por cuentas externas, ni pueden editar roles/estado de otros
-  usuarios (`PUT /api/v1/users/{id}`).
-- No se modificó el esquema de la sesión; el layout de admin vuelve a redirigir
-  con `redirect("/voluntarios")` si `role !== "admin"`.
-- Migración relacionada pero **independiente**: `011_add_external_official`
-  (campos de "voluntariado oficial externo"). No afecta este cambio.
+- `require_admin_session` sigue bloqueando a cualquiera que no sea `role =
+  admin` (incluidos usuarios externos Google). El panel de admin no es
+  alcanzable por cuentas voluntarias, ni pueden editar roles/estado.
+- La diferenciación SEP/externo ya no habilita ni bloquea capacidades de
+  gestión de actividades; solo afecta PII (directorio, ceder cupo), admin y el
+  chrome de navegación.
+- No se modificó el esquema de la sesión.
 
 ## Chrome para usuarios externos (OAuth)
 
-Los usuarios SEP ven el chrome de SISMO que imita al SEP: header propio **más**
+Los usuarios SEP ven el chrome que imita al portal SEP: header propio **más**
 sidebar (cuyo contenido SISMO consume en vivo desde el SEP, ver
-`docs/SEP_INTEGRATION.md` §2.2). Los usuarios externos (OAuth/Google, los que
-entran por invitación con token o agregando su correo) **no** ven ese sidebar:
-el sidebar pertenece al SEP y su contenido es para cuentas SEP. El header sí se
-muestra a todos, pero adaptado.
+`docs/SEP_INTEGRATION.md` §2.2). Los usuarios externos **no** ven ese sidebar:
+pertenece al SEP. El header sí se muestra a todos, adaptado.
 
-Para estos usuarios se aplica lo siguiente:
+- Se muestra el mismo header superior (notificaciones, tema, menú de perfil).
+  La opción "crear actividad" aparece para **cualquier usuario autenticado**
+  (`canCreate = !!user`), incluidos los externos con rol voluntario.
+- No se muestra el sidebar ni el botón hamburguesa; navegan con el panel
+  flotante y el FAB en teléfono.
+- El menú de la foto de perfil muestra el perfil propio y el logout de SISMO.
 
-- Sí se muestra el mismo header superior que ven los usuarios SEP, con
-  notificaciones, cambio de tema y el menú de la foto de perfil. La opción
-  "crear actividad" solo aparece para usuarios SEP o admin (`canCreate =
-  auth_source === "sep" || role === "admin"`), por lo que un externo con rol
-  voluntario no la ve.
-- No se muestra el sidebar, ni en modo escritorio ni en modo responsive; el botón
-  hamburguesa tampoco aparece (el header no incluye ese botón para ellos). El
-  usuario navega con el panel flotante y el botón (FAB) en teléfono.
-- En el menú que se abre al pulsar la foto del perfil del usuario aparecen el
-  acceso al perfil propio de SISMO y el logout (que solo cierra la sesión de
-  SISMO y redirige al login de SISMO).
-
-Implementación: el header vive en `components/header-bar.tsx` y lo comparten
-`AppShell` (usuarios SEP: le pasa el botón hamburguesa que abre el sidebar) y
-`ExternalShell` (usuarios OAuth: lo renderiza sin botón de menú).
+Implementación: `components/header-bar.tsx` lo comparten `AppShell` (SEP) y
+`ExternalShell` (OAuth).
 
 ## Logout según el tipo de usuario
 
-El logout que se muestra depende del tipo de cuenta, y cada uno tiene un
-alcance y un destino distintos:
-
-- **Usuario del SEP:** ve el logout del SEP. Al pulsarlo se cierra la sesión en
-  ambas plataformas (la de SEP y la de SISMO-Voluntarios) y se redirige a la
-  página de login del SEP.
-- **Usuario OAuth (externo):** ve el logout de SISMO. Al pulsarlo solo se cierra
-  la sesión de SISMO-Voluntarios y se redirige a la página de login de SISMO. No
-  afecta la sesión del SEP.
+- **Usuario del SEP:** logout del SEP (cierra ambas sesiones y redirige al
+  login del SEP).
+- **Usuario OAuth (externo):** logout de SISMO (solo cierra SISMO-Voluntarios y
+  redirige al login de SISMO).
