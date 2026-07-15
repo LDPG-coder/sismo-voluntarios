@@ -1,9 +1,9 @@
 """SEP Partner API — server-to-server notifications for SEP's own header.
 
-SEP's backend calls these endpoints (authenticated with the shared
-`SISMO_SEP_API_TOKEN`) to render SISMO's notifications inside SEP's general
-header, without embedding SISMO's UI. The contract mirrors
-`docs/SEP_INTEGRATION_COOKBOOK.md`.
+SEP's backend calls these endpoints (authenticated with the read-only
+`SISMO_SEP_PARTNER_TOKEN`, or the deprecated `SISMO_SEP_API_TOKEN` fallback) to
+render SISMO's notifications inside SEP's general header, without embedding
+SISMO's UI. The contract mirrors `docs/SEP_INTEGRATION.md`.
 """
 
 from __future__ import annotations
@@ -27,12 +27,16 @@ def require_sep_partner_token(
     authorization: str = Header(None),
     settings: Settings = Depends(get_settings),
 ) -> None:
-    if not settings.sep_api_token:
+    # Distinct from the login token: a leak here only exposes read-only
+    # notification data, not the ability to mint sessions. Falls back to the
+    # deprecated single `sep_api_token` for backwards compatibility.
+    partner_token = settings.sep_partner_token or settings.sep_api_token
+    if not partner_token:
         raise ApiError(
             ErrorCode.auth_sep_unauthorized,
             "SEP partner API is not configured",
         )
-    expected = f"Bearer {settings.sep_api_token}"
+    expected = f"Bearer {partner_token}"
     if not authorization or not hmac.compare_digest(authorization, expected):
         raise ApiError(ErrorCode.auth_sep_token_invalid, "invalid SEP API token")
 

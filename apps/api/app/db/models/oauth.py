@@ -24,3 +24,6 @@ class OAuthExchangeCode(Base, IdMixin):
     status = Column(String(20), nullable=False)
     created_at = Column(DateTime(timezone=True), nullable=False)
     consumed = Column(Boolean, nullable=False, default=False)
+    # PKCE S256 challenge (base64url(sha256(verifier))) bound to the code.
+    # Null for legacy (non-SEP) exchange codes, which are not PKCE-protected.
+    code_challenge = Column(String(255), nullable=True)

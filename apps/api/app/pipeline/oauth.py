@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import base64
+import hashlib
+import hmac
 import secrets
 import uuid
 from dataclasses import dataclass
@@ -73,14 +76,47 @@ def consume_state(db: Session, state: str, ttl: float):
     db.commit()
 
 
-def store_code(db: Session, *, user_id: uuid.UUID, role: str, status: str, ttl: float) -> str:
+def store_code(
+    db: Session,
+    *,
+    user_id: uuid.UUID,
+    role: str,
+    status: str,
+    ttl: float,
+    code_challenge: str | None = None,
+) -> str:
     code = secrets.token_urlsafe(32)
-    db.add(OAuthExchangeCode(code=code, user_id=user_id, role=role, status=status, created_at=_now(), consumed=False))
+    db.add(
+        OAuthExchangeCode(
+            code=code,
+            user_id=user_id,
+            role=role,
+            status=status,
+            created_at=_now(),
+            consumed=False,
+            code_challenge=code_challenge,
+        )
+    )
     db.commit()
     return code
 
 
-def consume_code(db: Session, code: str, ttl: float):
+def _pkce_challenge(verifier: str) -> str:
+    """S256 PKCE challenge: base64url(sha256(verifier))."""
+    digest = hashlib.sha256(verifier.encode("utf-8")).digest()
+    return base64.urlsafe_b64encode(digest).rstrip(b"=").decode("ascii")
+
+
+def _verify_pkce(challenge: str, verifier: str) -> bool:
+    if not verifier:
+        return False
+    try:
+        return hmac.compare_digest(challenge, _pkce_challenge(verifier))
+    except Exception:
+        return False
+
+
+def consume_code(db: Session, code: str, ttl: float, code_verifier: str | None = None):
     row = db.query(OAuthExchangeCode).filter(OAuthExchangeCode.code == code).first()
     if row is None:
         raise OAuthStateError("exchange code not found")
@@ -89,6 +125,13 @@ def consume_code(db: Session, code: str, ttl: float):
     now = _now()
     if now.timestamp() - row.created_at.timestamp() > ttl:
         raise OAuthStateError("exchange code expired")
+    # PKCE: if the code was issued with a challenge, the redeemer must present
+    # the matching verifier. This binds the one-time code (which travels in the
+    # redirect URL) to the SEP backend that initiated the login, so an
+    # intercepted code cannot be redeemed by a third party.
+    if row.code_challenge:
+        if not _verify_pkce(row.code_challenge, code_verifier or ""):
+            raise OAuthStateError("code_verifier mismatch")
     row.consumed = True
     db.commit()
     return row
@@ -253,13 +296,23 @@ def consume_oauth_state(db: Session, state: str, ttl: float = _DEFAULT_CODE_TTL)
 
 
 def issue_exchange_code(
-    db: Session, *, user_id: uuid.UUID, role: str, status: str, ttl: float = _DEFAULT_CODE_TTL
+    db: Session,
+    *,
+    user_id: uuid.UUID,
+    role: str,
+    status: str,
+    ttl: float = _DEFAULT_CODE_TTL,
+    code_challenge: str | None = None,
 ) -> str:
-    return store_code(db, user_id=user_id, role=role, status=status, ttl=ttl)
+    return store_code(
+        db, user_id=user_id, role=role, status=status, ttl=ttl, code_challenge=code_challenge
+    )
 
 
-def consume_exchange_code(db: Session, code: str, ttl: float = _DEFAULT_CODE_TTL):
-    return consume_code(db, code, ttl)
+def consume_exchange_code(
+    db: Session, code: str, ttl: float = _DEFAULT_CODE_TTL, code_verifier: str | None = None
+):
+    return consume_code(db, code, ttl, code_verifier=code_verifier)
 
 
 def complete_google_callback(

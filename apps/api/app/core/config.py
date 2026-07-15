@@ -35,11 +35,28 @@ class Settings(BaseSettings):
 
     importer_token: str | None = None
 
-    # Shared secret that the SEP platform backend uses to call SISMO's
-    # server-to-server login endpoint (POST /api/v1/auth/sep-login). SEP mints
-    # a one-time exchange code on behalf of an authenticated SEP user; the
-    # browser then carries that code to SISMO to obtain a normal session cookie.
+    # DEPRECATED single shared secret that authorized BOTH the SEP login
+    # handshake and the Partner API. Kept only as a backwards-compatible
+    # fallback: if `sep_login_token` / `sep_partner_token` are unset, SISMO
+    # falls back to this value. Provision SEP with two distinct tokens instead
+    # (see below) so a leak in one channel cannot be replayed on the other.
     sep_api_token: str | None = None
+
+    # Bearer token shared with the SEP backend for the server-to-server login
+    # handshake only (POST /api/v1/auth/sep-login). Distinct from the Partner
+    # API token so a leak here cannot be used to read notifications, and vice
+    # versa. Falls back to `sep_api_token` for backwards compatibility.
+    sep_login_token: str | None = None
+
+    # Bearer token shared with the SEP backend for the read-only Partner API
+    # (notification summaries for the SEP header). Distinct from the login
+    # token. Falls back to `sep_api_token` for backwards compatibility.
+    sep_partner_token: str | None = None
+
+    # Lifetime (seconds) of the one-time SEP login code. Kept short: the code
+    # is a bearer credential carried in the redirect URL. PKCE binds it to the
+    # SEP-issued verifier, but the short TTL further limits the replay window.
+    sep_code_ttl_seconds: float = 120.0
 
     google_client_id: str | None = None
     google_client_secret: str | None = None

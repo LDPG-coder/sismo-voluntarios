@@ -359,13 +359,11 @@ def create_activity(
 ) -> dict:
     # Public (non-SEP) accounts may only join activities, not create them.
     # SEP-provisioned users and SISMO admins retain full access.
-    # TEMPORAL (ver docs/external-users-access.md): se desactiva la restricción
-    # para que usuarios externos (google) también puedan crear actividades.
-    # if user.auth_source != "sep" and user.role != UserRole.admin.value:
-    #     raise ApiError(
-    #         ErrorCode.auth_forbidden,
-    #         "las cuentas publicas no pueden crear actividades",
-    #     )
+    if user.auth_source != "sep" and user.role != UserRole.admin.value:
+        raise ApiError(
+            ErrorCode.auth_forbidden,
+            "las cuentas publicas no pueden crear actividades",
+        )
 
     title = body.title.strip()
     if not title:
@@ -611,18 +609,15 @@ def transfer_membership(
     #  - SEP users and admins can cede to anyone.
     #  - External (Google) users can only cede to other external users.
     #  - Anyone may *receive* a cupo (including from SEP users).
-    # TEMPORAL (ver docs/external-users-access.md): se permite que usuarios
-    # externos (google) cedan cupo a cualquiera, igual que SEP/admins.
     can_cede_to_anyone = (
         user.role == UserRole.admin.value
         or user.auth_source == "sep"
-        or user.auth_source == "google"
     )
-    # if not can_cede_to_anyone and to_user.auth_source != "google":
-    #     raise ApiError(
-    #         ErrorCode.auth_forbidden,
-    #         "solo puedes ceder cupo a otros usuarios externos",
-    #     )
+    if not can_cede_to_anyone and to_user.auth_source != "google":
+        raise ApiError(
+            ErrorCode.auth_forbidden,
+            "solo puedes ceder cupo a otros usuarios externos",
+        )
 
     src = db.execute(
         select(ActivityMember).where(
@@ -676,18 +671,16 @@ def list_attendees(
     # The creator must be able to see their own attendees to administer the
     # activity. Other external (public) accounts cannot browse attendees, to
     # protect PII; SEP users and SISMO admins may.
-    # TEMPORAL (ver docs/external-users-access.md): se permite que usuarios
-    # externos (google) también vean los inscritos de cualquier actividad.
     is_creator = str(a.creator_id) == str(user.id)
-    # if (
-    #     not is_creator
-    #     and user.auth_source != "sep"
-    #     and user.role != UserRole.admin.value
-    # ):
-    #     raise ApiError(
-    #         ErrorCode.auth_forbidden,
-    #         "no tienes permiso para ver los inscritos de esta actividad",
-    #     )
+    if (
+        not is_creator
+        and user.auth_source != "sep"
+        and user.role != UserRole.admin.value
+    ):
+        raise ApiError(
+            ErrorCode.auth_forbidden,
+            "no tienes permiso para ver los inscritos de esta actividad",
+        )
 
     members = db.execute(
         select(ActivityMember, User)
