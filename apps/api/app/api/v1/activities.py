@@ -363,14 +363,9 @@ def create_activity(
     user: Annotated[User, Depends(require_session)],
     db: Annotated[Session, Depends(get_db)],
 ) -> dict:
-    # Public (non-SEP) accounts may only join activities, not create them.
-    # SEP-provisioned users and SISMO admins retain full access.
-    if user.auth_source != "sep" and user.role != UserRole.admin.value:
-        raise ApiError(
-            ErrorCode.auth_forbidden,
-            "las cuentas publicas no pueden crear actividades",
-        )
-
+    # La creación de actividades está abierta a cualquier usuario autenticado y
+    # activo (SEP o externo). Los roles de administración se siguen validando en
+    # otras rutas; aquí solo se requiere una sesión vigente (require_session).
     title = body.title.strip()
     if not title:
         raise ApiError(ErrorCode.validation_missing_field, "title is required")
@@ -915,11 +910,11 @@ def _require_evidence_management(a: Activity, user: User) -> None:
         )
     if not _activity_has_started(a):
         raise ApiError(
-            ErrorCode.validation_invalid,
+            ErrorCode.validation_invalid_format,
             "solo puedes subir comprobantes una vez iniciada la actividad",
         )
     if _activity_is_closed(a):
-        raise ApiError(ErrorCode.validation_invalid, "la actividad ya esta cerrada")
+        raise ApiError(ErrorCode.validation_invalid_format, "la actividad ya esta cerrada")
 
 
 @router.get("/{activity_id}/evidence")

@@ -64,8 +64,8 @@ def test_upload_requires_started(client, db):
         cookies=auth_cookies(owner),
         headers=auth_headers(),
     )
-    assert resp.status_code == 400
-    assert resp.json()["error"]["code"] == "validation.invalid"
+    assert resp.status_code == 422
+    assert resp.json()["error"]["code"] == "validation.invalid_format"
 
 
 def test_upload_requires_creator(client, db):
@@ -133,5 +133,5 @@ def test_delete_blocked_after_close(client, db):
         cookies=auth_cookies(owner),
         headers=auth_headers(),
     )
-    assert resp.status_code == 400
-    assert resp.json()["error"]["code"] == "validation.invalid"
+    assert resp.status_code == 422
+    assert resp.json()["error"]["code"] == "validation.invalid_format"

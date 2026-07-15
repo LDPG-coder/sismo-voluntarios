@@ -176,13 +176,13 @@ def test_feed_excludes_past_activity_but_link_still_works(client, db):
     for viewer in (admin, other):
         resp = client.get("/api/v1/activities", cookies=auth_cookies(viewer), headers=auth_headers())
         assert resp.status_code == 200
-        assert act.id not in [a["id"] for a in resp.json()]
+        assert str(act.id) not in [a["id"] for a in resp.json()]
     # Still reachable via direct link / organizer profile.
     resp = client.get(f"/api/v1/activities/{act.id}", cookies=auth_cookies(other), headers=auth_headers())
     assert resp.status_code == 200
     resp = client.get("/api/v1/activities/mine", cookies=auth_cookies(admin), headers=auth_headers())
     assert resp.status_code == 200
-    assert act.id in [a["id"] for a in resp.json()]
+    assert str(act.id) in [a["id"] for a in resp.json()]
 
 
 
