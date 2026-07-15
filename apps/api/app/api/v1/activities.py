@@ -19,7 +19,7 @@ from app.core.utils import ensure_timezone
 from app.db.base import get_db
 from app.db.constants import MVP_TENANT_ID
 from app.db.enums import ActivityStatus, UserRole
-from app.db.models import Activity, ActivityMember, Notification, User
+from app.db.models import Activity, ActivityMember, ActivityEvidence, Notification, User
 from app.pipeline.dependencies import require_session
 
 router = APIRouter(prefix="/activities", tags=["activities"])
@@ -133,6 +133,10 @@ def list_activities(
         q = q.where(Activity.zone == zone)
     if status:
         q = q.where(Activity.status == status)
+    # Ocultar actividades cuya fecha de inicio ya paso: el feed de descubrimiento
+    # solo debe mostrar actividades futuras. Siguen accesibles por enlace directo
+    # (GET /activities/{id}) y desde el perfil del organizador (GET /activities/mine).
+    q = q.where(Activity.date_time >= datetime.now(UTC))
     # The discovery feed shows activities published by *others*; the user's own
     # creations live under "Mis actividades" (Creadas), not here.
     q = q.where(Activity.creator_id != user.id)
@@ -151,10 +155,12 @@ def list_zones(
 ) -> list[dict]:
     # Counts must mirror the discovery feed (GET /activities): exclude the
     # user's own activities and the activities they've already joined, so the
-    # filter tags don't advertise counts the list itself hides.
+    # filter tags don't advertise counts the list itself hides. Tambien se
+    # excluyen las actividades cuya fecha de inicio ya paso.
     rows = db.execute(
         select(Activity.zone, func.count())
         .where(Activity.status == ActivityStatus.active.value)
+        .where(Activity.date_time >= datetime.now(UTC))
         .where(Activity.creator_id != user.id)
         .where(Activity.id.notin_(_enrolled_activity_ids_subquery(user.id)))
         .group_by(Activity.zone)
@@ -867,6 +873,154 @@ def delete_external_certificate(
     a.external_certificate = None
     db.commit()
     _log.info("activity.external_certificate.deleted", activity_id=str(a.id), creator_id=str(user.id))
+    return {"ok": True}
+
+
+# -- Comprobantes fotograficos (evidencia) -------------------------------
+
+
+_MAX_EVIDENCE_IMAGES = 10
+_MAX_EVIDENCE_IMAGE_BYTES = 5 * 1024 * 1024  # ~3.7MB imagen cruda -> base64
+
+
+def _serialize_evidence(ev: ActivityEvidence, uploader_name: str | None) -> dict:
+    return {
+        "id": str(ev.id),
+        "image_url": ev.image_url,
+        "uploaded_by": str(ev.uploaded_by),
+        "uploader_name": uploader_name,
+        "created_at": ev.created_at.isoformat() if ev.created_at else None,
+    }
+
+
+def _activity_has_started(a: Activity) -> bool:
+    return a.date_time is not None and a.date_time <= datetime.now(UTC)
+
+
+def _activity_is_closed(a: Activity) -> bool:
+    # Una actividad se considera cerrada cuando deja de estar activa
+    # (realizada/archivada o cancelada). Mientras este activa, incluso si su
+    # fecha fin ya paso, el organizador aun puede aportar/quitar comprobantes
+    # hasta confirmar su realizacion.
+    return a.status != ActivityStatus.active.value
+
+
+def _require_evidence_management(a: Activity, user: User) -> None:
+    """Solo el creador puede gestionar comprobantes, y unicamente mientras la
+    actividad haya iniciado y no este cerrada (archivada/cancelada)."""
+    if str(a.creator_id) != str(user.id):
+        raise ApiError(
+            ErrorCode.activity_not_creator,
+            "solo el creador puede gestionar los comprobantes",
+        )
+    if not _activity_has_started(a):
+        raise ApiError(
+            ErrorCode.validation_invalid,
+            "solo puedes subir comprobantes una vez iniciada la actividad",
+        )
+    if _activity_is_closed(a):
+        raise ApiError(ErrorCode.validation_invalid, "la actividad ya esta cerrada")
+
+
+@router.get("/{activity_id}/evidence")
+def list_evidence(
+    activity_id: str,
+    user: Annotated[User, Depends(require_session)],
+    db: Annotated[Session, Depends(get_db)],
+) -> list[dict]:
+    a = db.get(Activity, UUID(activity_id))
+    if not a:
+        raise ApiError(ErrorCode.activity_not_found, "activity not found")
+    rows = db.execute(
+        select(ActivityEvidence, User.name)
+        .join(User, ActivityEvidence.uploaded_by == User.id)
+        .where(ActivityEvidence.activity_id == a.id)
+        .order_by(ActivityEvidence.created_at.asc())
+    ).all()
+    return [
+        _serialize_evidence(ev, name)
+        for ev, name in rows
+    ]
+
+
+class _EvidenceUploadBody(BaseModel):
+    # Acepta varias imagenes a la vez (data URLs) para subir comprobantes en
+    # lote. Cada imagen se valida como data:image/ y se acota su tamano.
+    images: list[str] = Field(..., min_length=1, max_length=_MAX_EVIDENCE_IMAGES)
+
+
+@router.post("/{activity_id}/evidence")
+def upload_evidence(
+    activity_id: str,
+    body: _EvidenceUploadBody,
+    user: Annotated[User, Depends(require_session)],
+    db: Annotated[Session, Depends(get_db)],
+) -> dict:
+    a = db.get(Activity, UUID(activity_id))
+    if not a:
+        raise ApiError(ErrorCode.activity_not_found, "activity not found")
+    _require_evidence_management(a, user)
+
+    # Validar todas las imagenes antes de escribir nada.
+    for img in body.images:
+        if not isinstance(img, str) or not img.startswith("data:image/"):
+            raise ApiError(
+                ErrorCode.validation_invalid_format,
+                "cada comprobante debe ser una imagen (data:image/...)",
+            )
+        if len(img) > _MAX_EVIDENCE_IMAGE_BYTES:
+            raise ApiError(
+                ErrorCode.validation_invalid_format,
+                "una de las imagenes es demasiado grande",
+            )
+
+    created: list[ActivityEvidence] = []
+    for img in body.images:
+        ev = ActivityEvidence(
+            activity_id=a.id,
+            uploaded_by=user.id,
+            image_url=img,
+        )
+        ev.tenant_id = MVP_TENANT_ID
+        db.add(ev)
+        created.append(ev)
+    db.commit()
+    for ev in created:
+        db.refresh(ev)
+    _log.info(
+        "activity.evidence.uploaded",
+        activity_id=str(a.id),
+        creator_id=str(user.id),
+        count=len(created),
+    )
+    uploader_name = user.name
+    return {"items": [_serialize_evidence(ev, uploader_name) for ev in created]}
+
+
+@router.delete("/{activity_id}/evidence/{evidence_id}")
+def delete_evidence(
+    activity_id: str,
+    evidence_id: str,
+    user: Annotated[User, Depends(require_session)],
+    db: Annotated[Session, Depends(get_db)],
+) -> dict:
+    a = db.get(Activity, UUID(activity_id))
+    if not a:
+        raise ApiError(ErrorCode.activity_not_found, "activity not found")
+    _require_evidence_management(a, user)
+
+    ev = db.get(ActivityEvidence, UUID(evidence_id))
+    if not ev or str(ev.activity_id) != str(a.id):
+        raise ApiError(ErrorCode.not_found, "comprobante no encontrado")
+
+    db.delete(ev)
+    db.commit()
+    _log.info(
+        "activity.evidence.deleted",
+        activity_id=str(a.id),
+        evidence_id=str(ev.id),
+        creator_id=str(user.id),
+    )
     return {"ok": True}
 
 

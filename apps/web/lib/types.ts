@@ -23,3 +23,11 @@ export type Activity = {
     phone: string | null;
   };
 };
+
+export type ActivityEvidence = {
+  id: string;
+  image_url: string;
+  uploaded_by: string;
+  uploader_name: string | null;
+  created_at: string | null;
+};

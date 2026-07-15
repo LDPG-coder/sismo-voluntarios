@@ -655,6 +655,9 @@ Las páginas protegidas (`/perfil`, `/mis-actividades`, `/voluntarios/crear`, `/
 - `POST /api/v1/activities` (crear)
 - `PATCH /api/v1/activities/{id}`
 - `DELETE /api/v1/activities/{id}`
+- `GET /api/v1/activities/{id}/evidence` (listar comprobantes)
+- `POST /api/v1/activities/{id}/evidence` (subir comprobantes, creador)
+- `DELETE /api/v1/activities/{id}/evidence/{evidence_id}` (quitar comprobante, creador)
 - `POST /api/v1/activities/{id}/join`
 - `POST /api/v1/activities/{id}/leave`
 - `POST /api/v1/ai/suggest`
@@ -688,11 +691,20 @@ POST   /api/v1/auth/referral        → Validar código de invitación
 
 ```
 GET    /api/v1/activities           → Listar actividades (público)
+                                        Oculta automáticamente las que ya
+                                        iniciaron (fecha de inicio pasada).
+                                        Accesibles vía enlace directo y desde
+                                        "Mis actividades" del organizador.
 GET    /api/v1/activities/{id}      → Detalle de actividad (público)
-GET    /api/v1/activities/zones     → Zonas disponibles
+GET    /api/v1/activities/zones     → Zonas disponibles (solo futuras)
 GET    /api/v1/activities/mine      → Mis actividades (sesión)
 POST   /api/v1/activities           → Crear actividad (sesión)
 DELETE /api/v1/activities/{id}      → Cancelar/archivar (sesión)
+GET    /api/v1/activities/{id}/evidence          → Comprobantes (sesión)
+POST   /api/v1/activities/{id}/evidence          → Subir comprobantes (creador,
+                                                    solo si inició y no cerró)
+DELETE /api/v1/activities/{id}/evidence/{id}     → Quitar comprobante (creador,
+                                                    antes del cierre)
 POST   /api/v1/activities/{id}/join    → Unirse (sesión)
 POST   /api/v1/activities/{id}/leave   → Salirse (sesión)
 GET    /api/v1/activities/{id}/attendees → Asistentes (sesión)

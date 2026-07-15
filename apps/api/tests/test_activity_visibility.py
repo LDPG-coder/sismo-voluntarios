@@ -156,3 +156,33 @@ def test_zones_exclude_enrolled_activity(client, db):
     assert zones.get("Caracas", 0) == 0
 
 
+def test_feed_excludes_past_activity_but_link_still_works(client, db):
+    admin = make_user(db, role="admin", status="active")
+    other = make_user(db, auth_source="google", status="active")
+    # Activity whose start date already passed.
+    act = Activity(
+        title="Actividad ya iniciada",
+        zone="Caracas",
+        raw_address="Calle 2",
+        date_time=datetime.now(timezone.utc) - timedelta(days=1),
+        creator_id=admin.id,
+        status=ActivityStatus.active.value,
+        tenant_id=MVP_TENANT_ID,
+    )
+    db.add(act)
+    db.commit()
+    db.refresh(act)
+    # Hidden from the discovery feed for everyone (even the organizer).
+    for viewer in (admin, other):
+        resp = client.get("/api/v1/activities", cookies=auth_cookies(viewer), headers=auth_headers())
+        assert resp.status_code == 200
+        assert act.id not in [a["id"] for a in resp.json()]
+    # Still reachable via direct link / organizer profile.
+    resp = client.get(f"/api/v1/activities/{act.id}", cookies=auth_cookies(other), headers=auth_headers())
+    assert resp.status_code == 200
+    resp = client.get("/api/v1/activities/mine", cookies=auth_cookies(admin), headers=auth_headers())
+    assert resp.status_code == 200
+    assert act.id in [a["id"] for a in resp.json()]
+
+
+

@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { JoinButton } from "@/components/join-button";
 import { AttendeeList } from "@/components/attendee-list";
+import { ActivityEvidence } from "@/components/activity-evidence";
 import { ActivityDetailSkeleton } from "@/components/skeletons";
 import { csrfHeaders } from "@/lib/auth/csrf-client";
 import { useSession } from "@/components/session-provider";
@@ -194,6 +195,8 @@ export default function ActivityDetailPage() {
   const isCreator = user?.id === activity.creator_id;
   const isPast = new Date(activity.date_time) < new Date();
   const isPendingConfirm =
+    isCreator && activity.status === "active" && isPast;
+  const canManageEvidence =
     isCreator && activity.status === "active" && isPast;
 
   const statusLabel: Record<string, string> = {
@@ -522,6 +525,11 @@ export default function ActivityDetailPage() {
               )}
             </div>
           )}
+
+          <ActivityEvidence
+            activityId={activity.id}
+            canManage={canManageEvidence}
+          />
         </div>
       </main>
     </div>
