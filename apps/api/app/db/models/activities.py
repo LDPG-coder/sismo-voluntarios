@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from sqlalchemy import Boolean, Column, DateTime, Float, ForeignKey, Integer, String, Text
 from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import relationship
 
 from app.db.enums import ActivityStatus
 from app.db.models._base import Base, IdMixin, TenantMixin, TimestampMixin
@@ -37,6 +38,10 @@ class Activity(Base, IdMixin, TimestampMixin, TenantMixin):
     # de AVAA que SUMAN horas al programa. Excluyente con el voluntariado externo
     # oficial (si is_internal=True, los campos external_* van vacios).
     is_internal = Column(Boolean, nullable=False, default=False, server_default="false")
+    # Registro de una actividad ya realizada: privada del becario que la creo.
+    # No aparece en el listado publico, no acepta participantes y no es visible
+    # para otros usuarios; se usa unicamente para validar horas externas.
+    is_private = Column(Boolean, nullable=False, default=False, server_default="false")
     creator_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False, index=True)
 
     # Flujo de validacion de actividades externas: cuando un administrador

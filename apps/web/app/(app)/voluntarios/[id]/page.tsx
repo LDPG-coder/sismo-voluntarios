@@ -29,6 +29,7 @@ type Activity = {
   my_attended?: boolean | null;
   is_external_official?: boolean;
   is_internal?: boolean;
+  is_private?: boolean;
   has_attendance?: boolean;
   external_certificate?: string | null;
   external_relevant_data?: string | null;
@@ -267,6 +268,11 @@ export default function ActivityDetailPage() {
                 <span className={`inline-block rounded-full bg-[#eaebed] px-3 py-1 text-xs font-medium text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 ${statusTextClass}`}>
                   {statusText}
                 </span>
+                {activity.is_private && (
+                  <span className="inline-block rounded-full bg-amber-100 px-3 py-1 text-xs font-medium text-amber-800 dark:bg-amber-950/40 dark:text-amber-300">
+                    Registro privado
+                  </span>
+                )}
               </div>
               <h1 className="mt-2 text-xl font-bold text-emerald-700 dark:text-[#079669]">{activity.title}</h1>
             </div>

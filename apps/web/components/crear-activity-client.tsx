@@ -320,6 +320,17 @@ export function CrearActivityClient() {
     if (reqInput.trim()) addRequirement(reqInput);
   };
 
+  // Registro de actividades ya realizadas: si la fecha (fin, o inicio si no hay
+  // fin) ya paso, la actividad no entra al flujo de publicacion. El backend la
+  // crea como privada (solo del becario, sin participantes, fuera del listado
+  // publico) y aqui redirigimos a la vista individual para cargar comprobantes.
+  const isPastActivity = (() => {
+    if (!dateTime) return false;
+    const ref = endDateTime || dateTime;
+    const d = new Date(ref);
+    return !isNaN(d.getTime()) && d.getTime() < Date.now();
+  })();
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
@@ -732,6 +743,20 @@ export function CrearActivityClient() {
             )}
           </div>
 
+          {isPastActivity && (
+            <div className="rounded-lg border border-amber-300 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-950/30">
+              <p className="text-sm font-semibold text-amber-800 dark:text-amber-300">
+                Esta actividad ya ocurrio
+              </p>
+              <p className="mt-1 text-sm text-amber-700 dark:text-amber-200/80">
+                Se registrara como una actividad realizada, privada y solo tuya:
+                no aparece en el listado publico ni acepta participantes. Sirve
+                para validar tus horas externas. Al guardarla podras cargar los
+                comprobantes (fotografias).
+              </p>
+            </div>
+          )}
+
           {error && (
             <p className="rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700 dark:border-rose-900 dark:bg-rose-950 dark:text-rose-300">{error}</p>
           )}
@@ -741,7 +766,11 @@ export function CrearActivityClient() {
             disabled={submitting}
             className="w-full rounded-md bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 disabled:opacity-50 dark:bg-emerald-500 dark:text-white dark:hover:bg-emerald-600"
           >
-            {submitting ? "Creando..." : "Crear actividad"}
+            {submitting
+              ? "Guardando..."
+              : isPastActivity
+                ? "Registrar actividad realizada"
+                : "Crear actividad"}
           </button>
         </form>
       </main>

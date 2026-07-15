@@ -33,6 +33,24 @@ def _create_activity(client, user, *, max_participants: int = 1000):
     return resp.json()["id"]
 
 
+def _create_past_activity(client, user):
+    """Registrar una actividad cuya fecha ya paso (registro ya realizado)."""
+    past = (datetime.now(timezone.utc) - timedelta(days=3)).strftime("%Y-%m-%dT%H:%M:%S")
+    resp = client.post(
+        "/api/v1/activities",
+        json={
+            "title": "Actividad ya realizada",
+            "zone": "Caracas",
+            "raw_address": "Av. Libertador 123",
+            "date_time": past,
+        },
+        cookies=auth_cookies(user),
+        headers=auth_headers(),
+    )
+    assert resp.status_code == 200, resp.text
+    return resp.json()
+
+
 def _insert_activity(db, owner_id):
     act = Activity(
         title="Actividad propia externa",
@@ -183,6 +201,86 @@ def test_feed_excludes_past_activity_but_link_still_works(client, db):
     resp = client.get("/api/v1/activities/mine", cookies=auth_cookies(admin), headers=auth_headers())
     assert resp.status_code == 200
     assert str(act.id) in [a["id"] for a in resp.json()]
+
+
+# -- Registro de actividades ya realizadas (privadas) ------------------------
+
+
+def test_past_activity_is_registered_as_private(client, db):
+    owner = make_user(db, auth_source="google", status="active")
+    data = _create_past_activity(client, owner)
+    assert data["is_private"] is True
+
+
+def test_future_activity_is_not_private(client, db):
+    owner = make_user(db, auth_source="google", status="active")
+    act_id = _create_activity(client, owner)
+    resp = client.get(
+        f"/api/v1/activities/{act_id}", cookies=auth_cookies(owner), headers=auth_headers()
+    )
+    assert resp.status_code == 200
+    assert resp.json()["is_private"] is False
+
+
+def test_private_activity_hidden_from_feed_and_zones(client, db):
+    owner = make_user(db, auth_source="google", status="active")
+    other = make_user(db, auth_source="google", status="active")
+    data = _create_past_activity(client, owner)
+    # Ni el creador ni terceros la ven en descubrimiento.
+    for viewer in (owner, other):
+        resp = client.get(
+            "/api/v1/activities", cookies=auth_cookies(viewer), headers=auth_headers()
+        )
+        assert resp.status_code == 200
+        assert data["id"] not in [a["id"] for a in resp.json()]
+    # Tampoco cuenta en las zonas.
+    resp = client.get(
+        "/api/v1/activities/zones", cookies=auth_cookies(other), headers=auth_headers()
+    )
+    zones = {z["name"]: z["count"] for z in resp.json()}
+    assert zones.get("Caracas", 0) == 0
+
+
+def test_private_activity_visible_only_to_creator(client, db):
+    owner = make_user(db, auth_source="google", status="active")
+    other = make_user(db, auth_source="google", status="active")
+    data = _create_past_activity(client, owner)
+    # El creador la ve por enlace directo y en "mis actividades".
+    resp = client.get(
+        f"/api/v1/activities/{data['id']}", cookies=auth_cookies(owner), headers=auth_headers()
+    )
+    assert resp.status_code == 200
+    resp = client.get(
+        "/api/v1/activities/mine", cookies=auth_cookies(owner), headers=auth_headers()
+    )
+    assert data["id"] in [a["id"] for a in resp.json()]
+    # Un tercero no puede verla (se responde 404, sin revelar su existencia).
+    resp = client.get(
+        f"/api/v1/activities/{data['id']}", cookies=auth_cookies(other), headers=auth_headers()
+    )
+    assert resp.status_code == 404
+
+
+def test_private_activity_not_visible_to_admin(client, db):
+    owner = make_user(db, auth_source="google", status="active")
+    admin = make_user(db, role="admin", status="active")
+    data = _create_past_activity(client, owner)
+    resp = client.get(
+        f"/api/v1/activities/{data['id']}", cookies=auth_cookies(admin), headers=auth_headers()
+    )
+    assert resp.status_code == 404
+
+
+def test_private_activity_rejects_participants(client, db):
+    owner = make_user(db, auth_source="google", status="active")
+    other = make_user(db, auth_source="google", status="active")
+    data = _create_past_activity(client, owner)
+    resp = client.post(
+        f"/api/v1/activities/{data['id']}/join",
+        cookies=auth_cookies(other),
+        headers=auth_headers(),
+    )
+    assert resp.status_code == 404
 
 
 

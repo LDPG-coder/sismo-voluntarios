@@ -68,6 +68,7 @@ def _serialize_activity(
         "contact_info": a.contact_info,
         "is_external_official": bool(a.external_beneficiary),
         "is_internal": bool(a.is_internal),
+        "is_private": bool(a.is_private),
         "creator_id": str(a.creator_id),
         "status": a.status,
         "member_count": member_count,
@@ -167,6 +168,10 @@ def list_activities(
     # solo debe mostrar actividades futuras. Siguen accesibles por enlace directo
     # (GET /activities/{id}) y desde el perfil del organizador (GET /activities/mine).
     q = q.where(Activity.date_time >= datetime.now(UTC))
+    # Las actividades privadas (registros de actividades ya realizadas) nunca
+    # aparecen en descubrimiento: pertenecen solo a su creador y sirven para
+    # validar horas externas.
+    q = q.where(Activity.is_private.is_(False))
     # The discovery feed shows activities published by *others*; the user's own
     # creations live under "Mis actividades" (Creadas), not here.
     q = q.where(Activity.creator_id != user.id)
@@ -191,6 +196,7 @@ def list_zones(
         select(Activity.zone, func.count())
         .where(Activity.status == ActivityStatus.active.value)
         .where(Activity.date_time >= datetime.now(UTC))
+        .where(Activity.is_private.is_(False))
         .where(Activity.creator_id != user.id)
         .where(Activity.id.notin_(_enrolled_activity_ids_subquery(user.id)))
         .group_by(Activity.zone)
@@ -638,6 +644,11 @@ def get_activity(
     a = db.get(Activity, UUID(activity_id))
     if not a:
         raise ApiError(ErrorCode.activity_not_found, "activity not found")
+    # Las actividades privadas solo son visibles para su creador: no se revela
+    # su existencia a otros usuarios (se devuelve el mismo 404 que si no
+    # existiera).
+    if a.is_private and str(a.creator_id) != str(user.id):
+        raise ApiError(ErrorCode.activity_not_found, "activity not found")
     count = db.execute(
         select(func.count()).select_from(ActivityMember).where(ActivityMember.activity_id == a.id, ActivityMember.status == "active")
     ).scalar() or 0
@@ -675,6 +686,8 @@ def check_membership(
 ) -> dict:
     a = db.get(Activity, UUID(activity_id))
     if not a:
+        raise ApiError(ErrorCode.activity_not_found, "activity not found")
+    if a.is_private and str(a.creator_id) != str(user.id):
         raise ApiError(ErrorCode.activity_not_found, "activity not found")
     member = db.execute(
         select(ActivityMember).where(
@@ -754,6 +767,15 @@ def create_activity(
     #       raise ApiError(ErrorCode.auth_forbidden, "solo coordinadores/staff pueden crear voluntariado interno")
     is_internal = bool(body.is_internal)
 
+    # Registro de actividades ya realizadas: si la actividad ya termino al
+    # momento de crearla (su fecha fin o, en su defecto, su fecha de inicio ya
+    # paso), no entra al flujo de publicacion. Se crea como privada: pertenece
+    # solo a su creador, no aparece en el listado publico, no acepta
+    # participantes y sirve unicamente para validar horas externas. El becario
+    # es redirigido a la vista individual para cargar comprobantes.
+    finished_at = end_time or date_time
+    is_private = finished_at < datetime.now(UTC)
+
     a = Activity(
         title=title,
         description=body.description,
@@ -771,6 +793,7 @@ def create_activity(
         external_assigned_hours=None if is_internal else body.external_assigned_hours,
         external_relevant_data=None if is_internal else body.external_relevant_data,
         is_internal=is_internal,
+        is_private=is_private,
         creator_id=user.id,
         status=ActivityStatus.active.value,
     )
@@ -778,7 +801,12 @@ def create_activity(
     db.add(a)
     db.commit()
     db.refresh(a)
-    _log.info("activity.created", activity_id=str(a.id), creator_id=str(user.id))
+    _log.info(
+        "activity.created",
+        activity_id=str(a.id),
+        creator_id=str(user.id),
+        is_private=is_private,
+    )
     return _serialize_activity(a)
 
 
@@ -867,6 +895,10 @@ def join_activity(
 ) -> dict:
     a = db.get(Activity, UUID(activity_id))
     if not a:
+        raise ApiError(ErrorCode.activity_not_found, "activity not found")
+    # Las actividades privadas (registros ya realizados) no aceptan
+    # participantes: no se revela su existencia a terceros.
+    if a.is_private:
         raise ApiError(ErrorCode.activity_not_found, "activity not found")
     if a.status != ActivityStatus.active.value:
         raise ApiError(ErrorCode.activity_cancelled, "activity is cancelled")
@@ -1031,6 +1063,9 @@ def list_attendees(
     # activity. Other external (public) accounts cannot browse attendees, to
     # protect PII; SEP users and SISMO admins may.
     is_creator = str(a.creator_id) == str(user.id)
+    # Las actividades privadas solo las administra su creador.
+    if a.is_private and not is_creator:
+        raise ApiError(ErrorCode.activity_not_found, "activity not found")
     if (
         not is_creator
         and user.auth_source != "sep"
