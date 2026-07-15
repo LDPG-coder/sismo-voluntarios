@@ -590,6 +590,8 @@ docker compose exec api alembic revision --autogenerate -m "descripcion"
 | `011_add_activity_external_official.py` | Voluntariado oficial externo en actividades |
 | `012_ext_certificate.py` | Constancia para voluntariado externo |
 | `013_incubator.py` | Incubadora de proyectos (desconectada en prod) |
+| `014_add_activity_internal.py` | Voluntariado interno (flag en actividades, excluyente con externo oficial) |
+| `015_sep_code_challenge.py` | `code_challenge` (PKCE S256) en los one-time exchange codes del login SEP |
 
 ---
 
@@ -605,6 +607,7 @@ docker compose exec api alembic revision --autogenerate -m "descripcion"
 | `SISMO_DB_USER` | No | `sismo` | Usuario de la BD |
 | `SISMO_DB_PASSWORD` | Sí | - | Password de la BD |
 | `SISMO_SESSION_SECRET` | Sí* | - | Secret para firmar sesiones (HMAC) |
+| `SISMO_COOKIE_SAME_SITE` | No | `lax` | Política `SameSite` de la cookie de sesión (`lax`/`strict`/`none`). `none` solo si SISMO se sirve cross-site (ya no aplica tras quitar el iframe) |
 | `SISMO_GOOGLE_CLIENT_ID` | Sí | - | Google OAuth Client ID |
 | `SISMO_GOOGLE_CLIENT_SECRET` | Sí | - | Google OAuth Client Secret |
 | `SISMO_GOOGLE_REDIRECT_URI` | No | `http://localhost:8000/api/v1/auth/callback` | URI de callback OAuth |
@@ -616,7 +619,6 @@ docker compose exec api alembic revision --autogenerate -m "descripcion"
 | `SISMO_SEP_LOGIN_TOKEN` | No | - | Token `Bearer` para el handshake de login SEP (`POST /sep-login`) y logout coordinado (`POST /sep-logout`). Distinto del de Partner API. Vacío = integración SEP deshabilitada |
 | `SISMO_SEP_PARTNER_TOKEN` | No | - | Token `Bearer` de solo lectura para la Partner API (notificaciones del header del SEP) |
 | `SISMO_SEP_API_TOKEN` | No | - | **Deprecado:** secreto único anterior; SISMO lo usa como fallback si no defines los dos anteriores. Mejor definir los dos |
-| `SEP_NAVIGATION_URL` | No | - | URL (dentro del stack) del JSON de navegación del SEP que SISMO renderiza en su sidebar. Vacío = sidebar de SEP vacío |
 | `SISMO_SEP_CODE_TTL_SECONDS` | No | 120 | TTL (s) del one-time code de login SEP (PKCE). Corto para limitar replay |
 | `SISMO_LOG_LEVEL` | No | `INFO` | Nivel de log |
 | `SISMO_ENV` | No | `local` | Entorno (local/dev/staging/prod) |
@@ -630,6 +632,7 @@ docker compose exec api alembic revision --autogenerate -m "descripcion"
 | `NEXT_PUBLIC_API_URL` | Sí | URL pública de la API (ej: `https://api.sismo.lat`) |
 | `NEXT_PUBLIC_WEB_ORIGIN` | Sí | Origen del frontend (ej: `https://sismo.lat`) |
 | `NEXT_PUBLIC_BASE_PATH` | No | Ruta base (build-time) cuando SISMO se sirve bajo un sub-path del SEP (ej: `/voluntarios-becarios`). Vacío = raíz |
+| `SEP_NAVIGATION_URL` | No | URL (dentro del stack) del endpoint JSON de navegación del SEP que el web consume para el sidebar. Vacío = sidebar de SEP vacío |
 | `SISMO_SESSION_SECRET` | Sí* | Mismo secret que la API (para verificar cookies) |
 | `INTERNAL_API_URL` | No | URL interna de la API (Docker networking, ej: `http://api:8000`) |
 
@@ -640,7 +643,7 @@ docker compose exec api alembic revision --autogenerate -m "descripcion"
 ### Autenticación
 
 - **OAuth 2.0** con Google como proveedor de identidad
-- **Sesiones** firmadas con HMAC (`sismo_session` cookie, HttpOnly, Secure, SameSite=None en prod)
+- **Sesiones** firmadas con HMAC (`sismo_session` cookie, HttpOnly, Secure, SameSite=Lax por defecto; configurable con `SISMO_COOKIE_SAME_SITE`). Como SISMO ya no se embebe en un `<iframe>` cross-site, `SameSite=None` ya no es necesario.
 - **CSRF** protección con double-submit cookie pattern (`XSRF-TOKEN`)
 - **Rate limiting** por IP: 60 req/min (público), 30 req/min (auth). El autocompletado
   con IA tiene un bucket dedicado más permisivo — 600 req/min + burst 200 — y además un
