@@ -16,6 +16,12 @@ export type Activity = {
   status: string;
   member_count: number;
   my_attended?: boolean | null;
+  is_private?: boolean;
+  external_relevant_data?: string | null;
+  validated_at?: string | null;
+  validated_by?: string | null;
+  validated_by_name?: string | null;
+  validation_notes?: string | null;
   creator?: {
     id: string;
     name: string | null;

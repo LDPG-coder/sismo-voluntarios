@@ -58,6 +58,7 @@ class ErrorCode(StrEnum):
     referral_invalid = "referral.invalid"
 
     validation_missing_field = "validation.missing_field"
+    validation_invalid = "validation.invalid"
     validation_invalid_format = "validation.invalid_format"
 
     worker_unauthorized = "worker.unauthorized"
@@ -103,6 +104,7 @@ _DEFAULT_STATUS: dict[ErrorCode, int] = {
     ErrorCode.user_email_exists: 409,
     ErrorCode.referral_invalid: 400,
     ErrorCode.validation_missing_field: 422,
+    ErrorCode.validation_invalid: 422,
     ErrorCode.validation_invalid_format: 422,
     ErrorCode.worker_unauthorized: 401,
     ErrorCode.rate_limit_exceeded: 429,

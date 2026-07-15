@@ -6,6 +6,7 @@ import Link from "next/link";
 import { JoinButton } from "@/components/join-button";
 import { AttendeeList } from "@/components/attendee-list";
 import { ActivityEvidence } from "@/components/activity-evidence";
+import { ActivityValidationClient } from "@/components/activity-validation-client";
 import { ActivityDetailSkeleton } from "@/components/skeletons";
 import { csrfHeaders } from "@/lib/auth/csrf-client";
 import { useSession } from "@/components/session-provider";
@@ -30,6 +31,11 @@ type Activity = {
   is_internal?: boolean;
   has_attendance?: boolean;
   external_certificate?: string | null;
+  external_relevant_data?: string | null;
+  validated_at?: string | null;
+  validated_by?: string | null;
+  validated_by_name?: string | null;
+  validation_notes?: string | null;
   creator?: {
     id: string;
     name: string | null;
@@ -211,6 +217,8 @@ export default function ActivityDetailPage() {
     active: "Programada",
     archived: "Realizada",
     cancelled: "Cancelada",
+    pending_validation: "En revisión",
+    validated: "Validada",
   };
   const statusText =
     statusLabel[activity.status] ?? "Programada";
@@ -292,6 +300,11 @@ export default function ActivityDetailPage() {
             {activity.description && (
               <InfoRow icon={<DocumentIcon />} label="Descripcion">
                 {activity.description}
+              </InfoRow>
+            )}
+            {activity.is_external_official && activity.external_relevant_data && (
+              <InfoRow icon={<DocumentIcon />} label="Datos relevantes">
+                {activity.external_relevant_data}
               </InfoRow>
             )}
             <InfoRow icon={<BadgeIcon />} label="Tipo de voluntariado">
@@ -484,7 +497,7 @@ export default function ActivityDetailPage() {
             </div>
           )}
 
-          {isCreator && activity.is_external_official && activity.status === "archived" && activity.has_attendance && (
+          {isCreator && activity.is_external_official && (activity.status === "archived" || activity.status === "pending_validation" || activity.status === "validated") && (
             <div className="mt-6 border-t border-zinc-200 pt-4 dark:border-zinc-700">
               <h2 className="mb-1 text-sm font-semibold">Constancia del voluntariado oficial externo</h2>
               <p className="mb-3 text-xs text-zinc-500 dark:text-zinc-400">
@@ -533,6 +546,12 @@ export default function ActivityDetailPage() {
               )}
             </div>
           )}
+
+          <ActivityValidationClient
+            activity={activity}
+            user={user}
+            onChanged={refresh}
+          />
 
           <ActivityEvidence
             activityId={activity.id}

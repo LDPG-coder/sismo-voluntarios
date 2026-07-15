@@ -41,6 +41,11 @@ export function EditarActivityClient() {
   const [requirements, setRequirements] = useState("");
   // Voluntariado interno: suma horas al programa. Excluyente con externo oficial.
   const [isInternal, setIsInternal] = useState(false);
+  const [extBeneficiary, setExtBeneficiary] = useState("");
+  const [extSupervisor, setExtSupervisor] = useState("");
+  const [extSupervisorEmail, setExtSupervisorEmail] = useState("");
+  const [extHours, setExtHours] = useState("");
+  const [extRelevantData, setExtRelevantData] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -62,6 +67,11 @@ export function EditarActivityClient() {
         setEstimatedDuration(a.estimated_duration_min ? String(a.estimated_duration_min) : "");
         setMaxParticipants(a.max_participants ? String(a.max_participants) : "");
         setIsInternal(!!a.is_internal);
+        setExtBeneficiary(a.external_beneficiary || "");
+        setExtSupervisor(a.external_supervisor || "");
+        setExtSupervisorEmail(a.external_supervisor_email || "");
+        setExtHours(a.external_assigned_hours != null ? String(a.external_assigned_hours) : "");
+        setExtRelevantData(a.external_relevant_data || "");
         const start = toVenezuelaParts(a.date_time);
         setDateTime(start.date ? `${start.date}T${start.time}` : "");
         const end = toVenezuelaParts(a.end_time);
@@ -91,6 +101,11 @@ export function EditarActivityClient() {
       contact_info: contactInfo || null,
       requirements,
       is_internal: isInternal,
+      external_beneficiary: isInternal ? null : extBeneficiary || null,
+      external_supervisor: isInternal ? null : extSupervisor || null,
+      external_supervisor_email: isInternal ? null : extSupervisorEmail || null,
+      external_assigned_hours: isInternal ? null : extHours ? parseFloat(extHours) : null,
+      external_relevant_data: isInternal ? null : extRelevantData.trim() || null,
     };
 
     const res = await fetch(`${API}/api/v1/activities/${params.id}`, {
@@ -272,6 +287,37 @@ export function EditarActivityClient() {
               </span>
             </span>
           </button>
+
+          {/* Voluntariado externo oficial: campos que completa el becario y
+              despues envia a validacion. Excluyente con el voluntariado interno. */}
+          <div className={`rounded-lg border border-zinc-200 dark:border-zinc-700 ${isInternal ? "pointer-events-none opacity-50" : ""}`}>
+            <div className="space-y-4 border-t border-zinc-200 px-4 py-4 dark:border-zinc-700">
+              <p className="text-xs text-zinc-400">
+                Voluntariado externo oficial. Completa los datos y, al guardar, podras
+                enviar la actividad a validacion desde su pagina.
+              </p>
+              <div>
+                <label className="mb-1 block text-sm font-medium">Institucion beneficiaria</label>
+                <input type="text" value={extBeneficiary} onChange={(e) => setExtBeneficiary(e.target.value)} className={INPUT_cls} />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium">Supervisor de la actividad</label>
+                <input type="text" value={extSupervisor} onChange={(e) => setExtSupervisor(e.target.value)} className={INPUT_cls} />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium">Correo del supervisor</label>
+                <input type="email" value={extSupervisorEmail} onChange={(e) => setExtSupervisorEmail(e.target.value)} placeholder="Ej: supervisor@organizacion.org" className={INPUT_cls} />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium">Horas asignadas</label>
+                <input type="number" min={0} step="0.5" value={extHours} onChange={(e) => setExtHours(e.target.value)} placeholder="Ej: 4" className={INPUT_cls} />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium">Datos relevantes</label>
+                <textarea rows={3} value={extRelevantData} onChange={(e) => setExtRelevantData(e.target.value)} placeholder="Contexto, logros, observaciones u otra informacion relevante" className={INPUT_cls} />
+              </div>
+            </div>
+          </div>
 
           {error && <p className="text-sm text-rose-600">{error}</p>}
 

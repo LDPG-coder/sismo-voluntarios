@@ -37,6 +37,7 @@ export function CrearActivityClient() {
   const [extSupervisor, setExtSupervisor] = useState("");
   const [extSupervisorEmail, setExtSupervisorEmail] = useState("");
   const [extHours, setExtHours] = useState("");
+  const [extRelevantData, setExtRelevantData] = useState("");
 
   // Voluntariado interno: suma horas al programa. Excluyente con externo oficial.
   const [isInternal, setIsInternal] = useState(false);
@@ -339,6 +340,7 @@ export function CrearActivityClient() {
       external_supervisor: isInternal ? null : extSupervisor || null,
       external_supervisor_email: isInternal ? null : extSupervisorEmail || null,
       external_assigned_hours: isInternal ? null : extHours ? parseFloat(extHours) : null,
+      external_relevant_data: isInternal ? null : extRelevantData.trim() || null,
       is_internal: isInternal,
     };
 
@@ -713,6 +715,16 @@ export function CrearActivityClient() {
                     value={extHours}
                     onChange={(e) => setExtHours(e.target.value)}
                     placeholder="Ej: 4"
+                    className={INPUT_cls}
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-sm font-medium">Datos relevantes</label>
+                  <textarea
+                    value={extRelevantData}
+                    onChange={(e) => setExtRelevantData(e.target.value)}
+                    rows={3}
+                    placeholder="Contexto, logros, observaciones u otra informacion relevante de la actividad externa"
                     className={INPUT_cls}
                   />
                 </div>

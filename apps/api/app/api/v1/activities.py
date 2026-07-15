@@ -2,12 +2,18 @@
 
 from __future__ import annotations
 
+import io
+import mimetypes
+import zipfile
 from datetime import UTC, datetime, timedelta
+from pathlib import Path
 from typing import Annotated
 from uuid import UUID, uuid4
 
 from dateutil.parser import parse as parse_dt
 from fastapi import APIRouter, Depends, Query
+from fastapi.responses import Response, StreamingResponse
+from openpyxl import Workbook
 from pydantic import BaseModel, Field
 from sqlalchemy import delete, func, select, text
 from sqlalchemy.orm import Session
@@ -28,11 +34,12 @@ from app.db.models import (
     Notification,
     User,
 )
-from app.pipeline.dependencies import require_session
+from app.pipeline.dependencies import require_admin_session, require_session
 from app.storage.service import (
     MediaError,
     decode_data_url,
     delete_media,
+    get_storage,
     media_url,
     save_media,
 )
@@ -66,6 +73,14 @@ def _serialize_activity(
         "member_count": member_count,
         "my_attended": my_attended,
         "created_at": a.created_at.isoformat() if a.created_at else None,
+        # Flujo de validacion de actividades externas.
+        "external_relevant_data": a.external_relevant_data,
+        "validated_at": a.validated_at.isoformat() if a.validated_at else None,
+        "validated_by": str(a.validated_by) if a.validated_by else None,
+        "validated_by_name": (
+            a.validated_by_user.name if a.validated_by_user else None
+        ),
+        "validation_notes": a.validation_notes,
     }
     if creator:
         # The activity creator's phone is public on the activity itself
@@ -288,6 +303,332 @@ def mark_notification_read(
     return {"ok": True}
 
 
+# -- Flujo de validacion de actividades externas -----------------------
+# Rutas de administracion. Se definen ANTES de `/{activity_id}` para que el
+# segmento `admin` no sea capturado como un id de actividad.
+
+
+def _is_external_official(a: Activity) -> bool:
+    return bool(a.external_beneficiary) and not a.is_internal
+
+
+def _require_external_for_validation(a: Activity) -> None:
+    if not _is_external_official(a):
+        raise ApiError(
+            ErrorCode.validation_invalid,
+            "la actividad no es un voluntariado oficial externo",
+        )
+
+
+def _notify_validation_change(
+    db: Session, a: Activity, title: str, message: str
+) -> None:
+    n = Notification(
+        user_id=a.creator_id,
+        activity_id=a.id,
+        type="activity_validation",
+        title=title,
+        message=message,
+    )
+    n.tenant_id = MVP_TENANT_ID
+    db.add(n)
+
+
+class _ValidationNotesBody(BaseModel):
+    notes: str | None = Field(None, max_length=2000)
+
+
+@router.post("/{activity_id}/submit-validation")
+def submit_external_for_validation(
+    activity_id: str,
+    user: Annotated[User, Depends(require_session)],
+    db: Annotated[Session, Depends(get_db)],
+) -> dict:
+    """El becario (creador) envia la actividad externa a revision.
+
+    Requiere que haya completado los datos relevantes, las horas y al menos
+    un comprobante fotografico. La actividad pasa a `pending_validation`."""
+    a = db.get(Activity, UUID(activity_id))
+    if not a:
+        raise ApiError(ErrorCode.activity_not_found, "activity not found")
+    if str(a.creator_id) != str(user.id):
+        raise ApiError(ErrorCode.activity_not_creator, "solo el creador puede enviar a validacion")
+    _require_external_for_validation(a)
+    if a.status != ActivityStatus.active.value:
+        raise ApiError(
+            ErrorCode.validation_invalid,
+            "la actividad ya fue enviada a validacion o no esta activa",
+        )
+    if not (a.external_relevant_data and a.external_relevant_data.strip()):
+        raise ApiError(ErrorCode.validation_missing_field, "debes completar los datos relevantes")
+    if a.external_assigned_hours is None:
+        raise ApiError(ErrorCode.validation_missing_field, "debes indicar las horas realizadas")
+    evidence_count = (
+        db.execute(
+            select(func.count())
+            .select_from(ActivityEvidence)
+            .where(ActivityEvidence.activity_id == a.id)
+        ).scalar()
+        or 0
+    )
+    if evidence_count == 0:
+        raise ApiError(
+            ErrorCode.validation_missing_field,
+            "debes subir al menos un comprobante fotografico",
+        )
+
+    a.status = ActivityStatus.pending_validation.value
+    db.commit()
+    _log.info("activity.submitted_for_validation", activity_id=str(a.id), creator_id=str(user.id))
+    return _serialize_activity(a)
+
+
+@router.post("/{activity_id}/validate")
+def validate_external_activity(
+    activity_id: str,
+    body: _ValidationNotesBody,
+    admin: Annotated[User, Depends(require_admin_session)],
+    db: Annotated[Session, Depends(get_db)],
+) -> dict:
+    """Administrador valida la actividad externa. Registra fecha y responsable."""
+    a = db.get(Activity, UUID(activity_id))
+    if not a:
+        raise ApiError(ErrorCode.activity_not_found, "activity not found")
+    _require_external_for_validation(a)
+    if a.status != ActivityStatus.pending_validation.value:
+        raise ApiError(
+            ErrorCode.validation_invalid,
+            "solo se pueden validar actividades en revision",
+        )
+
+    a.status = ActivityStatus.validated.value
+    a.validated_at = datetime.now(UTC)
+    a.validated_by = admin.id
+    a.validation_notes = body.notes
+    db.commit()
+    _notify_validation_change(
+        db,
+        a,
+        "Actividad validada",
+        f"Tu actividad externa '{a.title}' fue validada por un administrador.",
+    )
+    db.commit()
+    _log.info(
+        "activity.validated",
+        activity_id=str(a.id),
+        validated_by=str(admin.id),
+    )
+    return _serialize_activity(a, creator=db.get(User, a.creator_id))
+
+
+@router.post("/{activity_id}/reject-validation")
+def reject_external_activity(
+    activity_id: str,
+    body: _ValidationNotesBody,
+    admin: Annotated[User, Depends(require_admin_session)],
+    db: Annotated[Session, Depends(get_db)],
+) -> dict:
+    """Administrador rechaza la actividad y la devuelve al becario (estado active)."""
+    a = db.get(Activity, UUID(activity_id))
+    if not a:
+        raise ApiError(ErrorCode.activity_not_found, "activity not found")
+    _require_external_for_validation(a)
+    if a.status != ActivityStatus.pending_validation.value:
+        raise ApiError(
+            ErrorCode.validation_invalid,
+            "solo se pueden rechazar actividades en revision",
+        )
+    if not (body.notes and body.notes.strip()):
+        raise ApiError(ErrorCode.validation_missing_field, "debes indicar el motivo del rechazo")
+
+    a.status = ActivityStatus.active.value
+    a.validated_at = None
+    a.validated_by = None
+    a.validation_notes = body.notes
+    db.commit()
+    _notify_validation_change(
+        db,
+        a,
+        "Actividad devuelta para corregir",
+        f"Tu actividad externa '{a.title}' fue devuelta: {body.notes}",
+    )
+    db.commit()
+    _log.info(
+        "activity.validation_rejected",
+        activity_id=str(a.id),
+        validated_by=str(admin.id),
+    )
+    return _serialize_activity(a, creator=db.get(User, a.creator_id))
+
+
+@router.get("/admin/external-validation")
+def list_external_pending_validation(
+    admin: Annotated[User, Depends(require_admin_session)],
+    db: Annotated[Session, Depends(get_db)],
+    status: str = "pending_validation",
+) -> list[dict]:
+    """Lista las actividades externas en revision (o el estado solicitado)."""
+    allowed = {
+        ActivityStatus.pending_validation.value,
+        ActivityStatus.validated.value,
+        "all",
+    }
+    if status not in allowed:
+        raise ApiError(ErrorCode.validation_invalid, "estado no valido para esta lista")
+    q = select(Activity).where(Activity.external_beneficiary.isnot(None), Activity.is_internal.is_(False))
+    if status == "all":
+        q = q.where(
+            Activity.status.in_(
+                [ActivityStatus.pending_validation.value, ActivityStatus.validated.value]
+            )
+        )
+    else:
+        q = q.where(Activity.status == status)
+    q = q.order_by(Activity.created_at.desc())
+    activities = db.execute(q).scalars().all()
+    return _serialize_activities_batch(activities, db)
+
+
+def _external_validation_rows(db: Session, statuses: list[str]) -> list[Activity]:
+    q = (
+        select(Activity)
+        .where(
+            Activity.external_beneficiary.isnot(None),
+            Activity.is_internal.is_(False),
+            Activity.status.in_(statuses),
+        )
+        .order_by(Activity.created_at.desc())
+    )
+    return list(db.execute(q).scalars().all())
+
+
+def _read_media_bytes(reference: str | None) -> bytes | None:
+    if not reference:
+        return None
+    try:
+        with get_storage().open(reference) as fh:
+            return fh.read()
+    except (OSError, ValueError):
+        return None
+
+
+def _build_external_export(statuses: list[str], db: Session) -> bytes:
+    """Construye un ZIP con un Excel de las actividades externas y sus adjuntos.
+
+    El Excel incluye una columna con la ruta relativa a la carpeta de adjuntos
+    de cada actividad, de modo que al descomprimir el ZIP las fotos y la
+    constancia quedan accesibles desde el propio libro."""
+    activities = _external_validation_rows(db, statuses)
+
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Actividades externas"
+    headers = [
+        "ID",
+        "Titulo",
+        "Institucion",
+        "Supervisor",
+        "Email supervisor",
+        "Horas asignadas",
+        "Zona",
+        "Ubicacion",
+        "Fecha",
+        "Descripcion",
+        "Datos relevantes",
+        "Estado",
+        "Fecha de validacion",
+        "Validado por",
+        "Notas de validacion",
+        "Ruta adjuntos",
+    ]
+    ws.append(headers)
+
+    zip_buf = io.BytesIO()
+    with zipfile.ZipFile(zip_buf, "w", zipfile.ZIP_DEFLATED) as zf:
+        for a in activities:
+            validated_by_name = (
+                a.validated_by_user.name if a.validated_by_user else None
+            )
+            rel_dir = f"adjuntos/{a.id}"
+            ws.append(
+                [
+                    str(a.id),
+                    a.title,
+                    a.external_beneficiary,
+                    a.external_supervisor,
+                    a.external_supervisor_email,
+                    a.external_assigned_hours,
+                    a.zone,
+                    a.raw_address,
+                    a.date_time.isoformat() if a.date_time else None,
+                    a.description,
+                    a.external_relevant_data,
+                    a.status,
+                    a.validated_at.isoformat() if a.validated_at else None,
+                    validated_by_name,
+                    a.validation_notes,
+                    rel_dir + "/",
+                ]
+            )
+
+            # Comprobantes fotograficos.
+            ev_rows = db.execute(
+                select(ActivityEvidence, MediaAsset)
+                .join(MediaAsset, ActivityEvidence.media_asset_id == MediaAsset.id)
+                .where(ActivityEvidence.activity_id == a.id)
+                .order_by(ActivityEvidence.created_at.asc())
+            ).all()
+            for i, (ev, asset) in enumerate(ev_rows, start=1):
+                data = _read_media_bytes(asset.reference)
+                if data is None:
+                    continue
+                ext = "".join(Path(asset.filename).suffixes) if asset.filename else ""
+                if not ext:
+                    ext = mimetypes.guess_extension(asset.content_type) or ".bin"
+                zf.writestr(f"{rel_dir}/evidencia/evidencia_{i}{ext}", data)
+
+            # Constancia (PDF) si existe.
+            if a.certificate_asset:
+                data = _read_media_bytes(a.certificate_asset.reference)
+                if data is not None:
+                    zf.writestr(f"{rel_dir}/constancia/constancia.pdf", data)
+
+        # Hoja de calculo dentro del ZIP.
+        xlsx_buf = io.BytesIO()
+        wb.save(xlsx_buf)
+        zf.writestr("actividades_externas.xlsx", xlsx_buf.getvalue())
+
+    return zip_buf.getvalue()
+
+
+@router.get("/admin/export-external")
+def export_external_activities(
+    admin: Annotated[User, Depends(require_admin_session)],
+    db: Annotated[Session, Depends(get_db)],
+    status: str = "validated",
+) -> Response:
+    """Exporta las actividades externas validadas (o en revision) a un ZIP que
+    contiene un Excel con toda la data relevante y las carpetas de adjuntos."""
+    status_map = {
+        "validated": [ActivityStatus.validated.value],
+        "pending_validation": [ActivityStatus.pending_validation.value],
+        "all": [
+            ActivityStatus.pending_validation.value,
+            ActivityStatus.validated.value,
+        ],
+    }
+    if status not in status_map:
+        raise ApiError(ErrorCode.validation_invalid, "estado de exportacion no valido")
+    data = _build_external_export(status_map[status], db)
+    stamp = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
+    filename = f"actividades_externas_{stamp}.zip"
+    return Response(
+        content=data,
+        media_type="application/zip",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
 @router.get("/{activity_id}")
 def get_activity(
     activity_id: str,
@@ -368,6 +709,7 @@ class _CreateActivityBody(BaseModel):
     external_supervisor: str | None = Field(None, max_length=255)
     external_supervisor_email: str | None = Field(None, max_length=255)
     external_assigned_hours: float | None = Field(None, ge=0, le=100000)
+    external_relevant_data: str | None = Field(None, max_length=4000)
     # Voluntariado interno: suma horas al programa. Excluyente con externo oficial.
     is_internal: bool = Field(False)
 
@@ -427,6 +769,7 @@ def create_activity(
         external_supervisor=None if is_internal else body.external_supervisor,
         external_supervisor_email=None if is_internal else body.external_supervisor_email,
         external_assigned_hours=None if is_internal else body.external_assigned_hours,
+        external_relevant_data=None if is_internal else body.external_relevant_data,
         is_internal=is_internal,
         creator_id=user.id,
         status=ActivityStatus.active.value,
@@ -736,6 +1079,7 @@ class _UpdateActivityBody(BaseModel):
     external_supervisor: str | None = None
     external_supervisor_email: str | None = None
     external_assigned_hours: float | None = None
+    external_relevant_data: str | None = None
     is_internal: bool | None = None
 
 
@@ -749,6 +1093,7 @@ def _apply_text_fields(a: Activity, body: _UpdateActivityBody) -> None:
         "external_beneficiary",
         "external_supervisor",
         "external_supervisor_email",
+        "external_relevant_data",
     ):
         val = getattr(body, field)
         if val is not None:
@@ -827,8 +1172,10 @@ def _require_external_official_ready(
         raise ApiError(ErrorCode.activity_not_creator, "solo el creador puede gestionar la constancia")
     if not a.external_beneficiary:
         raise ApiError(ErrorCode.validation_invalid, "la actividad no es un voluntariado oficial externo")
-    if a.status != ActivityStatus.archived.value:
-        raise ApiError(ErrorCode.validation_invalid, "la actividad debe estar marcada como realizada")
+    # Una vez enviada a validacion (o ya validada) la actividad deja de estar
+    # 'active'; la constancia puede gestionarse en esos estados finales.
+    if a.status == ActivityStatus.active.value:
+        raise ApiError(ErrorCode.validation_invalid, "la actividad debe estar enviada a validacion")
     has_attendance = (
         db.execute(
             select(func.count()).select_from(ActivityMember).where(

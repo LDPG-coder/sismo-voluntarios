@@ -4,12 +4,18 @@ const STATUS_LABEL: Record<string, string> = {
   active: "Programada",
   archived: "Realizada",
   cancelled: "Cancelada",
+  pending_validation: "En revisión",
+  validated: "Validada",
 };
 
 const STATUS_CLASS: Record<string, string> = {
   active: "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400",
   archived: "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-[#079669]",
   cancelled: "bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-400",
+  pending_validation:
+    "bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400",
+  validated:
+    "bg-sky-50 text-sky-700 dark:bg-sky-950/40 dark:text-sky-400",
 };
 
 export function ActivityStatusBadges({
