@@ -1,33 +1,35 @@
 import { fetchCurrentUser } from "@/lib/auth/me";
-import { getEmbedContext } from "@/lib/auth/embed";
 import { SessionProvider } from "@/components/session-provider";
 import { AppShell } from "@/components/app-shell";
-import { EmbeddedShell } from "@/components/embedded-shell";
-import { FloatingNav } from "@/components/floating-nav";
-import { MobileFabNav } from "@/components/mobile-fab-nav";
+import { ExternalShell } from "@/components/external-shell";
+import { getSepNavigation } from "@/lib/sep-nav";
 
-// SEP users are rendered without SISMO's own header/sidebar (the SEP platform
-// supplies its own chrome); they use the floating navigation instead. Detection
-// is driven by the user's auth_source ("sep") and falls back to the request
-// context header/cookie injected by the SEP proxy (getEmbedContext).
+// Chrome is chosen by the user's account type:
+//   - SEP users (auth_source "sep"): SISMO renders its own header + sidebar that
+//     imitate the SEP site (AppShell). SISMO is served as one more page under
+//     the SEP domain (reverse proxy / container), never inside an <iframe>.
+//     The sidebar's SEP navigation is fetched live from SEP (see lib/sep-nav).
+//   - External users (Google/OAuth): no SEP-like sidebar; they navigate with the
+//     floating panel / FAB (ExternalShell). See docs/external-users-access.md.
 export default async function AppLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
   const user = await fetchCurrentUser();
-  const embedCtx = await getEmbedContext();
-  const isSep = user?.auth_source === "sep" || embedCtx === "sep";
+  const isSep = user?.auth_source === "sep";
+
+  // Fetched once per render of the app shell. Cheap (cached by SEP) and
+  // fails open to an empty list if SEP is unreachable.
+  const sepNav = isSep ? await getSepNavigation() : [];
 
   return (
     <SessionProvider initialUser={user}>
       {isSep ? (
-        <EmbeddedShell>{children}</EmbeddedShell>
+        <AppShell sepNav={sepNav}>{children}</AppShell>
       ) : (
-        <AppShell>{children}</AppShell>
+        <ExternalShell>{children}</ExternalShell>
       )}
-      <FloatingNav />
-      <MobileFabNav />
     </SessionProvider>
   );
 }

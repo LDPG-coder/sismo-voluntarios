@@ -15,6 +15,7 @@ import {
   GlobeIcon,
   LogoutIcon,
 } from "@/components/nav-config";
+import type { SepNavItem } from "@/lib/sep-nav";
 
 type User = {
   name: string | null;
@@ -24,12 +25,34 @@ type User = {
 
 const GREEN = "#00A650";
 
-export function Sidebar({ user, open, onClose }: { user: User; open: boolean; onClose: () => void }) {
+export function Sidebar({
+  user,
+  open,
+  onClose,
+  sepNav = [],
+}: {
+  user: User;
+  open: boolean;
+  onClose: () => void;
+  sepNav?: SepNavItem[];
+}) {
   const pathname = usePathname();
   const [volOpen, setVolOpen] = useState(true);
 
   const isActive = (href: string) =>
     href === "/" ? pathname === "/" : pathname === href;
+
+  const sepNavContent =
+    sepNav.length > 0 ? (
+      <div>
+        <Category>Portal SEP</Category>
+        <div className="space-y-1">
+          {sepNav.map((item) => (
+            <SepNavLink key={item.href} item={item} active={isActive(item.href)} onClick={onClose} />
+          ))}
+        </div>
+      </div>
+    ) : null;
 
   const navContent = (
     <div className="flex h-full flex-col overflow-hidden bg-white dark:bg-[#121212]">
@@ -74,6 +97,8 @@ export function Sidebar({ user, open, onClose }: { user: User; open: boolean; on
             <NavLink href="#" label="Oferta de actividades" Icon={CalendarIcon} active={false} iconActive bold onClick={onClose} />
           </div>
         </div>
+
+        {sepNavContent}
 
         <div>
           <Category>Análisis</Category>
@@ -189,6 +214,43 @@ function SubLink({
     >
       <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[#bbbbbb] dark:bg-[#888888]" />
       {label}
+    </Link>
+  );
+}
+
+// Link to a SEP page. SEP pages may be served on the SEP domain (same origin as
+// SISMO when proxied) or cross-origin; either way we open them in the same tab
+// so SEP owns the navigation. The SEP session cookie is carried automatically
+// for same-origin targets, so no extra token is appended here (see
+// docs/SEP_INTEGRATION.md §2.2 for correlation params SEP may require).
+function SepNavLink({
+  item,
+  active,
+  onClick,
+}: {
+  item: SepNavItem;
+  active: boolean;
+  onClick: () => void;
+}) {
+  const external = !item.href.startsWith("/");
+  const className = cn(
+    "flex items-center gap-3 rounded-xl px-1.5 py-2.5 text-[13px] transition",
+    active
+      ? "bg-[#00A650]/10 text-[#00A650]"
+      : "text-[#333333] hover:bg-zinc-100 dark:text-[#E0E0E0] dark:hover:bg-zinc-800",
+  );
+  if (external) {
+    return (
+      <a href={item.href} onClick={onClick} className={className} target="_self" rel="noopener">
+        <GlobeIcon className="h-5 w-5 shrink-0" />
+        {item.label}
+      </a>
+    );
+  }
+  return (
+    <Link href={item.href} onClick={onClick} className={className}>
+      <GlobeIcon className="h-5 w-5 shrink-0" />
+      {item.label}
     </Link>
   );
 }

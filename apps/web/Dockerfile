@@ -13,9 +13,13 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 ARG NEXT_PUBLIC_API_URL
 ARG NEXT_PUBLIC_WEB_ORIGIN
+ARG NEXT_PUBLIC_BASE_PATH
 ARG SISMO_WEB_PORT=3000
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 ENV NEXT_PUBLIC_WEB_ORIGIN=$NEXT_PUBLIC_WEB_ORIGIN
+ENV NEXT_PUBLIC_BASE_PATH=$NEXT_PUBLIC_BASE_PATH
+# URL del endpoint JSON de navegación del SEP (leída en runtime por el layout).
+ENV SEP_NAVIGATION_URL=${SEP_NAVIGATION_URL:-}
 RUN npm run build
 
 FROM node:22-alpine AS production
@@ -30,9 +34,15 @@ USER nextjs
 # Puerto abstracto: se puede sobreescribir con SISMO_WEB_PORT
 ARG SISMO_WEB_PORT=3000
 ENV PORT=$SISMO_WEB_PORT
+# basePath (build-time) también se usa en runtime para el healthcheck, porque
+# /login queda bajo la ruta base cuando SISMO se sirve en un sub-path del SEP.
+ARG NEXT_PUBLIC_BASE_PATH
+ENV NEXT_PUBLIC_BASE_PATH=$NEXT_PUBLIC_BASE_PATH
+# Runtime: el layout del web lee SEP_NAVIGATION_URL para el sidebar.
+ENV SEP_NAVIGATION_URL=${SEP_NAVIGATION_URL:-}
 EXPOSE 3000
 ENV HOSTNAME="0.0.0.0"
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
-    CMD wget -q -O /dev/null http://127.0.0.1:${SISMO_WEB_PORT:-3000}/login || exit 1
+    CMD wget -q -O /dev/null http://127.0.0.1:${SISMO_WEB_PORT:-3000}${NEXT_PUBLIC_BASE_PATH}/login || exit 1
 ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
 CMD ["node", "server.js"]

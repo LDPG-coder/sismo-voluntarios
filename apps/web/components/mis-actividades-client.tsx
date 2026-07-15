@@ -45,11 +45,7 @@ export function MisActividadesClient() {
   const [confirmAction, setConfirmAction] = useState<{ id: string; title: string; action: "cancel" | "archive" } | null>(null);
   const [processing, setProcessing] = useState(false);
   const { user } = useSession();
-  // TEMPORAL (ver docs/external-users-access.md): también los usuarios externos
-  // (google) pueden crear actividades.
-  // const canCreate = user?.auth_source === "sep" || user?.role === "admin";
-  const canCreate =
-    user?.auth_source === "sep" || user?.role === "admin" || user?.auth_source === "google";
+  const canCreate = user?.auth_source === "sep" || user?.role === "admin";
 
   useEffect(() => {
     fetch(`${API}/api/v1/activities/mine`, { credentials: "include" })

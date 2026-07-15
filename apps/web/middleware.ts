@@ -24,19 +24,9 @@ export function middleware(request: NextRequest) {
 
   const isDev = (process.env.NODE_ENV ?? "development") !== "production";
 
-  // frame-ancestors: by default only same-origin framing is allowed
-  // (`'self'`). When SEP is configured to embed Sismo, SISMO_FRAME_ANCESTORS
-  // lists the allowed SEP parent origins (comma-separated). This is what lets
-  // the SEP platform load Sismo inside an <iframe>.
-  const ancestors = (process.env.SISMO_FRAME_ANCESTORS ?? "")
-    .split(",")
-    .map((s) => s.trim())
-    .filter(Boolean);
-  const sepEmbedEnabled = ancestors.length > 0;
-  const frameAncestors = sepEmbedEnabled
-    ? `${ancestors.join(" ")} self`
-    : "self";
-
+  // SISMO is served as one more page under the SEP domain (reverse proxy or
+  // container), never inside a cross-origin <iframe>, so framing is restricted
+  // to same-origin only.
   const csp = [
     "default-src 'self'",
     // 'unsafe-inline' is required for Next.js App Router RSC payloads;
@@ -51,7 +41,7 @@ export function middleware(request: NextRequest) {
     isDev
       ? "connect-src 'self' http://localhost:* http://127.0.0.1:* https: wss: https://*.cloudflareinsights.com"
       : "connect-src 'self' https: wss: https://*.cloudflareinsights.com",
-    `frame-ancestors ${frameAncestors}`,
+    "frame-ancestors 'self'",
     "base-uri 'self'",
     "form-action 'self' https://accounts.google.com",
     "object-src 'none'",
@@ -62,13 +52,9 @@ export function middleware(request: NextRequest) {
 
   const response = NextResponse.next();
   response.headers.set("Content-Security-Policy", csp);
-  // X-Frame-Options conflicts with a permissive frame-ancestors; modern
-  // browsers honor frame-ancestors, but we omit XFO when SEP embedding is
-  // enabled so older engines don't block the iframe. When only same-origin
-  // framing is allowed we keep DENY as defense-in-depth.
-  if (!sepEmbedEnabled) {
-    response.headers.set("X-Frame-Options", "DENY");
-  }
+  // Defense-in-depth against clickjacking for engines that predate
+  // frame-ancestors. SISMO is never embedded cross-origin.
+  response.headers.set("X-Frame-Options", "DENY");
   response.headers.set("X-Content-Type-Options", "nosniff");
   response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
   response.headers.set(

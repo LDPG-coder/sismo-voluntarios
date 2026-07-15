@@ -42,12 +42,15 @@ services:
       SISMO_OPENAI_API_KEY: ${SISMO_OPENAI_API_KEY:-}
       SISMO_OPENAI_MODEL: ${SISMO_OPENAI_MODEL:-north-mini-code-free}
       SISMO_IMPORTER_TOKEN: ${SISMO_IMPORTER_TOKEN:-}
-      # SEP integration. SISMO_SEP_API_TOKEN is the Bearer for the Partner API
-      # + sep-login (one-time code, usado en micro-frontend). SISMO_SEP_PROXY_SECRET
-      # es SOLO para la variante de proxy reverso (header HMAC firmado); no se
-      # usa en micro-frontend. Ambos vacíos hasta que SEP defina su setup.
+      # Integración SEP: dos tokens Bearer distintos. SISMO_SEP_LOGIN_TOKEN
+      # autoriza solo POST /api/v1/auth/sep-login (acuñar sesiones); un leak es
+      # crítico. SISMO_SEP_PARTNER_TOKEN autoriza solo la Partner API de solo
+      # lectura (notificaciones del header del SEP). SISMO_SEP_API_TOKEN se
+      # conserva como fallback del anterior secreto único. Vacíos hasta que SEP
+      # los defina.
+      SISMO_SEP_LOGIN_TOKEN: ${SISMO_SEP_LOGIN_TOKEN:-}
+      SISMO_SEP_PARTNER_TOKEN: ${SISMO_SEP_PARTNER_TOKEN:-}
       SISMO_SEP_API_TOKEN: ${SISMO_SEP_API_TOKEN:-}
-      SISMO_SEP_PROXY_SECRET: ${SISMO_SEP_PROXY_SECRET:-}
       SISMO_LOG_LEVEL: ${SISMO_LOG_LEVEL:-INFO}
       SISMO_LOG_FORMAT: ${SISMO_LOG_FORMAT:-json}
     # Los 3 secretos que la API necesita se inyectan vía /run/secrets
@@ -72,15 +75,20 @@ services:
       args:
         NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:?Set NEXT_PUBLIC_API_URL in .env}
         NEXT_PUBLIC_WEB_ORIGIN: ${NEXT_PUBLIC_WEB_ORIGIN:-https://sismo.lat}
+        NEXT_PUBLIC_BASE_PATH: ${NEXT_PUBLIC_BASE_PATH:-}
         SISMO_WEB_PORT: ${SISMO_WEB_PORT:-3000}
     restart: unless-stopped
     environment:
       NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
       NEXT_PUBLIC_WEB_ORIGIN: ${NEXT_PUBLIC_WEB_ORIGIN:-https://sismo.lat}
       SISMO_WEB_PORT: ${SISMO_WEB_PORT:-3000}
-      # Orígenes SEP autorizados a embeber Sismo en un <iframe> (CSP frame-ancestors).
-      # Vacío => solo mismo origen. Cuando SEP esté listo, agrega su origen separado por comas.
-      SISMO_FRAME_ANCESTORS: ${SISMO_FRAME_ANCESTORS:-}
+      # Ruta base cuando SISMO se sirve como "una página más" bajo el dominio del
+      # SEP (p. ej. /voluntarios-becarios). Vacío => se sirve en la raíz.
+      NEXT_PUBLIC_BASE_PATH: ${NEXT_PUBLIC_BASE_PATH:-}
+      # URL (server-to-server, dentro del stack) del endpoint JSON de
+      # navegación del SEP que SISMO renderiza en su sidebar. Vacío => el
+      # sidebar de SEP queda vacío (fallback graceful). Ver docs/SEP_INTEGRATION.md §2.2.
+      SEP_NAVIGATION_URL: ${SEP_NAVIGATION_URL:-}
       INTERNAL_API_URL: http://api:${SISMO_API_PORT:-8000}
     # SISMO_SESSION_SECRET se inyecta vía secret (no como env plano)
     secrets:
