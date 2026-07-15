@@ -19,8 +19,23 @@ from app.core.utils import ensure_timezone
 from app.db.base import get_db
 from app.db.constants import MVP_TENANT_ID
 from app.db.enums import ActivityStatus, UserRole
-from app.db.models import Activity, ActivityMember, ActivityEvidence, Notification, User
+from app.db.models import (
+    Activity,
+    ActivityMember,
+    ActivityEvidence,
+    MediaAsset,
+    MediaOwnerType,
+    Notification,
+    User,
+)
 from app.pipeline.dependencies import require_session
+from app.storage.service import (
+    MediaError,
+    decode_data_url,
+    delete_media,
+    media_url,
+    save_media,
+)
 
 router = APIRouter(prefix="/activities", tags=["activities"])
 _log = get_logger("app.api.v1.activities")
@@ -845,10 +860,32 @@ def upload_external_certificate(
             ErrorCode.validation_invalid_format,
             "la constancia debe ser un archivo PDF (data:application/pdf;base64,)",
         )
-    if len(cert) > _MAX_CERTIFICATE_LEN:
+    try:
+        mime, raw = decode_data_url(cert)
+    except MediaError as e:
+        raise ApiError(ErrorCode.validation_invalid_format, str(e))
+    if len(raw) > _MAX_CERTIFICATE_LEN:
         raise ApiError(ErrorCode.validation_invalid_format, "la constancia PDF es demasiado grande")
 
-    a.external_certificate = cert
+    # Reemplazar el asset previo si existe.
+    if a.certificate_asset_id:
+        old = db.get(MediaAsset, a.certificate_asset_id)
+        if old:
+            delete_media(db, old)
+    asset = save_media(
+        db,
+        owner_type=MediaOwnerType.ACTIVITY_CERTIFICATE,
+        owner_id=a.id,
+        kind="document",
+        content_type=mime,
+        data=raw,
+        created_by=user.id,
+        filename="constancia.pdf",
+    )
+    db.flush()
+    a.certificate_asset_id = asset.id
+    # La columna conserva la URL pública como referencia (sin base64).
+    a.external_certificate = media_url(asset)
     db.commit()
     _log.info("activity.external_certificate.uploaded", activity_id=str(a.id), creator_id=str(user.id))
     return {"ok": True, "external_certificate": a.external_certificate}
@@ -865,6 +902,11 @@ def delete_external_certificate(
         raise ApiError(ErrorCode.activity_not_found, "activity not found")
     _require_external_official_ready(a, user, db)
 
+    if a.certificate_asset_id:
+        old = db.get(MediaAsset, a.certificate_asset_id)
+        if old:
+            delete_media(db, old)
+    a.certificate_asset_id = None
     a.external_certificate = None
     db.commit()
     _log.info("activity.external_certificate.deleted", activity_id=str(a.id), creator_id=str(user.id))
@@ -1036,10 +1078,25 @@ def upload_evidence(
 
     created: list[ActivityEvidence] = []
     for img in body.images:
+        try:
+            mime, raw = decode_data_url(img)
+        except MediaError as e:
+            raise ApiError(ErrorCode.validation_invalid_format, str(e))
+        asset = save_media(
+            db,
+            owner_type=MediaOwnerType.ACTIVITY_EVIDENCE,
+            owner_id=a.id,
+            kind="image",
+            content_type=mime,
+            data=raw,
+            created_by=user.id,
+        )
+        db.flush()
         ev = ActivityEvidence(
             activity_id=a.id,
             uploaded_by=user.id,
-            image_url=img,
+            image_url=media_url(asset),
+            media_asset_id=asset.id,
         )
         ev.tenant_id = MVP_TENANT_ID
         db.add(ev)
@@ -1074,6 +1131,10 @@ def delete_evidence(
 
     _require_can_delete_evidence(a, user, db, ev)
 
+    if ev.media_asset_id:
+        asset = db.get(MediaAsset, ev.media_asset_id)
+        if asset:
+            delete_media(db, asset)
     db.delete(ev)
     db.commit()
     _log.info(

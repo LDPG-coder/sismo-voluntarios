@@ -16,11 +16,20 @@
 └───────┬───────────┘         └───────────────────────┘
         │
         ▼
-┌───────────────┐    ┌───────────────┐
-│  PostgreSQL   │    │    Redis      │
-│  :5432        │    │    :6379      │
-└───────────────┘    └───────────────┘
+┌───────────────┐    ┌───────────────┐    ┌──────────────────────┐
+│  PostgreSQL   │    │    Redis      │    │  Volumen multimedia  │
+│  :5432        │    │    :6379      │    │  (/data/media)       │
+└───────────────┘    └───────────────┘    └──────────┬───────────┘
+                                                      │ referencia (ruta/URL)
+                                                      │ en tabla media_assets
+                                                      ▼
+                                            (solo metadatos en la BD)
 ```
+
+> **Multimedia fuera de la BD.** Las imágenes/PDF se guardan en el volumen
+> `/data/media` del servidor y la base de datos conserva únicamente una
+> referencia en `media_assets`. Se sirven por la API autenticada en
+> `GET /media/{id}` (ver `docs/MEDIA_STORAGE.md`).
 
 ### Stack Tecnológico
 
@@ -34,6 +43,7 @@
 | Migraciones | Alembic | 1.18.5 |
 | Tunnel | Cloudflare Tunnel | latest |
 | Containerización | Docker Compose | v2 |
+| Almacenamiento multimedia | Volumen local (`/data/media`) + `media_assets` | — |
 
 ---
 

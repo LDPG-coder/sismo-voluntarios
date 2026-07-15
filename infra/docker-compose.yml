@@ -61,6 +61,9 @@ services:
       - SISMO_GOOGLE_CLIENT_SECRET
     ports:
       - "127.0.0.1:${SISMO_API_PORT:-8000}:${SISMO_API_PORT:-8000}"
+    volumes:
+      # Almacenamiento persistente de multimedia (fuera de la base de datos).
+      - media_data:/data/media
     networks:
       - sismo
     deploy:
@@ -129,6 +132,10 @@ networks:
   sismo:
     name: sismo
     driver: bridge
+
+volumes:
+  media_data:
+    driver: local
 
 secrets:
   # El nombre del secreto = nombre del archivo montado en /run/secrets,

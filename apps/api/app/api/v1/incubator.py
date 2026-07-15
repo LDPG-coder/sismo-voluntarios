@@ -38,7 +38,14 @@ from app.db.models import (
     IncubatorProject,
     IncubatorTimelineEvent,
     IncubatorUpdate,
+    MediaAsset,
+    MediaOwnerType,
     User,
+)
+from app.storage.service import (
+    MediaError,
+    decode_data_url,
+    save_media,
 )
 from app.pipeline.dependencies import require_admin_session, require_session
 
@@ -144,12 +151,22 @@ def _add_timeline(db: Session, project: IncubatorProject, etype: TimelineEventTy
 
 
 def _serialize_attachment(a: IncubatorAttachment) -> dict:
+    # `url` es la referencia pública derivada del asset (o el data:URL legacy
+    # mientras no se migre). El binario nunca viaja en `data`.
+    url = None
+    if a.media_asset_id is not None:
+        from app.core.config import get_settings
+
+        url = f"{get_settings().media_public_base_url}/{a.media_asset_id}"
+    else:
+        url = a.data
     return {
         "id": str(a.id),
         "kind": a.kind,
         "filename": a.filename,
         "content_type": a.content_type,
-        "data": a.data,
+        "url": url,
+        "data": a.data if a.media_asset_id is None else None,
         "size": a.size,
     }
 
@@ -255,14 +272,30 @@ def _create_attachments(db: Session, items: list[_AttachmentBody] | None, *, pro
     created: list[IncubatorAttachment] = []
     for att in items or []:
         _validate_attachment(att)
+        try:
+            mime, raw = decode_data_url(att.data)
+        except MediaError as e:
+            raise ApiError(ErrorCode.validation_invalid_format, str(e))
+        owner_id = project_id or update_id
+        asset = save_media(
+            db,
+            owner_type=MediaOwnerType.INCUBATOR_ATTACHMENT,
+            owner_id=owner_id,
+            kind=att.kind,
+            content_type=mime,
+            data=raw,
+            filename=att.filename,
+        )
+        db.flush()
         a = IncubatorAttachment(
             project_id=project_id,
             update_id=update_id,
             kind=att.kind,
             filename=att.filename,
-            content_type=att.content_type,
-            data=att.data,
-            size=att.size,
+            content_type=mime,
+            data=None,
+            size=asset.byte_size,
+            media_asset_id=asset.id,
         )
         a.tenant_id = MVP_TENANT_ID
         db.add(a)

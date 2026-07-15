@@ -26,6 +26,7 @@ from sqlalchemy import (
 from sqlalchemy.orm import relationship
 
 from app.db.models._base import Base, IdMixin, TenantMixin, TimestampMixin
+from app.db.models.media_asset import MediaAsset
 
 
 class IncubatorProject(Base, IdMixin, TimestampMixin, TenantMixin):
@@ -66,8 +67,13 @@ class IncubatorAttachment(Base, IdMixin, TimestampMixin, TenantMixin):
     kind = Column(String(20), nullable=False)  # image | document
     filename = Column(String(255), nullable=True)
     content_type = Column(String(100), nullable=True)
-    data = Column(Text, nullable=False)  # data:<mime>;base64,<...>
+    data = Column(Text, nullable=True)  # data:<mime>;base64,<...> (legacy/migración)
     size = Column(Integer, nullable=True)
+    # Referencia al archivo en el backend de almacenamiento.
+    media_asset_id = Column(
+        UUID(as_uuid=True), ForeignKey("media_assets.id"), nullable=True, index=True
+    )
+    media_asset = relationship("MediaAsset", foreign_keys=[media_asset_id])
 
 
 class IncubatorBudgetLine(Base, IdMixin, TimestampMixin, TenantMixin):

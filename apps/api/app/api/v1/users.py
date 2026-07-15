@@ -15,8 +15,15 @@ from app.core.logging import get_logger
 from app.core.utils import serialize_user, validate_enum
 from app.db.base import get_db
 from app.db.enums import UserRole, UserStatus
-from app.db.models import Activity, ActivityMember, User
+from app.db.models import Activity, ActivityMember, MediaAsset, MediaOwnerType, User
 from app.pipeline.dependencies import require_admin_session, require_session
+from app.storage.service import (
+    MediaError,
+    decode_data_url,
+    delete_media,
+    media_url,
+    save_media,
+)
 
 router = APIRouter(prefix="/users", tags=["users"])
 _log = get_logger("app.api.v1.users")
@@ -165,7 +172,15 @@ def update_user(
     return serialize_user(u, include_phone=True)
 
 
-_MAX_PHOTO_LEN = 3_500_000
+_MAX_PHOTO_LEN = 5 * 1024 * 1024
+
+
+def _clear_photo_asset(db: Session, user: User) -> None:
+    if user.photo_asset_id:
+        asset = db.get(MediaAsset, user.photo_asset_id)
+        if asset:
+            delete_media(db, asset)
+    user.photo_asset_id = None
 
 
 @router.put("/me/photo")
@@ -175,12 +190,39 @@ def update_my_photo(
     db: Annotated[Session, Depends(get_db)],
 ) -> dict:
     photo = body.photo
-    if photo is not None:
-        if not isinstance(photo, str) or not photo.startswith("data:image/"):
-            raise ApiError(ErrorCode.validation_invalid_format, "photo must be a data: image URL")
-        if len(photo) > _MAX_PHOTO_LEN:
-            raise ApiError(ErrorCode.validation_invalid_format, "photo is too large")
-    user.photo_url = photo
+    if photo is None:
+        # Limpiar la foto actual (asset + referencia).
+        _clear_photo_asset(db, user)
+        user.photo_url = None
+        db.commit()
+        db.refresh(user)
+        _log.info("user.photo.cleared", user_id=str(user.id))
+        return serialize_user(user, include_phone=True)
+
+    if not isinstance(photo, str) or not photo.startswith("data:image/"):
+        raise ApiError(ErrorCode.validation_invalid_format, "photo must be a data: image URL")
+    try:
+        mime, raw = decode_data_url(photo)
+    except MediaError as e:
+        raise ApiError(ErrorCode.validation_invalid_format, str(e))
+    if len(raw) > _MAX_PHOTO_LEN:
+        raise ApiError(ErrorCode.validation_invalid_format, "photo is too large")
+
+    _clear_photo_asset(db, user)
+    asset = save_media(
+        db,
+        owner_type=MediaOwnerType.USER_PHOTO,
+        owner_id=user.id,
+        kind="image",
+        content_type=mime,
+        data=raw,
+        created_by=user.id,
+        filename="photo",
+    )
+    db.flush()
+    user.photo_asset_id = asset.id
+    # La columna conserva la URL pública como referencia (sin base64).
+    user.photo_url = media_url(asset)
     db.commit()
     db.refresh(user)
     _log.info("user.photo.updated", user_id=str(user.id))
@@ -192,6 +234,7 @@ def delete_my_photo(
     user: Annotated[User, Depends(require_session)],
     db: Annotated[Session, Depends(get_db)],
 ) -> dict:
+    _clear_photo_asset(db, user)
     user.photo_url = None
     db.commit()
     db.refresh(user)
@@ -204,6 +247,7 @@ def reset_my_photo(
     user: Annotated[User, Depends(require_session)],
     db: Annotated[Session, Depends(get_db)],
 ) -> dict:
+    _clear_photo_asset(db, user)
     user.photo_url = user.google_photo_url
     db.commit()
     db.refresh(user)

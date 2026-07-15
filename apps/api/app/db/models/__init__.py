@@ -15,6 +15,7 @@ from app.db.models.incubator_project import (
     IncubatorUpdate,
     IncubatorAccountability,
 )
+from app.db.models.media_asset import MediaAsset, MediaOwnerType
 
 __all__ = [
     "Base",
@@ -33,5 +34,7 @@ __all__ = [
     "IncubatorTimelineEvent",
     "IncubatorUpdate",
     "IncubatorAccountability",
+    "MediaAsset",
+    "MediaOwnerType",
 ]
 

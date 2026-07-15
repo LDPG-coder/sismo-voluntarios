@@ -268,3 +268,38 @@ def test_blocked_after_close(client, db):
     )
     assert resp.status_code == 422
     assert resp.json()["error"]["code"] == "validation.invalid_format"
+
+
+def test_evidence_stored_as_reference_and_served_via_api(client, db):
+    """La imagen NO viaja como base64 en la respuesta ni en la BD: se guarda
+    en el backend de almacenamiento y se sirve por la API autenticada."""
+    from app.storage.service import decode_data_url
+
+    owner = make_user(db, role="admin", status="active")
+    act = _make_activity(db, owner, started=True)
+
+    resp = client.post(
+        f"/api/v1/activities/{act.id}/evidence",
+        json={"images": [PNG]},
+        cookies=auth_cookies(owner),
+        headers=auth_headers(),
+    )
+    assert resp.status_code == 200
+    item = resp.json()["items"][0]
+
+    # La respuesta solo trae la referencia (URL), no el binario.
+    assert item["image_url"].startswith("http://") or item["image_url"].startswith("/")
+    assert not item["image_url"].startswith("data:")
+
+    # El binario se recupera por la API autenticada y coincide con el original.
+    media_id = item["image_url"].rstrip("/").split("/")[-1]
+    resp = client.get(
+        f"/api/v1/media/{media_id}",
+        cookies=auth_cookies(owner),
+        headers=auth_headers(),
+    )
+    assert resp.status_code == 200
+    assert resp.headers["content-type"].startswith("image/")
+    expected = decode_data_url(PNG)[1]
+    assert resp.content == expected
+

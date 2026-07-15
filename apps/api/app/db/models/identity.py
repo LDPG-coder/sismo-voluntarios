@@ -8,6 +8,7 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 
 from app.db.models._base import Base, IdMixin, TimestampMixin, TenantMixin
+from app.db.models.media_asset import MediaAsset
 from app.db.enums import UserRole, UserStatus
 
 
@@ -26,6 +27,12 @@ class User(Base, IdMixin, TimestampMixin, TenantMixin):
     name = Column(String(255), nullable=True)
     photo_url = Column(Text, nullable=True)
     google_photo_url = Column(Text, nullable=True)
+    # Referencia al archivo en el backend de almacenamiento (fuera de la BD).
+    # Cuando existe, `photo_url` queda en NULL y la URL se deriva del asset.
+    photo_asset_id = Column(
+        UUID(as_uuid=True), ForeignKey("media_assets.id"), nullable=True, index=True
+    )
+    photo_asset = relationship("MediaAsset", foreign_keys=[photo_asset_id])
     phone = Column(String(50), nullable=True)
     role = Column(String(20), nullable=False, default=UserRole.volunteer.value)
     status = Column(String(20), nullable=False, default=UserStatus.pending.value)

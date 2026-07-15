@@ -55,6 +55,8 @@ services:
       SISMO_DB_HOST: postgres
       SISMO_DB_PORT: "5432"
       SISMO_REDIS_URL: redis://redis:6379/0
+    volumes:
+      - media_data:/data/media
 
   web:
     depends_on:
@@ -64,3 +66,5 @@ services:
 volumes:
   sismo_pgdata:
     name: sismo_pgdata
+  media_data:
+    driver: local

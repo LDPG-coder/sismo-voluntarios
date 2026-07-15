@@ -4,6 +4,7 @@ from sqlalchemy import Boolean, Column, DateTime, Float, ForeignKey, Integer, St
 from sqlalchemy.dialects.postgresql import UUID
 
 from app.db.models._base import Base, IdMixin, TimestampMixin, TenantMixin
+from app.db.models.media_asset import MediaAsset
 from app.db.enums import ActivityStatus
 
 
@@ -25,6 +26,11 @@ class Activity(Base, IdMixin, TimestampMixin, TenantMixin):
     external_supervisor_email = Column(String(255), nullable=True)
     external_assigned_hours = Column(Float, nullable=True)
     external_certificate = Column(Text, nullable=True)
+    # Referencia al PDF en el backend de almacenamiento (fuera de la BD).
+    certificate_asset_id = Column(
+        UUID(as_uuid=True), ForeignKey("media_assets.id"), nullable=True, index=True
+    )
+    certificate_asset = relationship("MediaAsset", foreign_keys=[certificate_asset_id])
     # Voluntariado interno: tareas rapidas publicadas por coordinadores/becarios
     # de AVAA que SUMAN horas al programa. Excluyente con el voluntariado externo
     # oficial (si is_internal=True, los campos external_* van vacios).

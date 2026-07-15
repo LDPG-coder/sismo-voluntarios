@@ -93,6 +93,28 @@ class Settings(BaseSettings):
 
     redis_url: str = "redis://localhost:6379/0"
 
+    # -- Almacenamiento de multimedia --------------------------------------
+    # Los archivos se guardan FUERA de la base de datos, en un backend de
+    # almacenamiento, y la BD solo conserva una referencia (ruta/identificador).
+    # Backend soportado hoy: "local" (volumen del servidor). La URL pública es
+    # absoluta para que el front-end pueda usarla directamente en <img src>.
+    media_storage_backend: str = "local"
+    media_root: str = "/data/media"
+    media_public_base_url: str = "http://localhost:8000/media"
+    media_max_image_bytes: int = 5 * 1024 * 1024
+    media_max_document_bytes: int = 8 * 1024 * 1024
+    media_allowed_image_types: Annotated[list[str], NoDecode] = Field(
+        default_factory=lambda: [
+            "image/jpeg",
+            "image/png",
+            "image/webp",
+            "image/gif",
+        ]
+    )
+    media_allowed_document_types: Annotated[list[str], NoDecode] = Field(
+        default_factory=lambda: ["application/pdf"]
+    )
+
     openai_api_key: str | None = None
     openai_model: str = "north-mini-code-free"
     ai_rate_limit_per_user_per_hour: int = 5000

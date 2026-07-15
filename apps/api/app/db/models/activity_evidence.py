@@ -4,16 +4,18 @@ from sqlalchemy import Column, ForeignKey, Text
 from sqlalchemy.dialects.postgresql import UUID
 
 from app.db.models._base import Base, IdMixin, TenantMixin, TimestampMixin
+from app.db.models.media_asset import MediaAsset
 
 
 class ActivityEvidence(Base, IdMixin, TimestampMixin, TenantMixin):
     """Comprobante fotografico subido por el organizador de una actividad.
 
-    Las imagenes se almacenan como data URL (igual que la constancia del
-    voluntariado oficial externo) para evitar gestionar un bucket externo. El
-    acceso de escritura es exclusivo del creador y solo mientras la actividad
-    este iniciada y no cerrada; la lectura queda abierta a cualquier usuario
-    autenticado que pueda ver la actividad.
+    La imagen se guarda en el backend de almacenamiento (fuera de la BD) y la
+    columna ``image_url`` queda como respaldo de migración: cuando existe el
+    ``media_asset``, la URL se deriva del asset y ``image_url`` se mantiene en
+    NULL. El acceso de escritura es exclusivo del creador y solo mientras la
+    actividad este iniciada y no cerrada; la lectura queda abierta a cualquier
+    usuario autenticado que pueda ver la actividad.
     """
 
     __tablename__ = "activity_evidence"
@@ -30,4 +32,9 @@ class ActivityEvidence(Base, IdMixin, TimestampMixin, TenantMixin):
         nullable=False,
         index=True,
     )
-    image_url = Column(Text, nullable=False)
+    image_url = Column(Text, nullable=True)
+    # Referencia al archivo en el backend de almacenamiento.
+    media_asset_id = Column(
+        UUID(as_uuid=True), ForeignKey("media_assets.id"), nullable=True, index=True
+    )
+    media_asset = relationship("MediaAsset", foreign_keys=[media_asset_id])
