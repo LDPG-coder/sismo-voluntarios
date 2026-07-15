@@ -332,8 +332,8 @@ Te redirige a `/voluntarios` ya logueado como admin. Desde ahí navega a
    dev mientras la API verificaba con el secret real → login siempre fallaba.
    → `infra/docker-compose.dev.yml` ahora inyecta `env_file: ../apps/api/.env`
    al servicio `web`, alineando ambos secretos.
-4. **Toggle `TODO(prueba)` / `SEP_EMBED`**: alterna chrome completo vs.
-   simulación SEP embebido (ver subsección D).
+4. **Chrome SEP vs externo**: el layout elige `AppShell` (usuario SEP) o
+   `ExternalShell` (usuario externo/OAuth) según `auth_source` (ver subsección D).
 5. **IA**: requiere `SISMO_OPENAI_API_KEY` (la UI se ve igual; el endpoint 500ea
    sin key).
 
@@ -395,41 +395,20 @@ Esto setea la cookie de sesión de admin fijo (`sismo_session` HttpOnly +
 > y `connect-src http://localhost:*`) ya están en el código y no requieren
 > acción manual.
 
-### D. Alternar chrome completo ↔ simulación SEP
+### D. Chrome según el tipo de usuario (SEP vs externo)
 
-El proyecto lee el contexto con `getEmbedContext()` (`apps/web/lib/auth/embed.ts`):
-prioriza `SEP_EMBED` env → header `x-sismo-context: sep` → cookie `sismo_ctx=sep`.
+El chrome se elige por el tipo de cuenta en `apps/web/app/(app)/layout.tsx`,
+según `user.auth_source` (no hay iframe ni contexto embebido):
 
-- **Sin tocar código** (recomendado para probar): en
-  `infra/docker-compose.dev.yml`, servicio `web`, agrega:
-  ```yaml
-  environment:
-    SEP_EMBED: "1"
-  ```
-  y reinicia con `./dev.sh restart web`. Quita la variable para volver al chrome
-  completo.
-- **Editando código** (líneas exactas): en `apps/web/app/(app)/layout.tsx`
-  importa `getEmbedContext` y `EmbeddedShell`, y reemplaza
-  `<AppShell>{children}</AppShell>` por una selección según contexto
-  (`sep` → `EmbeddedShell`, sino `AppShell`):
-  ```tsx
-  import { getEmbedContext } from "@/lib/auth/embed";
-  import { EmbeddedShell } from "@/components/embedded-shell";
-  // ...
-  const ctx = await getEmbedContext();
-  return (
-    <SessionProvider initialUser={user}>
-      {ctx === "sep" ? <EmbeddedShell>{children}</EmbeddedShell> : <AppShell>{children}</AppShell>}
-      <FloatingNav />
-      <MobileFabNav />
-    </SessionProvider>
-  );
-  ```
-  - `components/app-shell.tsx` línea ~47: para el modo real agrega `lg:hidden`
-    al `className` del `<header>` (oculta el header en escritorio durante la
-    simulación).
-  - `components/app-shell.tsx` línea ~87: quita `lg:pr-24` del `<div>`
-    contenedor (`<div className="flex-1 lg:pr-24">{children}</div>`).
+- **Usuario SEP** (`auth_source === "sep"`) → `AppShell`: SISMO renderiza su
+  propio header + sidebar que imitan al sitio del SEP.
+- **Usuario externo / OAuth** (Google) → `ExternalShell`: **sin** ese sidebar;
+  navega con el panel flotante (escritorio) y el botón FAB (teléfono). Ver
+  `docs/external-users-access.md`.
+
+Para probar el chrome de usuario SEP en local, crea/usa una cuenta con
+`auth_source = "sep"` (p. ej. vía el flujo `sep-login`); el bypass `dev-login`
+crea un admin externo.
 
 ### E. Datos de ejemplo
 
@@ -603,6 +582,14 @@ docker compose exec api alembic revision --autogenerate -m "descripcion"
 | `003_add_notifications.py` | Tabla de notificaciones |
 | `004_add_contact_info.py` | Campo contact_info en actividades |
 | `005_add_user_photo.py` | Campo photo_url en usuarios |
+| `006_add_user_phone.py` | Campo phone en usuarios |
+| `007_add_google_photo_url.py` | Campo google_photo_url en usuarios |
+| `008_backfill_google_photo_url.py` | Backfill de google_photo_url |
+| `009_add_member_status.py` | Estado de membresía en usuarios |
+| `010_add_user_auth_source.py` | `auth_source` + `sep_user_id` (integración SEP) |
+| `011_add_activity_external_official.py` | Voluntariado oficial externo en actividades |
+| `012_ext_certificate.py` | Constancia para voluntariado externo |
+| `013_incubator.py` | Incubadora de proyectos (desconectada en prod) |
 
 ---
 
@@ -626,6 +613,11 @@ docker compose exec api alembic revision --autogenerate -m "descripcion"
 | `SISMO_REDIS_URL` | No | `redis://localhost:6379/0` | URL de Redis |
 | `SISMO_OPENAI_API_KEY` | No | - | API Key de OpenAI (para IA) |
 | `SISMO_OPENAI_MODEL` | No | `north-mini-code-free` | Modelo de OpenAI |
+| `SISMO_SEP_LOGIN_TOKEN` | No | - | Token `Bearer` para el handshake de login SEP (`POST /sep-login`) y logout coordinado (`POST /sep-logout`). Distinto del de Partner API. Vacío = integración SEP deshabilitada |
+| `SISMO_SEP_PARTNER_TOKEN` | No | - | Token `Bearer` de solo lectura para la Partner API (notificaciones del header del SEP) |
+| `SISMO_SEP_API_TOKEN` | No | - | **Deprecado:** secreto único anterior; SISMO lo usa como fallback si no defines los dos anteriores. Mejor definir los dos |
+| `SEP_NAVIGATION_URL` | No | - | URL (dentro del stack) del JSON de navegación del SEP que SISMO renderiza en su sidebar. Vacío = sidebar de SEP vacío |
+| `SISMO_SEP_CODE_TTL_SECONDS` | No | 120 | TTL (s) del one-time code de login SEP (PKCE). Corto para limitar replay |
 | `SISMO_LOG_LEVEL` | No | `INFO` | Nivel de log |
 | `SISMO_ENV` | No | `local` | Entorno (local/dev/staging/prod) |
 
@@ -637,6 +629,7 @@ docker compose exec api alembic revision --autogenerate -m "descripcion"
 |---|---|---|
 | `NEXT_PUBLIC_API_URL` | Sí | URL pública de la API (ej: `https://api.sismo.lat`) |
 | `NEXT_PUBLIC_WEB_ORIGIN` | Sí | Origen del frontend (ej: `https://sismo.lat`) |
+| `NEXT_PUBLIC_BASE_PATH` | No | Ruta base (build-time) cuando SISMO se sirve bajo un sub-path del SEP (ej: `/voluntarios-becarios`). Vacío = raíz |
 | `SISMO_SESSION_SECRET` | Sí* | Mismo secret que la API (para verificar cookies) |
 | `INTERNAL_API_URL` | No | URL interna de la API (Docker networking, ej: `http://api:8000`) |
 

@@ -1,56 +1,70 @@
-# Acceso de usuarios externos (TEMPORAL)
+# Acceso de usuarios externos
 
-> **Estado:** Cambio temporal en producción. Pedido para habilitar que las
-> personas externas (cuentas OAuth de Google, `auth_source = "google"`) puedan
-> crear actividades y tener acceso de administración, igual que los usuarios
-> SEP / admins.
+> **Estado:** Cerrado. El cambio temporal que habilitaba a las cuentas OAuth de
+> Google (`auth_source = "google"`) crear actividades, ceder cupo a cualquiera,
+> ver inscritos ajenos, ver todo el directorio y entrar al panel de
+> administración **fue revertido**. Los usuarios externos vuelven a tener los
+> permisos originales (solo se unen a actividades; la creación, el ceder a no
+> externos, ver inscritos ajenos y el admin quedan reservados a SEP/admins).
 >
-> **Cómo revertir:** cada bloque modificado quedó con el código original
-> **comentado** y una marca `TEMPORAL (ver docs/external-users-access.md)`.
-> Para revertir, basta con des-comentar el código original y borrar la versión
-> nueva en cada archivo listado abajo. No requiere migración de BD.
+> **Historial:** esta excepción se documentó originalmente como temporal (ver
+> sección "Qué se habilitó" abajo) y se mantenía con bloques marcados
+> `TEMPORAL`. Esos bloques se eliminaron; el código original es ahora el que
+> está en vigor. No requirió migración de BD.
 
-## Qué se habilitó
+## Qué se habilitó (y ya fue revertido)
 
-1. **Crear actividades** (`POST /api/v1/activities`) — antes solo SEP/admins.
-2. **Ceder cupo a cualquiera** (`POST /api/v1/activities/{id}/transfer`) — antes
-   los externos solo podían ceder a otros externos.
+Estos cinco puntos fueron la excepción temporal; **todos fueron revertidos** y
+el comportamiento original es el vigente:
+
+1. **Crear actividades** (`POST /api/v1/activities`) — solo SEP/admins.
+2. **Ceder cupo a cualquiera** (`POST /api/v1/activities/{id}/transfer`) — los
+   externos solo pueden ceder a otros externos.
 3. **Ver inscritos de cualquier actividad** (`GET /api/v1/activities/{id}/attendees`)
-   — antes solo el creador, SEP o admins.
+   — solo el creador, SEP o admins.
 4. **Ver todos los voluntarios en el directorio** (`GET /api/v1/users/directory`)
-   — antes los externos solo veían cuentas Google.
+   — los externos solo ven cuentas Google.
 5. **Acceso al panel de administración** (rutas con `require_admin_session` y la
-   página `/admin/usuarios`) — antes solo `role = admin`.
+   página `/admin/usuarios`) — solo `role = admin`.
 
-El backend (`require_admin_session`) es la fuente de verdad: sigue bloqueando a
-cualquiera que no sea `role = admin` ni `auth_source = google`.
+El backend (`require_admin_session`) es la fuente de verdad: bloquea a cualquiera
+que no sea `role = admin`.
 
 ## Cambios en el backend (`apps/api`)
 
-| Archivo | Qué se hizo |
+> **Revertido:** los bloques `TEMPORAL` fueron eliminados; el código original
+> (que restringe a SEP/admins) es el que está en vigor.
+
+| Archivo | Estado actual |
 | --- | --- |
-| `app/api/v1/activities.py` — `create_activity` | Se comentó el `raise` que bloqueaba cuentas no-SEP/no-admin. |
-| `app/api/v1/activities.py` — `transfer_activity` | `can_cede_to_anyone` ahora también es `True` para `auth_source = "google"`; se comentó el `raise`. |
-| `app/api/v1/activities.py` — `list_attendees` | Se comentó el bloqueo para cuentas externas. |
-| `app/api/v1/users.py` — `user_directory` | Se comentó el filtro `q.where(User.auth_source == "google")`. |
-| `app/pipeline/dependencies.py` — `make_require_session` | En la rama `role == UserRole.admin`, se permiten cuentas `auth_source = "google"` (el `raise` quedó dentro de `if user.auth_source != "google":`). |
+| `app/api/v1/activities.py` — `create_activity` | `raise` restaurado: bloquea cuentas no-SEP/no-admin. |
+| `app/api/v1/activities.py` — `transfer_activity` | `can_cede_to_anyone` solo SEP/admins; `raise` restaurado para externos que ceden a no-externos. |
+| `app/api/v1/activities.py` — `list_attendees` | Bloqueo restaurado para cuentas externas. |
+| `app/api/v1/users.py` — `user_directory` | Filtro `q.where(User.auth_source == "google")` restaurado para externos. |
+| `app/pipeline/dependencies.py` — `make_require_session` | `require_admin_session` bloquea a cualquiera que no sea `role = admin` (sin excepción Google). |
 
 ## Cambios en el frontend (`apps/web`)
 
-| Archivo | Qué se hizo |
+> **Revertido:** los `canCreate` y el `redirect` de admin volvieron a su valor
+> original (`auth_source === "sep" \|\| role === "admin"`, y `role !== "admin"` →
+> redirige).
+
+| Archivo | Estado actual |
 | --- | --- |
-| `components/nav-bar.tsx` | `canCreate` ahora también `\|\| user?.auth_source === "google"`. |
-| `components/app-shell.tsx` | `canCreate` ahora también `\|\| user?.auth_source === "google"`. |
-| `components/mis-actividades-client.tsx` | `canCreate` ahora también `\|\| user?.auth_source === "google"`. |
-| `app/(app)/admin/layout.tsx` | Se quitó el `redirect` por `role !== "admin"`; ahora solo `await requireSession()` (el backend decide). |
+| `components/nav-bar.tsx` | `canCreate` = `sep \|\| admin`. |
+| `components/header-bar.tsx` | `canCreate` = `sep \|\| admin`. |
+| `components/mis-actividades-client.tsx` | `canCreate` = `sep \|\| admin`. |
+| `components/todas-actividades-client.tsx` | `canCreate` = `sep \|\| admin`. |
+| `app/(app)/admin/layout.tsx` | `redirect("/voluntarios")` si `role !== "admin"`. |
 
 ## Notas de seguridad
 
-- Los usuarios externos (Google) ahora pueden editar roles/estado de otros
-  usuarios vía el panel de admin (`PUT /api/v1/users/{id}`), porque
-  `require_admin_session` los deja pasar. Revertir si esto no es deseado.
-- No se modificó el esquema de la sesión; el layout de admin delega la
-  autorización al backend.
+- Tras revertir, `require_admin_session` bloquea a cualquiera que no sea
+  `role = admin` (incluidos los usuarios externos Google). El panel de admin ya
+  no es alcanzable por cuentas externas, ni pueden editar roles/estado de otros
+  usuarios (`PUT /api/v1/users/{id}`).
+- No se modificó el esquema de la sesión; el layout de admin vuelve a redirigir
+  con `redirect("/voluntarios")` si `role !== "admin"`.
 - Migración relacionada pero **independiente**: `011_add_external_official`
   (campos de "voluntariado oficial externo"). No afecta este cambio.
 
