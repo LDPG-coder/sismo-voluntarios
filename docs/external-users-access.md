@@ -68,18 +68,22 @@ que no sea `role = admin`.
 - Migración relacionada pero **independiente**: `011_add_external_official`
   (campos de "voluntariado oficial externo"). No afecta este cambio.
 
-## Secciones del SEP para usuarios externos (OAuth)
+## Chrome para usuarios externos (OAuth)
 
-Ahora SISMO renderiza su propio sidebar y su propio header para mostrar las
-páginas del SEP. El sidebar pertenece al SEP y no debe mostrarse a los usuarios
-de cuentas OAuth (los que entran por invitación con token o agregando su correo),
-pero el header sí se muestra a todos.
+Los usuarios SEP ven el chrome de SISMO que imita al SEP: header propio **más**
+sidebar (cuyo contenido SISMO consume en vivo desde el SEP, ver
+`docs/SEP_INTEGRATION.md` §2.2). Los usuarios externos (OAuth/Google, los que
+entran por invitación con token o agregando su correo) **no** ven ese sidebar:
+el sidebar pertenece al SEP y su contenido es para cuentas SEP. El header sí se
+muestra a todos, pero adaptado.
 
 Para estos usuarios se aplica lo siguiente:
 
-- Sí se muestra el mismo header superior que ven los usuarios SEP, con todo lo
-  que ya trae (crear actividad, notificaciones, cambio de tema y el menú de la
-  foto de perfil).
+- Sí se muestra el mismo header superior que ven los usuarios SEP, con
+  notificaciones, cambio de tema y el menú de la foto de perfil. La opción
+  "crear actividad" solo aparece para usuarios SEP o admin (`canCreate =
+  auth_source === "sep" || role === "admin"`), por lo que un externo con rol
+  voluntario no la ve.
 - No se muestra el sidebar, ni en modo escritorio ni en modo responsive; el botón
   hamburguesa tampoco aparece (el header no incluye ese botón para ellos). El
   usuario navega con el panel flotante y el botón (FAB) en teléfono.

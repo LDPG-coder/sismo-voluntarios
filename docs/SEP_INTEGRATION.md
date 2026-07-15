@@ -72,10 +72,13 @@ no responde (la navegación del SEP es una mejora, nunca una dependencia dura).
 ```
 GET <SEP_NAVIGATION_URL>   # configurado en SISMO vía SEP_NAVIGATION_URL
 Accept: application/json
-→ 200 { "items": [ { "label": "...", "href": "https://sep.org/...", "requiresSession": true }, ... ] }
+→ 200 { "items": [ { "label": "...", "href": "https://sep.org/..." }, ... ] }
 ```
 
-SISMO renderiza esos `items` bajo la categoría "Portal SEP" del sidebar
+Cada `item` tiene `label` (texto del enlace) y `href` (URL absoluta o relativa a
+`sep.org`); `requiresSession` es un campo opcional e informativo que SISMO no
+usa para bloquear (pinta todos los items como enlaces). SISMO renderiza esos
+`items` bajo la categoría "Portal SEP" del sidebar
 (`apps/web/components/sidebar.tsx`, fetcher en `apps/web/lib/sep-nav.ts`). SEP
 es dueño de la lista; cualquier cambio de nombre/estructura en el SEP se refleja
 sin tocar el código de SISMO.
@@ -158,7 +161,7 @@ crea otra cuenta distinta.
 El backend del SEP consulta, para el usuario actual, la Partner API de SISMO:
 
 ```
-GET https://sep.org/voluntarios-becarios/partner/v1/users/{sep_user_id}/notifications/summary
+GET https://sep.org/voluntarios-becarios/api/v1/partner/v1/users/{sep_user_id}/notifications/summary
 Authorization: Bearer <SISMO_SEP_PARTNER_TOKEN>
 ```
 
@@ -187,7 +190,7 @@ depende de SISMO, así que el SEP debe aislarse de fallos de SISMO:
 ### 2.5 Cerrar la sesión de SISMO al salir del SEP
 
 Cuando el usuario cierra sesión en el SEP, el SEP también termina la sesión de
-SISMO-Voluntarios. Como SISMO se sirve bajo el dominen del SEP, hay dos acciones
+SISMO-Voluntarios. Como SISMO se sirve bajo el dominio del SEP, hay dos acciones
 coordinadas:
 
 1. **Logout server-to-server (cierre real en SISMO):** el backend del SEP llama
@@ -222,8 +225,8 @@ coordinadas:
 | `POST /api/v1/auth/sep-login` | Genera el código de acceso (server-to-server, con `code_challenge` PKCE) |
 | `POST /api/v1/auth/exchange` | Canjea el código presentando `code_verifier` (PKCE S256) |
 | `POST /api/v1/auth/sep-logout` | Logout coordinado server-to-server (invalida la sesión SISMO del usuario) |
-| `GET /partner/v1/users/{sep_user_id}/notifications/summary` | Resumen de notificaciones (server-to-server, token Partner) |
-| `GET /partner/v1/users/{sep_user_id}/notifications` | Lista de notificaciones (server-to-server, token Partner) |
+| `GET /api/v1/partner/v1/users/{sep_user_id}/notifications/summary` | Resumen de notificaciones (server-to-server, token Partner) |
+| `GET /api/v1/partner/v1/users/{sep_user_id}/notifications` | Lista de notificaciones (server-to-server, token Partner) |
 | cookie `sismo_session` | Sesión de SISMO; se elimina en el logout del SEP y se invalida vía `sep-logout` |
 
 ## 4. Verificación
