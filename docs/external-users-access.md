@@ -83,9 +83,11 @@ El login de Google para una cuenta que no existe previamente responde con
 | `components/header-bar.tsx` | `canCreate` = `!!user`. |
 | `components/mis-actividades-client.tsx` | `canCreate` = `!!user`. |
 | `components/todas-actividades-client.tsx` | `canCreate` = `!!user`. |
-| `app/login/page.tsx` | Sin link a `/registro`; banner `not_invited` dice "no registrada". |
+| `app/login/page.tsx` | Sin link a `/registro`; banner `not_invited` dice "no registrada"; muestra `PrivacyNotice` al acceder. |
 | `app/(app)/perfil/page.tsx` | Sin `ReferralBox` ni `InviteForm`. |
-| `app/registro/page.tsx` | Redirige a `/login`. |
+| `app/registro/page.tsx` | Redirige a `/login` (el aviso de privacidad se ve en `/login`, destino de la redirección). |
+| `components/privacy-notice.tsx` | Modal de aviso de privacidad que aparece la primera vez por navegador (`localStorage["privacy-notice-ack"]`); se cierra con "Continuar". |
+| `components/site-footer.tsx` | Footer global (root layout) con enlace permanente a `https://avaa.org/terminos-y-condiciones/`. |
 
 ## Notas de seguridad
 

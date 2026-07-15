@@ -1,3 +1,5 @@
+import { PrivacyNotice } from "@/components/privacy-notice";
+
 export default async function LoginPage({
   searchParams,
 }: {
@@ -7,6 +9,7 @@ export default async function LoginPage({
 
   return (
     <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-6 py-12">
+      <PrivacyNotice />
       <header className="mb-8">
         <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500">
           Sismo Voluntarios
