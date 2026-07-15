@@ -114,6 +114,10 @@ services:
       SISMO_DB_PORT: "5432"
       SISMO_REDIS_URL: redis://redis:6379/0
       SISMO_API_PORT: ${SISMO_API_PORT:-8000}
+      # El container corre como usuario sin root; usamos una ruta escribible
+      # para el volumen de multimedia (fuera de la BD).
+      SISMO_MEDIA_ROOT: /tmp/sismo-media
+      SISMO_MEDIA_PUBLIC_BASE_URL: http://localhost:${SISMO_API_PORT:-8000}/media
     depends_on:
       postgres:
         condition: service_healthy

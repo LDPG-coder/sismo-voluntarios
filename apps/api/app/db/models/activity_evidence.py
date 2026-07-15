@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from sqlalchemy import Column, ForeignKey, Text
 from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import relationship
 
 from app.db.models._base import Base, IdMixin, TenantMixin, TimestampMixin
 from app.db.models.media_asset import MediaAsset

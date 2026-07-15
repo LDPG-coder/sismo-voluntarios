@@ -31,6 +31,25 @@
 > referencia en `media_assets`. Se sirven por la API autenticada en
 > `GET /media/{id}` (ver `docs/MEDIA_STORAGE.md`).
 
+#### Operación del almacenamiento multimedia
+
+- **Migración de esquema:** `alembic upgrade head` aplica la revisión
+  `017_media_assets`, que crea la tabla `media_assets` y las FK nullable en
+  `users` (`photo_asset_id`), `activities` (`certificate_asset_id`),
+  `activity_evidence` (`media_asset_id`) e `incubator_attachments`
+  (`media_asset_id`). Las columnas legadas (`photo_url`, `external_certificate`,
+  `image_url`, `data`) pasan a guardar la **URL de referencia** en vez de base64.
+- **Migración de datos (legacy):** `python scripts/migrate_media_to_storage.py`
+  recorre las 4 entidades, decodifica el base64 existente, persiste el archivo
+  en `/data/media` y reemplaza el valor por la URL. Es **idempotente**; usar
+  `--dry-run` para previsualizar. Ejecutarlo una vez tras desplegar la 017.
+- **Variables de entorno** (ver `infra/.env.example`):
+  - `SISMO_MEDIA_STORAGE_BACKEND=local`
+  - `SISMO_MEDIA_ROOT=/data/media` (debe montarse como volumen persistente)
+  - `SISMO_MEDIA_PUBLIC_BASE_URL=https://api.sismo.lat/media`
+- **Respaldo:** incluir el volumen `media_data` en la política de respaldo del
+  host (Google Drive queda como destino de respaldo en frío, no para servir).
+
 ### Stack Tecnológico
 
 | Componente | Tecnología | Versión |
