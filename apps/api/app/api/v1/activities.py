@@ -574,7 +574,7 @@ def leave_activity(
         select(ActivityMember).where(ActivityMember.activity_id == a.id, ActivityMember.user_id == user.id)
     ).scalar_one_or_none()
     if not member:
-        raise ApiError(ErrorCode.activity_not_member, "no estás inscrito")
+        raise ApiError(ErrorCode.auth_forbidden, "no estás inscrito")
 
     db.delete(member)
     db.commit()
@@ -628,7 +628,7 @@ def transfer_membership(
         )
     ).scalar_one_or_none()
     if not src:
-        raise ApiError(ErrorCode.activity_not_member, "no estás inscrito activamente")
+        raise ApiError(ErrorCode.auth_forbidden, "no estás inscrito activamente")
 
     existing = db.execute(
         select(ActivityMember).where(
@@ -788,7 +788,7 @@ def mark_attendance(
         )
     ).scalar_one_or_none()
     if not member:
-        raise ApiError(ErrorCode.activity_not_member, "user not in activity")
+        raise ApiError(ErrorCode.auth_forbidden, "user not in activity")
 
     member.attended = body.attended
     db.commit()
@@ -900,14 +900,9 @@ def _activity_is_closed(a: Activity) -> bool:
     return a.status != ActivityStatus.active.value
 
 
-def _require_evidence_management(a: Activity, user: User) -> None:
-    """Solo el creador puede gestionar comprobantes, y unicamente mientras la
-    actividad haya iniciado y no este cerrada (archivada/cancelada)."""
-    if str(a.creator_id) != str(user.id):
-        raise ApiError(
-            ErrorCode.activity_not_creator,
-            "solo el creador puede gestionar los comprobantes",
-        )
+def _require_can_upload_evidence(a: Activity, user: User, db: Session) -> None:
+    """El creador o un inscrito activo pueden subir comprobantes, unicamente
+    mientras la actividad este iniciada y no cerrada (archivada/cancelada)."""
     if not _activity_has_started(a):
         raise ApiError(
             ErrorCode.validation_invalid_format,
@@ -915,6 +910,53 @@ def _require_evidence_management(a: Activity, user: User) -> None:
         )
     if _activity_is_closed(a):
         raise ApiError(ErrorCode.validation_invalid_format, "la actividad ya esta cerrada")
+    if str(a.creator_id) == str(user.id):
+        return
+    member = db.execute(
+        select(ActivityMember).where(
+            ActivityMember.activity_id == a.id,
+            ActivityMember.user_id == user.id,
+            ActivityMember.status == "active",
+        )
+    ).scalar_one_or_none()
+    if not member:
+        raise ApiError(
+            ErrorCode.auth_forbidden,
+            "solo el creador y los inscritos pueden subir comprobantes",
+        )
+
+
+def _require_can_delete_evidence(
+    a: Activity, user: User, db: Session, ev: ActivityEvidence
+) -> None:
+    """El creador puede borrar cualquier comprobante; un inscrito solo los
+    propios. Requiere que la actividad este iniciada y no cerrada."""
+    if not _activity_has_started(a):
+        raise ApiError(
+            ErrorCode.validation_invalid_format,
+            "solo puedes eliminar comprobantes una vez iniciada la actividad",
+        )
+    if _activity_is_closed(a):
+        raise ApiError(ErrorCode.validation_invalid_format, "la actividad ya esta cerrada")
+    if str(a.creator_id) == str(user.id):
+        return
+    if str(ev.uploaded_by) != str(user.id):
+        raise ApiError(
+            ErrorCode.auth_forbidden,
+            "solo puedes eliminar tus propios comprobantes",
+        )
+    member = db.execute(
+        select(ActivityMember).where(
+            ActivityMember.activity_id == a.id,
+            ActivityMember.user_id == user.id,
+            ActivityMember.status == "active",
+        )
+    ).scalar_one_or_none()
+    if not member:
+        raise ApiError(
+            ErrorCode.auth_forbidden,
+            "solo los inscritos pueden eliminar sus comprobantes",
+        )
 
 
 @router.get("/{activity_id}/evidence")
@@ -926,11 +968,19 @@ def list_evidence(
     a = db.get(Activity, UUID(activity_id))
     if not a:
         raise ApiError(ErrorCode.activity_not_found, "activity not found")
-    rows = db.execute(
+    stmt = (
         select(ActivityEvidence, User.name)
         .join(User, ActivityEvidence.uploaded_by == User.id)
         .where(ActivityEvidence.activity_id == a.id)
-        .order_by(ActivityEvidence.created_at.asc())
+    )
+    # El creador ve todos los comprobantes; el resto solo los propios y los
+    # subidos por el creador de la actividad.
+    if str(a.creator_id) != str(user.id):
+        stmt = stmt.where(
+            ActivityEvidence.uploaded_by.in_([user.id, a.creator_id])
+        )
+    rows = db.execute(
+        stmt.order_by(ActivityEvidence.created_at.asc())
     ).all()
     return [
         _serialize_evidence(ev, name)
@@ -954,7 +1004,7 @@ def upload_evidence(
     a = db.get(Activity, UUID(activity_id))
     if not a:
         raise ApiError(ErrorCode.activity_not_found, "activity not found")
-    _require_evidence_management(a, user)
+    _require_can_upload_evidence(a, user, db)
 
     # Validar todas las imagenes antes de escribir nada.
     for img in body.images:
@@ -968,6 +1018,21 @@ def upload_evidence(
                 ErrorCode.validation_invalid_format,
                 "una de las imagenes es demasiado grande",
             )
+
+    # El tope de comprobantes aplica por usuario.
+    existing = db.execute(
+        select(func.count())
+        .select_from(ActivityEvidence)
+        .where(
+            ActivityEvidence.activity_id == a.id,
+            ActivityEvidence.uploaded_by == user.id,
+        )
+    ).scalar_one()
+    if existing + len(body.images) > _MAX_EVIDENCE_IMAGES:
+        raise ApiError(
+            ErrorCode.validation_invalid_format,
+            f"solo puedes subir hasta {_MAX_EVIDENCE_IMAGES} comprobantes",
+        )
 
     created: list[ActivityEvidence] = []
     for img in body.images:
@@ -1002,11 +1067,12 @@ def delete_evidence(
     a = db.get(Activity, UUID(activity_id))
     if not a:
         raise ApiError(ErrorCode.activity_not_found, "activity not found")
-    _require_evidence_management(a, user)
 
     ev = db.get(ActivityEvidence, UUID(evidence_id))
     if not ev or str(ev.activity_id) != str(a.id):
         raise ApiError(ErrorCode.not_found, "comprobante no encontrado")
+
+    _require_can_delete_evidence(a, user, db, ev)
 
     db.delete(ev)
     db.commit()

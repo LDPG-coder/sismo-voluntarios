@@ -701,10 +701,15 @@ GET    /api/v1/activities/mine      → Mis actividades (sesión)
 POST   /api/v1/activities           → Crear actividad (sesión)
 DELETE /api/v1/activities/{id}      → Cancelar/archivar (sesión)
 GET    /api/v1/activities/{id}/evidence          → Comprobantes (sesión)
-POST   /api/v1/activities/{id}/evidence          → Subir comprobantes (creador,
-                                                    solo si inició y no cerró)
-DELETE /api/v1/activities/{id}/evidence/{id}     → Quitar comprobante (creador,
+POST   /api/v1/activities/{id}/evidence          → Subir comprobantes (creador
+                                                    o inscrito activo, solo si
+                                                    inició y no cerró)
+DELETE /api/v1/activities/{id}/evidence/{id}     → Quitar comprobante (creador
+                                                    o el propio del inscrito,
                                                     antes del cierre)
+GET    /api/v1/activities/{id}/evidence          → Listar (creador ve todos;
+                                                    resto ve solo los propios y
+                                                    los del creador)
 POST   /api/v1/activities/{id}/join    → Unirse (sesión)
 POST   /api/v1/activities/{id}/leave   → Salirse (sesión)
 GET    /api/v1/activities/{id}/attendees → Asistentes (sesión)

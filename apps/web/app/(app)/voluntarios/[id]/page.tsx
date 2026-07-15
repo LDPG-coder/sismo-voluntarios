@@ -59,6 +59,7 @@ export default function ActivityDetailPage() {
   const [certFile, setCertFile] = useState<File | null>(null);
   const [certUploading, setCertUploading] = useState(false);
   const [certError, setCertError] = useState<string | null>(null);
+  const [isMember, setIsMember] = useState(false);
   const { user } = useSession();
 
   const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
@@ -160,16 +161,21 @@ export default function ActivityDetailPage() {
 
   const refresh = useCallback(async () => {
     try {
-      const [actRes, attRes] = await Promise.all([
+      const [actRes, attRes, memRes] = await Promise.all([
         fetch(`${API}/api/v1/activities/${params.id}`, { credentials: "include" }),
         fetch(`${API}/api/v1/activities/${params.id}/attendees`, {
+          credentials: "include",
+        }),
+        fetch(`${API}/api/v1/activities/${params.id}/membership`, {
           credentials: "include",
         }),
       ]);
       const act = await actRes.json();
       const att = attRes.ok ? await attRes.json() : [];
+      const mem = memRes.ok ? await memRes.json() : { is_member: false };
       setActivity(act);
       setAttendees(att);
+      setIsMember(Boolean(mem.is_member));
     } catch {
       // silencioso
     } finally {
@@ -196,8 +202,10 @@ export default function ActivityDetailPage() {
   const isPast = new Date(activity.date_time) < new Date();
   const isPendingConfirm =
     isCreator && activity.status === "active" && isPast;
-  const canManageEvidence =
-    isCreator && activity.status === "active" && isPast;
+  const canUploadEvidence =
+    (isCreator || isMember) &&
+    activity.status === "active" &&
+    isPast;
 
   const statusLabel: Record<string, string> = {
     active: "Programada",
@@ -528,7 +536,9 @@ export default function ActivityDetailPage() {
 
           <ActivityEvidence
             activityId={activity.id}
-            canManage={canManageEvidence}
+            currentUserId={user?.id ?? null}
+            creatorId={activity.creator_id}
+            canUpload={canUploadEvidence}
           />
         </div>
       </main>

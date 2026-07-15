@@ -7,13 +7,17 @@ import type { ActivityEvidence } from "@/lib/types";
 
 type ActivityEvidenceProps = {
   activityId: string;
-  canManage: boolean;
+  currentUserId: string | null;
+  creatorId: string;
+  canUpload: boolean;
   maxImages?: number;
 };
 
 export function ActivityEvidence({
   activityId,
-  canManage,
+  currentUserId,
+  creatorId,
+  canUpload,
   maxImages = 10,
 }: ActivityEvidenceProps) {
   const [items, setItems] = useState<ActivityEvidence[]>([]);
@@ -24,6 +28,15 @@ export function ActivityEvidence({
   const [removingId, setRemovingId] = useState<string | null>(null);
 
   const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+
+  // Comprobantes propios del usuario actual.
+  const myCount = items.filter((e) => e.uploaded_by === currentUserId).length;
+  const room = Math.max(0, maxImages - myCount);
+  const atLimit = myCount >= maxImages;
+
+  const canDelete = (ev: ActivityEvidence) =>
+    canUpload &&
+    (currentUserId === creatorId || ev.uploaded_by === currentUserId);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -49,7 +62,6 @@ export function ActivityEvidence({
     if (!list) return;
     setError(null);
     const picked = Array.from(list);
-    const room = Math.max(0, maxImages - items.length);
     const accepted: File[] = [];
     for (const f of picked) {
       if (!f.type.startsWith("image/")) {
@@ -129,18 +141,32 @@ export function ActivityEvidence({
     }
   };
 
-  const atLimit = items.length >= maxImages;
-
   // Ocultar la seccion por completo si no hay nada que mostrar y el usuario
-  // no puede gestionar comprobantes (p.ej. actividad futura vista por un tercero).
-  if (!canManage && !loading && items.length === 0) return null;
+  // no puede gestionar comprobantes (p.ej. tercero no inscrito).
+  if (!canUpload && !loading && items.length === 0) return null;
 
   return (
     <div className="mt-6 border-t border-zinc-200 pt-4 dark:border-zinc-700">
       <h2 className="mb-1 text-sm font-semibold">Comprobantes de la actividad</h2>
       <p className="mb-3 text-xs text-zinc-500 dark:text-zinc-400">
-        Fotos que verifican la realizacion de la actividad.
+        {currentUserId === creatorId
+          ? "Fotos que verifican la realizacion de la actividad."
+          : "Sube tus fotos de la actividad. Tambien veras las del organizador."}
       </p>
+
+      {canUpload && (
+        <p className="mb-3 text-xs font-medium">
+          {myCount > 0 ? (
+            <span className="text-emerald-700 dark:text-[#079669]">
+              Ya cargaste {myCount} comprobante{myCount === 1 ? "" : "s"}.
+            </span>
+          ) : (
+            <span className="text-zinc-500 dark:text-zinc-400">
+              Aun no has cargado tus comprobantes.
+            </span>
+          )}
+        </p>
+      )}
 
       {loading ? (
         <p className="text-sm text-zinc-500">Cargando comprobantes...</p>
@@ -150,32 +176,40 @@ export function ActivityEvidence({
         </p>
       ) : (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-          {items.map((ev) => (
-            <div key={ev.id} className="relative">
-              <img
-                src={ev.image_url}
-                alt="Comprobante de la actividad"
-                className="aspect-square w-full rounded-lg border border-zinc-200 object-cover dark:border-zinc-800"
-              />
-              {canManage && (
-                <button
-                  type="button"
-                  onClick={() => handleRemove(ev.id)}
-                  disabled={removingId === ev.id}
-                  aria-label="Eliminar comprobante"
-                  className="absolute right-1.5 top-1.5 rounded-full bg-black/60 p-1 text-white transition hover:bg-rose-600 disabled:opacity-50"
-                >
-                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              )}
-            </div>
-          ))}
+          {items.map((ev) => {
+            const isCreatorEvidence = ev.uploaded_by === creatorId;
+            return (
+              <div key={ev.id} className="relative">
+                <img
+                  src={ev.image_url}
+                  alt="Comprobante de la actividad"
+                  className="aspect-square w-full rounded-lg border border-zinc-200 object-cover dark:border-zinc-800"
+                />
+                {isCreatorEvidence && (
+                  <span className="absolute left-1.5 top-1.5 rounded-full bg-emerald-600 px-2 py-0.5 text-[10px] font-medium text-white">
+                    Organizador
+                  </span>
+                )}
+                {canDelete(ev) && (
+                  <button
+                    type="button"
+                    onClick={() => handleRemove(ev.id)}
+                    disabled={removingId === ev.id}
+                    aria-label="Eliminar comprobante"
+                    className="absolute right-1.5 top-1.5 rounded-full bg-black/60 p-1 text-white transition hover:bg-rose-600 disabled:opacity-50"
+                  >
+                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
 
-      {canManage && (
+      {canUpload && (
         <div className="mt-4">
           <input
             type="file"
@@ -210,7 +244,9 @@ export function ActivityEvidence({
               disabled={uploading}
               className="mt-3 rounded-md bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:opacity-50 dark:bg-emerald-500"
             >
-              {uploading ? "Subiendo..." : `Subir ${files.length} comprobante(s)`}
+              {uploading
+                ? "Subiendo..."
+                : `Subir ${files.length} comprobante${files.length === 1 ? "" : "s"}`}
             </button>
           )}
         </div>
