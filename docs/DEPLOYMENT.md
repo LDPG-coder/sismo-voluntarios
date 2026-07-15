@@ -296,7 +296,7 @@ Para ver **todas** las páginas en local (públicas + protegidas + modo SEP) en
 un dev limpio, basta con esto:
 
 ```bash
-cp .env.example .env                # o usa apps/api/.env ya existente
+cp .env.example .env                # en dev, la API y el web comparten apps/api/.env (cópialo desde este .env)
 cp infra/.env.example infra/.env
 ./dev.sh up                         # api + web + postgres + redis
 ./dev.sh migrate                    # alembic upgrade head
@@ -340,7 +340,7 @@ Te redirige a `/voluntarios` ya logueado como admin. Desde ahí navega a
 ### A. Base
 
 ```bash
-cp .env.example .env                # o usa apps/api/.env ya existente
+cp .env.example .env                # en dev, la API y el web comparten apps/api/.env (cópialo desde este .env)
 cp infra/.env.example infra/.env
 ./dev.sh up
 ./dev.sh migrate                    # alembic upgrade head
@@ -419,7 +419,7 @@ ven** igual.
 ### F. IA (opcional)
 
 Para que `/ai/suggest` funcione, define `SISMO_OPENAI_API_KEY` en
-`apps/api/.env`. Sin la key la UI aparece igual pero el endpoint responde 500.
+`SISMO_OPENAI_API_KEY` en el `.env` (o en `apps/api/.env` en dev). Sin la key la UI aparece igual pero el endpoint responde 500.
 
 ### G. Solución de problemas comunes (dev)
 
@@ -490,16 +490,49 @@ NEXT_PUBLIC_WEB_ORIGIN=https://sismo.lat
 CLOUDFLARE_TUNNEL_TOKEN=<token>
 ```
 
-### Archivo `.env` de la API (apps/api/.env)
+### Archivo `.env` de la API
+
+El entorno de la API se define en el `.env` de la raíz del repo, que es una
+copia de `.env.example` (ese es el template con todas las variables). En el
+stack de desarrollo (`infra/docker-compose.dev.yml`), la API y el Web **comparten**
+el mismo archivo `apps/api/.env` (cópialo desde `.env`) para que ambos firmen
+y verifiquen la cookie de sesión con el mismo `SISMO_SESSION_SECRET`.
 
 ```bash
-# OAuth Google
+# Database
+SISMO_DB_NAME=sismo
+SISMO_DB_USER=db_user
+SISMO_DB_PASSWORD=CHANGE_ME_WITH_A_STRONG_PASSWORD
+
+# Puertos (abstractos)
+SISMO_API_PORT=8000
+SISMO_WEB_PORT=3001
+SISMO_PG_PORT=5432
+
+# Google OAuth (requerido)
 SISMO_GOOGLE_CLIENT_ID=<client-id>
 SISMO_GOOGLE_CLIENT_SECRET=<client-secret>
 SISMO_GOOGLE_REDIRECT_URI=https://api.sismo.lat/api/v1/auth/callback
 
-# Session
+# Session (generar con: openssl rand -hex 32)
 SISMO_SESSION_SECRET=<mismo-que-en-infra>
+SISMO_SESSION_MAX_AGE_SECONDS=1800
+SISMO_SESSION_REFRESH_MAX_AGE_SECONDS=2592000
+
+# Integración SEP (opcional, server-to-server)
+SISMO_SEP_LOGIN_TOKEN=<token-distinto-del-de-partner>
+SISMO_SEP_PARTNER_TOKEN=<token-de-solo-lectura>
+# SISMO_SEP_API_TOKEN=   # deprecado: fallback si no defines los dos anteriores
+
+# CORS / Orígenes
+SISMO_API_CORS_ORIGINS=https://sismo.lat,https://www.sismo.lat
+SISMO_WEB_ORIGIN=https://sismo.lat
+
+# Rate limiting
+SISMO_RATE_LIMIT_TRUST_PROXY=false
+SISMO_RATE_LIMIT_PUBLIC_PER_MIN=60
+SISMO_RATE_LIMIT_AUTH_PER_MIN=30
+SISMO_RATE_LIMIT_BURST=10
 
 # OpenAI (opcional)
 SISMO_OPENAI_API_KEY=<api-key>
@@ -507,6 +540,9 @@ SISMO_OPENAI_API_KEY=<api-key>
 # Redis
 SISMO_REDIS_URL=redis://redis:6379/0
 ```
+
+> El listado completo y actualizado de variables (incluidas las de la Web y las
+> de SEP) está en la sección **Variables de Entorno** más arriba.
 
 ### Levantar en Producción
 
