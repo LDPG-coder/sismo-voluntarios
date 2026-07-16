@@ -48,6 +48,7 @@ def _user_summary(u: User) -> dict:
         "id": str(u.id),
         "email": u.email,
         "name": u.name,
+        "photo_url": u.photo_url,
         "role": u.role,
         "status": u.status,
         "created_at": u.created_at.isoformat() if u.created_at else None,
