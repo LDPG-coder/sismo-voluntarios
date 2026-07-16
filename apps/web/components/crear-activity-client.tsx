@@ -385,6 +385,8 @@ export function CrearActivityClient({
     router.push(`/voluntarios/${data.id}`);
   };
 
+  const typeLabel = isRealizada ? "Registrar actividad realizada" : isOficial ? "Voluntariado oficial" : "Nueva actividad";
+
   return (
     <div className="min-h-screen">
       <main className="mx-auto max-w-lg px-4 py-8">
@@ -768,7 +770,6 @@ export function CrearActivityClient({
             </div>
           )}
 
-          )}{/* Fin IA section */}
         {error && (
             <p className="rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700 dark:border-rose-900 dark:bg-rose-950 dark:text-rose-300">{error}</p>
           )}

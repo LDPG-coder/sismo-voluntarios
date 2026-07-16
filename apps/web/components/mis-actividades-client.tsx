@@ -26,6 +26,9 @@ export interface Activity {
   max_participants: number | null;
   requirements: string | null;
   contact_info: string | null;
+  is_external_official?: boolean;
+  is_internal?: boolean;
+  is_private?: boolean;
   creator_id: string;
   member_count: number;
   status: string;
