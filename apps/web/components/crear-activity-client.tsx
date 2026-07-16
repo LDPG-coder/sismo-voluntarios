@@ -451,6 +451,8 @@ export function CrearActivityClient({
             />
           </div>
 
+          {!isRealizada && (
+          {!isRealizada && (
           <div>
             <label className="mb-1 block text-sm font-medium">Zona *</label>
             <input
@@ -468,15 +470,17 @@ export function CrearActivityClient({
               ))}
             </datalist>
           </div>
+          )}
+          )}
 
           <div>
             <label className="mb-1 block text-sm font-medium">Direccion *</label>
             <input
               type="text"
-              required
+              required={!isRealizada}
               value={rawAddress}
               onChange={(e) => setRawAddress(e.target.value)}
-              placeholder="Ej: Av. Principal, Edif. X, piso Y"
+              placeholder={isRealizada ? "Opcional" : "Ej: Av. Principal, Edif. X, piso Y"}
               disabled={aiThinking}
               className={aiThinking ? INPUT_LOADING_cls : INPUT_cls}
             />
@@ -561,6 +565,8 @@ export function CrearActivityClient({
             />
           </div>
 
+          {!isRealizada && (
+          {!isRealizada && (
           <div>
             <label className="mb-1 block text-sm font-medium">Maximo participantes</label>
             <input
@@ -573,7 +579,11 @@ export function CrearActivityClient({
               className={aiThinking ? INPUT_LOADING_cls : INPUT_cls}
             />
           </div>
+          )}
+          )}
 
+          {!isRealizada && (
+          {!isRealizada && (
           <div>
             <label className="mb-1 block text-sm font-medium">Contacto *</label>
             <input
@@ -587,7 +597,11 @@ export function CrearActivityClient({
             />
             <p className="mt-1 text-xs text-zinc-400">Numero de telefono, usuario de Telegram/WhatsApp, o enlace al grupo</p>
           </div>
+          )}
+          )}
 
+          {!isRealizada && (
+          {!isRealizada && (
           <div>
             <label className="mb-1 block text-sm font-medium">Requisitos</label>
             <div className="flex flex-wrap gap-2 mb-2">
@@ -619,13 +633,11 @@ export function CrearActivityClient({
               className={aiThinking ? INPUT_LOADING_cls : INPUT_cls}
             />
           </div>
+          </div>
+          )}{/* Fin requisitos */}
 
-          {/* Voluntariado interno: suma horas al programa. Excluyente con externo oficial. */}
-          {/* TODO (control por rol): de momento este checkbox es visible para
-              cualquier usuario con permiso de crear actividades. Si en el futuro
-              solo deben poder marcarlo ciertos roles (coordinadores, staff,
-              becarios de AVAA), condicionar este bloque al rol del usuario, p.ej.
-              envolverlo en {(user.role === "admin" || user.role === "coordinator" || ...) && (...)}. */}
+          {/* Voluntariado interno: solo para proponer (no realizada, no oficial) */}
+          {!isRealizada && !isOficial && (
           <button
             type="button"
             onClick={() =>

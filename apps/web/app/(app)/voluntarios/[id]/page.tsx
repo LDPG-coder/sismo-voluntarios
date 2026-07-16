@@ -397,12 +397,14 @@ export default function ActivityDetailPage() {
             {!isCreator && <JoinButton activity={activity} user={user} onChange={refresh} />}
             {isCreator && (
               <div className="flex gap-2">
+                {!activity.is_private && (
                 <Link
                   href={`/voluntarios/${activity.id}/admin`}
                   className="inline-block rounded-md bg-[#eaebed] px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-300"
                 >
                   Administrar
                 </Link>
+                )}
                 <Link
                   href={`/voluntarios/${activity.id}/editar`}
                   className="inline-block rounded-md bg-[#eaebed] px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-300"
