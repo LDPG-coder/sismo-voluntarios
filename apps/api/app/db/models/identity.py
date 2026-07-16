@@ -34,6 +34,14 @@ class User(Base, IdMixin, TimestampMixin, TenantMixin):
     )
     photo_asset = relationship("MediaAsset", foreign_keys=[photo_asset_id])
     phone = Column(String(50), nullable=True)
+    # Cédula de identidad (documento nacional). Única entre usuarios; se permite
+    # NULL porque no todos los usuarios la aportan al registrarse.
+    cedula = Column(String(20), unique=True, nullable=True, index=True)
+    # Género del usuario (libre: "femenino", "masculino", "otro", etc.).
+    gender = Column(String(20), nullable=True)
+    # Número de WhatsApp en formato E.164 (p.ej. +584121234567). Separa el
+    # contacto de WhatsApp del teléfono general cuando difieren.
+    whatsapp = Column(String(50), nullable=True)
     role = Column(String(20), nullable=False, default=UserRole.volunteer.value)
     status = Column(String(20), nullable=False, default=UserStatus.pending.value)
     referral_code = Column(String(20), unique=True, nullable=False, index=True)

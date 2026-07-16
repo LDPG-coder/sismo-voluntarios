@@ -46,6 +46,9 @@ def serialize_user(user: Any, *, include_phone: bool = False) -> dict:
     }
     if include_phone:
         result["phone"] = user.phone
+        result["cedula"] = getattr(user, "cedula", None)
+        result["gender"] = getattr(user, "gender", None)
+        result["whatsapp"] = getattr(user, "whatsapp", None)
     return result
 
 

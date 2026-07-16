@@ -18,6 +18,11 @@ class Activity(Base, IdMixin, TimestampMixin, TenantMixin):
     date_time = Column(DateTime(timezone=True), nullable=False, index=True)
     end_time = Column(DateTime(timezone=True), nullable=True)
     estimated_duration_min = Column(Integer, nullable=True)
+    # Horas realmente realizadas de la actividad. Siempre definido para
+    # cualquier tipo (interna/oficial/registro previo): se deriva de la
+    # diferencia end_time - date_time, o de estimated_duration_min, o de
+    # external_assigned_hours. Ver _compute_realized_hours().
+    realized_hours = Column(Float, nullable=True)
     max_participants = Column(Integer, nullable=True)
     requirements = Column(Text, nullable=True)
     contact_info = Column(Text, nullable=True)
@@ -55,3 +60,22 @@ class Activity(Base, IdMixin, TimestampMixin, TenantMixin):
     validation_notes = Column(Text, nullable=True)
 
     status = Column(String(20), nullable=False, default=ActivityStatus.active.value)
+
+
+def _compute_realized_hours(a: "Activity") -> float | None:
+    """Horas realizadas de la actividad, definidas para cualquier tipo.
+
+    Prioridad: (end_time - date_time) en horas -> estimated_duration_min/60
+    -> external_assigned_hours. Devuelve None solo si no hay ninguna fuente.
+    """
+    if a.end_time and a.date_time:
+        delta = a.end_time - a.date_time
+        hours = delta.total_seconds() / 3600
+        if hours is not None and hours >= 0:
+            return round(hours, 2)
+    if a.estimated_duration_min:
+        return round(a.estimated_duration_min / 60, 2)
+    if a.external_assigned_hours is not None:
+        return round(a.external_assigned_hours, 2)
+    return None
+
