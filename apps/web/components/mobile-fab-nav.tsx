@@ -1,14 +1,31 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { navItems, isNavActive } from "@/components/nav-config";
+import { navItems, isNavActive, GridIcon } from "@/components/nav-config";
 import { cn } from "@/lib/utils";
+
+const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
 export function MobileFabNav() {
   const [open, setOpen] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const pathname = usePathname();
+
+  useEffect(() => {
+    fetch(`${API}/api/v1/auth/me`, { credentials: "include" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => setIsAdmin(data?.role === "admin"))
+      .catch(() => {});
+  }, []);
+
+  const items = isAdmin
+    ? [
+        ...navItems,
+        { href: "/admin", label: "Administrar", Icon: GridIcon },
+      ]
+    : navItems;
 
   return (
     <div className="lg:hidden">
@@ -26,7 +43,7 @@ export function MobileFabNav() {
           aria-label="Navegacion del modulo"
           className="fixed bottom-20 right-4 z-50 w-56 rounded-2xl border border-zinc-200 bg-white p-2 shadow-xl dark:border-zinc-800 dark:bg-zinc-950"
         >
-          {navItems.map((item) => {
+          {items.map((item) => {
             const active = isNavActive(item, pathname);
             const Icon = item.Icon;
             return (
