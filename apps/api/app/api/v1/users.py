@@ -36,14 +36,28 @@ def list_users(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     search: str | None = None,
+    has_photo: bool | None = None,
 ) -> dict:
     q = select(User)
     count_q = select(func.count()).select_from(User)
 
     if search:
         like = f"%{search}%"
-        q = q.where(User.email.ilike(like) | User.name.ilike(like))
-        count_q = count_q.where(User.email.ilike(like) | User.name.ilike(like))
+        q = q.where(
+            User.email.ilike(like)
+            | User.name.ilike(like)
+            | User.cedula.ilike(like)
+        )
+        count_q = count_q.where(
+            User.email.ilike(like)
+            | User.name.ilike(like)
+            | User.cedula.ilike(like)
+        )
+
+    if has_photo is not None:
+        cond = User.photo_url.isnot(None) if has_photo else User.photo_url.is_(None)
+        q = q.where(cond)
+        count_q = count_q.where(cond)
 
     total = db.execute(count_q).scalar() or 0
     offset = (page - 1) * page_size
@@ -120,6 +134,9 @@ class _UpdateUserBody(BaseModel):
     status: str | None = None
     phone: str | None = None
     name: str | None = None
+    cedula: str | None = None
+    gender: str | None = None
+    whatsapp: str | None = None
 
 
 class _UpdatePhotoBody(BaseModel):
@@ -153,6 +170,15 @@ def update_user(
 
     if body.phone is not None:
         u.phone = body.phone
+
+    if body.cedula is not None:
+        u.cedula = body.cedula
+
+    if body.gender is not None:
+        u.gender = body.gender
+
+    if body.whatsapp is not None:
+        u.whatsapp = body.whatsapp
 
     if body.name is not None:
         u.name = body.name

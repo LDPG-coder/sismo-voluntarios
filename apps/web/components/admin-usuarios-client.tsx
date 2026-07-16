@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { UsuariosTableSkeleton } from "@/components/skeletons";
 import { csrfHeaders } from "@/lib/auth/csrf-client";
+import { displayPhoto } from "@/lib/photo";
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
@@ -12,9 +13,39 @@ interface User {
   email: string;
   name: string | null;
   phone: string | null;
+  whatsapp: string | null;
+  photo_url: string | null;
+  cedula: string | null;
   role: string;
   status: string;
   created_at: string;
+}
+
+const ROLE_LABELS: Record<string, string> = {
+  admin: "Administrador",
+  volunteer: "Voluntario",
+  sep: "SEP",
+};
+
+function roleLabel(r: string): string {
+  return ROLE_LABELS[r] ?? r;
+}
+
+function Avatar({ url }: { url: string | null }) {
+  return (
+    <div className="h-9 w-9 shrink-0 overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-800">
+      {url ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={displayPhoto(url) ?? ""} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" />
+      ) : (
+        <div className="flex h-full w-full items-center justify-center text-zinc-400">
+          <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
+          </svg>
+        </div>
+      )}
+    </div>
+  );
 }
 
 export function AdminUsuariosClient() {
@@ -24,6 +55,9 @@ export function AdminUsuariosClient() {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
+  const [onlyNoPhoto, setOnlyNoPhoto] = useState(false);
+  const [totalUsers, setTotalUsers] = useState<number | null>(null);
+  const [noPhotoTotal, setNoPhotoTotal] = useState<number | null>(null);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [processing, setProcessing] = useState(false);
   const [exporting, setExporting] = useState(false);
@@ -54,7 +88,24 @@ export function AdminUsuariosClient() {
 
   useEffect(() => {
     fetchUsers();
-  }, [page, search]);
+  }, [page, search, onlyNoPhoto]);
+
+  useEffect(() => {
+    fetchStats();
+  }, []);
+
+  const fetchStats = async () => {
+    try {
+      const [all, noPhoto] = await Promise.all([
+        fetch(`${API}/api/v1/users?page_size=1`, { credentials: "include" }).then((r) => r.json()),
+        fetch(`${API}/api/v1/users?page_size=1&has_photo=false`, { credentials: "include" }).then((r) => r.json()),
+      ]);
+      setTotalUsers(all.total);
+      setNoPhotoTotal(noPhoto.total);
+    } catch {
+      // silencioso
+    }
+  };
 
   const fetchUsers = async () => {
     try {
@@ -63,6 +114,7 @@ export function AdminUsuariosClient() {
         page_size: "20",
       });
       if (search) params.set("search", search);
+      if (onlyNoPhoto) params.set("has_photo", "false");
 
       const res = await fetch(`${API}/api/v1/users?${params}`, {
         credentials: "include",
@@ -107,8 +159,8 @@ export function AdminUsuariosClient() {
   const totalPages = Math.ceil(total / 20);
 
   return (
-    <div className="min-h-screen">
-      <main className="mx-auto max-w-4xl px-4 py-8">
+    <div>
+      <main className="mx-auto max-w-4xl px-4 pt-8 pb-4">
         <div className="mb-6 flex items-center justify-between">
           <h1 className="text-xl font-bold">Gestionar Usuarios</h1>
           <div className="flex items-center gap-2">
@@ -141,6 +193,41 @@ export function AdminUsuariosClient() {
           />
         </div>
 
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-3 text-sm">
+            {totalUsers !== null && (
+              <span className="text-zinc-600 dark:text-zinc-300">
+                <span className="font-semibold text-zinc-900 dark:text-zinc-100">{totalUsers}</span> usuarios
+              </span>
+            )}
+            {noPhotoTotal !== null && (
+              <span
+                className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                  noPhotoTotal === 0
+                    ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
+                    : "bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400"
+                }`}
+              >
+                {noPhotoTotal === 0
+                  ? "Todos tienen foto"
+                  : `${noPhotoTotal} sin foto`}
+              </span>
+            )}
+          </div>
+          <label className="flex cursor-pointer items-center gap-2 text-sm text-zinc-600 dark:text-zinc-300">
+            <input
+              type="checkbox"
+              checked={onlyNoPhoto}
+              onChange={(e) => {
+                setOnlyNoPhoto(e.target.checked);
+                setPage(1);
+              }}
+              className="h-4 w-4 accent-rose-600"
+            />
+            Solo sin foto
+          </label>
+        </div>
+
         {loading && <UsuariosTableSkeleton />}
         {error && <p className="rounded-xl bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</p>}
 
@@ -151,33 +238,41 @@ export function AdminUsuariosClient() {
         {users.length > 0 && (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
-              <thead>
-                <tr className="border-b border-zinc-200 text-zinc-500 dark:border-zinc-700">
-                  <th className="pb-2 font-medium">Email</th>
-                  <th className="pb-2 font-medium">Nombre</th>
-                  <th className="pb-2 font-medium">Telefono</th>
-                  <th className="pb-2 font-medium">Rol</th>
-                  <th className="pb-2 font-medium">Estado</th>
-                  <th className="pb-2 font-medium"></th>
-                </tr>
-              </thead>
-              <tbody>
-                {users.map((u) => (
-                  <tr key={u.id} className="border-b border-zinc-100 dark:border-zinc-800">
-                    <td className="py-2">{u.email}</td>
-                    <td className="py-2">{u.name || "-"}</td>
-                    <td className="py-2">{u.phone || "-"}</td>
-                    <td className="py-2">
-                      <span
-                        className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                          u.role === "admin"
-                            ? "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400"
-                            : "bg-[#eaebed] text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400"
-                        }`}
-                      >
-                        {u.role}
-                      </span>
-                    </td>
+               <thead>
+                 <tr className="border-b border-zinc-200 text-zinc-500 dark:border-zinc-700">
+                   <th className="pb-2 font-medium">Foto</th>
+                   <th className="pb-2 font-medium">Email</th>
+                   <th className="pb-2 font-medium">Nombre</th>
+                   <th className="pb-2 font-medium">Cedula</th>
+                   <th className="pb-2 font-medium">Telefono</th>
+                   <th className="pb-2 font-medium">Rol</th>
+                   <th className="pb-2 font-medium">Estado</th>
+                   <th className="pb-2 font-medium"></th>
+                 </tr>
+               </thead>
+               <tbody>
+                 {users.map((u) => (
+                   <tr key={u.id} className="border-b border-zinc-100 dark:border-zinc-800">
+                     <td className="py-2">
+                       <Avatar url={u.photo_url} />
+                     </td>
+                     <td className="py-2">{u.email}</td>
+                     <td className="py-2">{u.name || "-"}</td>
+                      <td className="py-2">{u.cedula || "-"}</td>
+                      <td className="py-2">{u.phone || u.whatsapp || "-"}</td>
+                      <td className="py-2">
+                        <span
+                          className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                            u.role === "admin"
+                              ? "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400"
+                              : u.role === "sep"
+                                ? "bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-400"
+                                : "bg-[#eaebed] text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400"
+                          }`}
+                        >
+                          {roleLabel(u.role)}
+                        </span>
+                      </td>
                     <td className="py-2">
                       <span
                         className={`rounded-full px-2 py-0.5 text-xs font-medium ${
