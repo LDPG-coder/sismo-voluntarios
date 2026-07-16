@@ -12,7 +12,7 @@ export default async function LoginPage({
       <PrivacyNotice />
       <header className="mb-8">
         <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500">
-          Sismo Voluntarios
+          Sismo - Voluntarios de ProExcelencia
         </p>
         <h1 className="mt-1 text-2xl font-bold tracking-tight">Iniciar sesion</h1>
         <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
@@ -28,7 +28,7 @@ export default async function LoginPage({
         </p>
         <a
           href={`${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"}/api/v1/auth/login`}
-          className="inline-flex w-full items-center justify-center rounded-md bg-[#4285F4] px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-[#3367D6] focus:outline-none focus:ring-2 focus:ring-[#4285F4] focus:ring-offset-2"
+          className="inline-flex w-full items-center justify-center rounded-md bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-600 focus:ring-offset-2"
         >
           <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
             <path

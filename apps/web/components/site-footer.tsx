@@ -49,6 +49,35 @@ export function SiteFooter() {
   return (
     <footer className="border-t border-zinc-200 bg-[#f4f5f7] dark:border-zinc-800 dark:bg-[#0c0b0a]">
       <div className="mx-auto flex max-w-5xl flex-col items-center gap-6 px-4 py-8">
+        {/* Redes sociales */}
+        <div className="flex flex-col items-center gap-3">
+          <p className="text-xs font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
+            Síguenos
+          </p>
+          <div className="flex items-center justify-center gap-4">
+            {socials.map((s) => (
+              <a
+                key={s.label}
+                href={s.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={s.label}
+                className="text-slate-500 transition-colors hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                  className="h-5 w-5"
+                  aria-hidden="true"
+                >
+                  {s.icon}
+                </svg>
+              </a>
+            ))}
+          </div>
+        </div>
+
+        {/* Enlaces */}
         <nav className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm">
           <a
             href="https://avaa.org/terminos-y-condiciones/"
@@ -71,28 +100,6 @@ export function SiteFooter() {
             Dejar feedback
           </a>
         </nav>
-
-        <div className="flex items-center justify-center gap-5">
-          {socials.map((s) => (
-            <a
-              key={s.label}
-              href={s.href}
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label={s.label}
-              className="text-slate-500 transition-colors hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
-            >
-              <svg
-                viewBox="0 0 24 24"
-                fill="currentColor"
-                className="h-5 w-5"
-                aria-hidden="true"
-              >
-                {s.icon}
-              </svg>
-            </a>
-          ))}
-        </div>
       </div>
     </footer>
   );
