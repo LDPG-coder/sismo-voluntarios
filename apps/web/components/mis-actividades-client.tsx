@@ -385,7 +385,7 @@ export function ActivityCard({
           <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:justify-end sm:gap-2">
             {isCreated ? (
             <>
-              {!a.is_private && (
+              {a.is_private ? null : (
                 <Link
                   href={`/voluntarios/${a.id}/admin`}
                   className="rounded-md bg-[#eaebed] px-3 py-1.5 text-xs font-medium text-zinc-700 shadow-sm transition hover:brightness-95 dark:bg-zinc-700 dark:text-zinc-200"

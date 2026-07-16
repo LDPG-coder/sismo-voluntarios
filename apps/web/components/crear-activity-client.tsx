@@ -61,6 +61,7 @@ export function CrearActivityClient({
 
   const isRealizada = activityType === "realizada";
   const isOficial = activityType === "oficial";
+  const typeLabel = isRealizada ? "Registrar actividad realizada" : isOficial ? "Crear voluntariado oficial" : "Crear actividad";
 
   const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
@@ -385,8 +386,6 @@ export function CrearActivityClient({
     router.push(`/voluntarios/${data.id}`);
   };
 
-  const typeLabel = isRealizada ? "Registrar actividad realizada" : isOficial ? "Voluntariado oficial" : "Nueva actividad";
-
   return (
     <div className="min-h-screen">
       <main className="mx-auto max-w-lg px-4 py-8">
@@ -406,6 +405,7 @@ export function CrearActivityClient({
           <div>
             <div className="mb-1 flex items-center justify-between">
               <label className="text-sm font-medium">Descripción *</label>
+              {isRealizada ? null : (
               <button
                 type="button"
                 onClick={() => {
@@ -423,6 +423,7 @@ export function CrearActivityClient({
                   <div className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform ${aiEnabled ? "translate-x-4" : "translate-x-0.5"}`} />
                 </div>
               </button>
+              )}
             </div>
             <textarea
               ref={descriptionRef}
@@ -451,8 +452,7 @@ export function CrearActivityClient({
             />
           </div>
 
-          {!isRealizada && (
-          {!isRealizada && (
+          {isRealizada ? null : (
           <div>
             <label className="mb-1 block text-sm font-medium">Zona *</label>
             <input
@@ -471,7 +471,6 @@ export function CrearActivityClient({
             </datalist>
           </div>
           )}
-          )}
 
           <div>
             <label className="mb-1 block text-sm font-medium">Direccion *</label>
@@ -480,7 +479,7 @@ export function CrearActivityClient({
               required={!isRealizada}
               value={rawAddress}
               onChange={(e) => setRawAddress(e.target.value)}
-              placeholder={isRealizada ? "Opcional" : "Ej: Av. Principal, Edif. X, piso Y"}
+              placeholder="Ej: Av. Principal, Edif. X, piso Y"
               disabled={aiThinking}
               className={aiThinking ? INPUT_LOADING_cls : INPUT_cls}
             />
@@ -565,8 +564,7 @@ export function CrearActivityClient({
             />
           </div>
 
-          {!isRealizada && (
-          {!isRealizada && (
+          {isRealizada ? null : (
           <div>
             <label className="mb-1 block text-sm font-medium">Maximo participantes</label>
             <input
@@ -580,10 +578,8 @@ export function CrearActivityClient({
             />
           </div>
           )}
-          )}
 
-          {!isRealizada && (
-          {!isRealizada && (
+          {isRealizada ? null : (
           <div>
             <label className="mb-1 block text-sm font-medium">Contacto *</label>
             <input
@@ -598,10 +594,8 @@ export function CrearActivityClient({
             <p className="mt-1 text-xs text-zinc-400">Numero de telefono, usuario de Telegram/WhatsApp, o enlace al grupo</p>
           </div>
           )}
-          )}
 
-          {!isRealizada && (
-          {!isRealizada && (
+          {isRealizada ? null : (
           <div>
             <label className="mb-1 block text-sm font-medium">Requisitos</label>
             <div className="flex flex-wrap gap-2 mb-2">
@@ -633,11 +627,15 @@ export function CrearActivityClient({
               className={aiThinking ? INPUT_LOADING_cls : INPUT_cls}
             />
           </div>
-          </div>
-          )}{/* Fin requisitos */}
+          )}
 
-          {/* Voluntariado interno: solo para proponer (no realizada, no oficial) */}
-          {!isRealizada && !isOficial && (
+          {/* Voluntariado interno: suma horas al programa. Excluyente con externo oficial. */}
+          {/* TODO (control por rol): de momento este checkbox es visible para
+              cualquier usuario con permiso de crear actividades. Si en el futuro
+              solo deben poder marcarlo ciertos roles (coordinadores, staff,
+              becarios de AVAA), condicionar este bloque al rol del usuario, p.ej.
+              envolverlo en {(user.role === "admin" || user.role === "coordinator" || ...) && (...)}. */}
+          {isRealizada || isOficial ? null : (
           <button
             type="button"
             onClick={() =>
@@ -687,7 +685,9 @@ export function CrearActivityClient({
               </span>
             </span>
           </button>
+          )}
 
+          {isOficial ? (
           <div className={`rounded-lg border border-zinc-200 transition dark:border-zinc-700 ${isInternal ? "pointer-events-none opacity-50" : ""}`}>
             <button
               type="button"
@@ -767,6 +767,7 @@ export function CrearActivityClient({
               </div>
             )}
           </div>
+          ) : null}
 
           {isPastActivity && (
             <div className="rounded-lg border border-amber-300 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-950/30">
@@ -782,6 +783,7 @@ export function CrearActivityClient({
             </div>
           )}
 
+          {/* Fin IA section */}
         {error && (
             <p className="rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700 dark:border-rose-900 dark:bg-rose-950 dark:text-rose-300">{error}</p>
           )}

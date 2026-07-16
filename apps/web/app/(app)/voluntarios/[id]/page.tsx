@@ -213,6 +213,7 @@ export default function ActivityDetailPage() {
     (isCreator || isMember) &&
     activity.status === "active" &&
     isPast;
+  const canAdmin = isCreator && !activity.is_private;
 
   const statusLabel: Record<string, string> = {
     active: "Programada",
@@ -397,7 +398,7 @@ export default function ActivityDetailPage() {
             {!isCreator && <JoinButton activity={activity} user={user} onChange={refresh} />}
             {isCreator && (
               <div className="flex gap-2">
-                {!activity.is_private && (
+                {canAdmin && (
                 <Link
                   href={`/voluntarios/${activity.id}/admin`}
                   className="inline-block rounded-md bg-[#eaebed] px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-300"
