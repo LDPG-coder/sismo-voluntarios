@@ -173,8 +173,8 @@ export default function VoluntariosPage() {
   );
 
   return (
-    <div className="min-h-screen">
-      <main className="mx-auto max-w-6xl px-4 py-8">
+    <div>
+      <main className="mx-auto max-w-6xl px-4 pt-8 pb-4">
         <div className="mb-6">
           <h1 className="text-2xl font-bold tracking-tight">
             Actividades de voluntariado

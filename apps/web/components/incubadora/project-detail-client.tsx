@@ -122,7 +122,7 @@ export function ProjectDetailClient({ id }: { id: string }) {
 
   if (loading) {
     return (
-      <div className="mx-auto max-w-6xl px-4 py-8">
+      <div className="mx-auto max-w-6xl px-4 pt-8 pb-4">
         <Skeleton className="mb-4 h-8 w-48" />
         <Skeleton className="h-64 w-full rounded-lg" />
       </div>
@@ -147,8 +147,8 @@ export function ProjectDetailClient({ id }: { id: string }) {
   const avg = project.evaluation.averages;
 
   return (
-    <div className="min-h-screen">
-      <main className="mx-auto max-w-6xl px-4 py-8">
+    <div>
+      <main className="mx-auto max-w-6xl px-4 pt-8 pb-4">
         <Link href="/incubadora" className="text-sm text-zinc-500 hover:text-zinc-700">
           ← Incubadora
         </Link>

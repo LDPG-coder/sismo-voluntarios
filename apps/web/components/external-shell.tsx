@@ -11,7 +11,7 @@ import { MobileFabNav } from "@/components/mobile-fab-nav";
 // to the SISMO login. See docs/external-users-access.md.
 export function ExternalShell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="relative min-h-screen bg-[#f4f5f7] dark:bg-[#0c0b0a]">
+    <div className="relative bg-[#f4f5f7] dark:bg-[#0c0b0a]">
       <HeaderBar
         leftSlot={
           <Link
@@ -26,7 +26,7 @@ export function ExternalShell({ children }: { children: React.ReactNode }) {
           </Link>
         }
       />
-      <div className="mx-auto max-w-5xl px-4 pb-24 pt-6 pr-4 lg:pr-24">
+      <div className="mx-auto max-w-5xl px-4 pb-24 pt-6 pr-4 lg:pb-4 lg:pr-24">
         {children}
       </div>
       <FloatingNav />

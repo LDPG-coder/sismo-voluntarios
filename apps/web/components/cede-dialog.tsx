@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { csrfHeaders } from "@/lib/auth/csrf-client";
+import { displayPhoto } from "@/lib/photo";
 
 type CedeActivity = {
   id: string;
@@ -181,7 +182,7 @@ export function CedeDialog({ open, activity, onCancel, onCeded }: CedeDialogProp
                 }`}
               >
                 {u.photo_url ? (
-                  <img src={u.photo_url} alt={u.name} className="h-8 w-8 rounded-full object-cover" />
+                  <img src={displayPhoto(u.photo_url) ?? ""} alt={u.name} loading="lazy" decoding="async" className="h-8 w-8 rounded-full object-cover" />
                 ) : (
                   <div className="flex h-8 w-8 items-center justify-center rounded-full bg-zinc-200 text-xs font-bold text-zinc-600 dark:bg-zinc-700 dark:text-zinc-300">
                     {u.name.charAt(0).toUpperCase()}

@@ -17,7 +17,7 @@ export function AppShell({
   const { user } = useSession();
 
   return (
-    <div className="flex min-h-screen bg-[#f4f5f7] dark:bg-[#0c0b0a]">
+    <div className="flex bg-[#f4f5f7] dark:bg-[#0c0b0a]">
       <Sidebar user={user} open={open} onClose={() => setOpen(false)} sepNav={sepNav} />
 
       <div className="flex min-w-0 flex-1 flex-col shadow-[0_0_60px_-28px_rgba(15,23,42,0.14)] dark:shadow-[-10px_0_24px_-12px_rgba(0,0,0,0.5)]">

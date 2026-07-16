@@ -32,7 +32,7 @@ RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 # asignamos el directorio al usuario no-root ANTES de declarar USER: si el
 # volumen esta vacio, Docker propaga esta propiedad/perms al inicializarlo,
 # evitando PermissionError al escribir comprobantes.
-RUN mkdir -p /data/media && chown -R appuser:appuser /app /data/media
+RUN mkdir -p /data/media /app/proxy_cache && chown -R appuser:appuser /app /data/media
 USER appuser
 
 # Entrypoint inyecta los Docker secrets como env antes de arrancar

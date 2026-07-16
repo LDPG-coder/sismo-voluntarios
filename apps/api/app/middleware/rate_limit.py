@@ -168,6 +168,13 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         if request.method == "OPTIONS":
             return await call_next(request)
 
+        # El proxy de imágenes (/api/v1/media/proxy-image) sirve bytes cacheados
+        # en disco y ya tiene su propio límite de concurrencia al blob, por lo
+        # que no debe consumir el bucket "public" (p. ej. una página con 20
+        # avatares reventaría el burst y dejaría fuera al resto de la API).
+        if request.url.path.startswith("/api/v1/media/proxy-image"):
+            return await call_next(request)
+
         bucket, key, per_minute, burst = _bucket_for(request)
         if per_minute <= 0:
             return await call_next(request)

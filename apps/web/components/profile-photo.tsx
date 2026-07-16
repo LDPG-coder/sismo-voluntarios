@@ -3,6 +3,7 @@
 import { useCallback, useRef, useState } from "react";
 import { csrfHeaders } from "@/lib/auth/csrf-client";
 import { emitPhotoChanged } from "@/lib/photo-events";
+import { displayPhoto } from "@/lib/photo";
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
@@ -216,7 +217,7 @@ export function ProfilePhoto({
             <div className="h-20 w-20 shrink-0 overflow-hidden rounded-lg bg-zinc-100 dark:bg-zinc-800">
               {photoUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={photoUrl} alt="" className="h-full w-full object-cover" />
+                <img src={displayPhoto(photoUrl) ?? ""} alt="" className="h-full w-full object-cover" />
               ) : (
                 <div className="flex h-full w-full items-center justify-center text-zinc-400">
                   <svg className="h-8 w-8" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">

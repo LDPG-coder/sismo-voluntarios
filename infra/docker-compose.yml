@@ -66,6 +66,9 @@ services:
     volumes:
       # Almacenamiento persistente de multimedia (fuera de la base de datos).
       - media_data:/data/media
+      # Caché persistente del proxy de imágenes (fotos del blob). Sobrevive a
+      # reinicios del container para no reconsultar el blob (evita el 429).
+      - proxy_cache_data:/app/proxy_cache
     networks:
       - sismo
     deploy:
@@ -137,6 +140,8 @@ networks:
 
 volumes:
   media_data:
+    driver: local
+  proxy_cache_data:
     driver: local
 
 secrets:

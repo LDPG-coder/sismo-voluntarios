@@ -76,8 +76,8 @@ export function TodasActividadesClient({ tab, estado }: { tab: Tab; estado: stri
   const visible = filterByEstado(items, estado);
 
   return (
-    <div className="min-h-screen">
-      <main className="mx-auto max-w-4xl px-4 py-8">
+    <div>
+      <main className="mx-auto max-w-4xl px-4 pt-8 pb-4">
         <div className="mb-6 flex items-center justify-between">
           <div>
             <Link

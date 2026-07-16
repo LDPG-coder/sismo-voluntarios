@@ -127,15 +127,15 @@ export function EditarActivityClient() {
 
   if (loading) {
     return (
-      <div className="min-h-screen">
+      <div>
         <div className="py-12 text-center text-zinc-500">Cargando...</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen">
-      <main className="mx-auto max-w-lg px-4 py-8">
+      <div>
+        <main className="mx-auto max-w-lg px-4 pt-8 pb-4">
         <button
           onClick={() => router.back()}
           className="mb-4 text-sm text-zinc-500 hover:text-zinc-700"

@@ -277,7 +277,7 @@ export function ActivityDetailSkeleton() {
 
 export function ActivityAdminSkeleton() {
   return (
-    <div className="mx-auto max-w-2xl px-4 py-8">
+    <div className="mx-auto max-w-2xl px-4 pt-8 pb-4">
       <Skeleton className="mb-4 h-4 w-16" />
       <div className="mb-6">
         <Skeleton className="h-6 w-2/3" />

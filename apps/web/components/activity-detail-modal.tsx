@@ -4,6 +4,7 @@ import { useEffect, useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Activity } from "@/lib/types";
 import { CedeDialog } from "@/components/cede-dialog";
+import { displayPhoto } from "@/lib/photo";
 
 type User = { id: string; role: string; status: string } | null;
 
@@ -139,7 +140,9 @@ export function ActivityDetailModal({
             <div className="mt-5 flex items-center gap-3 border-t border-zinc-100 pt-4 dark:border-zinc-800">
               {activity.creator.photo_url ? (
                 <img
-                  src={activity.creator.photo_url}
+                  src={displayPhoto(activity.creator.photo_url) ?? ""}
+                  loading="lazy"
+                  decoding="async"
                   alt=""
                   className="h-8 w-8 rounded-full object-cover"
                 />

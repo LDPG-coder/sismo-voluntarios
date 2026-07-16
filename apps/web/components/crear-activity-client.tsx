@@ -387,8 +387,8 @@ export function CrearActivityClient({
   };
 
   return (
-    <div className="min-h-screen">
-      <main className="mx-auto max-w-lg px-4 py-8">
+    <div>
+      <main className="mx-auto max-w-lg px-4 pt-8 pb-4">
         <button
           type="button"
           onClick={() => router.back()}

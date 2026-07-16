@@ -1,4 +1,6 @@
-import Link from "next/link";
+"use client";
+
+import { usePathname } from "next/navigation";
 
 const socials = [
   {
@@ -46,8 +48,14 @@ const socials = [
 ];
 
 export function SiteFooter() {
+  const pathname = usePathname();
+  const sticky = pathname === "/login";
   return (
-    <footer className="border-t border-zinc-200 bg-[#f4f5f7] dark:border-zinc-800 dark:bg-[#0c0b0a]">
+    <footer
+      className={`z-40 border-t border-zinc-200 bg-[#f4f5f7] dark:border-zinc-800 dark:bg-[#0c0b0a]${
+        sticky ? " lg:sticky lg:bottom-0" : ""
+      }`}
+    >
       <div className="mx-auto flex max-w-5xl flex-col items-center gap-6 px-4 py-8">
         {/* Redes sociales */}
         <div className="flex flex-col items-center gap-3">

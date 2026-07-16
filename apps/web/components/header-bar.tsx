@@ -6,6 +6,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { NotificationsBell } from "@/components/notifications-bell";
 import { LogoutIcon } from "@/components/nav-config";
 import { onPhotoChanged } from "@/lib/photo-events";
+import { displayPhoto } from "@/lib/photo";
 import { useSession, type SessionUser } from "@/components/session-provider";
 
 // Shared top header used by both AppShell (SEP users) and ExternalShell (OAuth
@@ -73,7 +74,7 @@ export function HeaderBar({ leftSlot }: { leftSlot?: React.ReactNode }) {
             className="group relative flex h-9 w-9 items-center justify-center overflow-hidden rounded-md bg-[#eaebed] transition dark:bg-zinc-800"
           >
             {user?.photo_url ? (
-              <img src={user.photo_url} alt="" className="h-full w-full object-cover" />
+              <img src={displayPhoto(user.photo_url) ?? ""} alt="" className="h-full w-full object-cover" />
             ) : (
               <svg className="h-5 w-5 text-zinc-500 dark:text-zinc-400" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />

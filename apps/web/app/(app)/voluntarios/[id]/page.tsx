@@ -10,6 +10,7 @@ import { ActivityValidationClient } from "@/components/activity-validation-clien
 import { ActivityDetailSkeleton } from "@/components/skeletons";
 import { csrfHeaders } from "@/lib/auth/csrf-client";
 import { useSession } from "@/components/session-provider";
+import { displayPhoto } from "@/lib/photo";
 
 type Activity = {
   id: string;
@@ -196,8 +197,8 @@ export default function ActivityDetailPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen">
-        <main className="mx-auto max-w-2xl px-4 py-8">
+      <div>
+        <main className="mx-auto max-w-2xl px-4 pt-8 pb-4">
           <ActivityDetailSkeleton />
         </main>
       </div>
@@ -253,8 +254,8 @@ export default function ActivityDetailPage() {
     : null;
 
   return (
-    <div className="min-h-screen">
-      <main className="mx-auto max-w-2xl px-4 py-8">
+    <div>
+      <main className="mx-auto max-w-2xl px-4 pt-8 pb-4">
         <button onClick={() => router.back()} className="mb-4 text-sm text-zinc-500 hover:text-zinc-700">
           &larr; Volver
         </button>
@@ -347,7 +348,7 @@ export default function ActivityDetailPage() {
               <div className="flex items-center gap-3">
                 {activity.creator.photo_url ? (
                   <img
-                    src={activity.creator.photo_url}
+                    src={displayPhoto(activity.creator.photo_url) ?? ""}
                     alt={activity.creator.name || ""}
                     className="h-10 w-10 rounded-full object-cover"
                   />
@@ -426,7 +427,9 @@ export default function ActivityDetailPage() {
                   <div key={a.user_id} className="flex items-center gap-2">
                     {a.photo_url ? (
                       <img
-                        src={a.photo_url}
+                        src={displayPhoto(a.photo_url) ?? ""}
+                        loading="lazy"
+                        decoding="async"
                         alt={a.name}
                         className="h-8 w-8 rounded-full object-cover"
                       />
@@ -465,7 +468,9 @@ export default function ActivityDetailPage() {
                     <div key={a.user_id} className="flex items-center gap-2">
                       {a.photo_url ? (
                         <img
-                          src={a.photo_url}
+                        src={displayPhoto(a.photo_url) ?? ""}
+                        loading="lazy"
+                        decoding="async"
                           alt={a.name}
                           className="h-8 w-8 rounded-full object-cover"
                         />

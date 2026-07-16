@@ -208,8 +208,8 @@ export function CrearPropuestaClient({
   };
 
   return (
-    <div className="min-h-screen">
-      <main className="mx-auto max-w-3xl px-4 py-8">
+    <div>
+      <main className="mx-auto max-w-3xl px-4 pt-8 pb-4">
         <div className="mb-6">
           <h1 className="text-2xl font-bold tracking-tight">{projectId ? "Editar propuesta" : "Proponer un proyecto"}</h1>
           <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">

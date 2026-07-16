@@ -3,6 +3,7 @@ import { useState } from "react";
 import type { Activity } from "@/lib/types";
 import { ActivityStatusBadges } from "@/components/activity-status-badges";
 import { CedeDialog } from "@/components/cede-dialog";
+import { displayPhoto } from "@/lib/photo";
 
 type ActivityCardProps = {
   activity: Activity;
@@ -99,7 +100,9 @@ export function ActivityCard({ activity, isEnrolled, onJoin, onCeded }: Activity
               <div className="flex items-center gap-3">
                 {activity.creator.photo_url ? (
                   <img
-                    src={activity.creator.photo_url}
+                    src={displayPhoto(activity.creator.photo_url) ?? ""}
+                    loading="lazy"
+                    decoding="async"
                     alt={activity.creator.name || ""}
                     className="h-10 w-10 rounded-full object-cover"
                   />
