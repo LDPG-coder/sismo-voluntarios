@@ -81,7 +81,8 @@ export async function GET(request: Request) {
   const domain = cookieDomain();
   const { sameSite, secure } = cookieSameSite();
 
-  const redirectUrl = `${WEB_ORIGIN}/voluntarios`;
+  const redirectUrl =
+    user.role === "admin" ? `${WEB_ORIGIN}/admin` : `${WEB_ORIGIN}/voluntarios`;
   const html = `<!DOCTYPE html><html><head><meta http-equiv="refresh" content="0;url=${redirectUrl}"></head><body>Redirecting...</body></html>`;
   const headers = new Headers();
   headers.set("Content-Type", "text/html");

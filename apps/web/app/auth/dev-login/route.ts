@@ -41,7 +41,7 @@ export async function GET(request: Request) {
   const webOrigin =
     process.env.NEXT_PUBLIC_WEB_ORIGIN ?? "http://localhost:3001";
 
-  const html = `<!DOCTYPE html><html><head><meta http-equiv="refresh" content="0;url=/voluntarios"></head><body>Redirigiendo a Sismo Voluntarios…</body></html>`;
+  const html = `<!DOCTYPE html><html><head><meta http-equiv="refresh" content="0;url=/admin"></head><body>Redirigiendo a Sismo Admin…</body></html>`;
 
   const response = new NextResponse(html, {
     status: 200,

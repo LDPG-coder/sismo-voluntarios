@@ -338,8 +338,9 @@ Luego, en el navegador (Safari/Chrome), abre **exactamente esta URL**:
 http://localhost:3001/auth/dev-login
 ```
 
-Te redirige a `/voluntarios` ya logueado como admin. Desde ahí navega a
-`/mis-actividades`, `/perfil`, `/voluntarios/crear`, `/admin/usuarios`, etc.
+Te redirige a `/admin` ya logueado como admin (los voluntarios van a
+`/voluntarios`). Desde el panel admin navega a `/admin/usuarios`, etc., o entra
+a `/mis-actividades`, `/perfil`, `/voluntarios/crear`.
 
 > **Regla de oro del host:** usa siempre `localhost`, **nunca `127.0.0.1`**,
 > en navegador, API y CORS. La cookie de sesión es *host-only* para el host que
@@ -408,7 +409,7 @@ http://localhost:3001/auth/dev-login
 ```
 
 Esto setea la cookie de sesión de admin fijo (`sismo_session` HttpOnly +
-`XSRF-TOKEN`) y redirige a `/voluntarios` ya logueado. **Solo existe si
+`XSRF-TOKEN`) y redirige a `/admin` ya logueado. **Solo existe si
 `NODE_ENV !== "production"`** (la ruta retorna 404 en prod, no se compila).
 
 > **No uses el botón de Google** en `/login`: inicia el flujo OAuth real, que

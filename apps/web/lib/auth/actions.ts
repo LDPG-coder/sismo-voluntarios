@@ -75,5 +75,5 @@ export async function finishOAuthAction(code: string): Promise<void> {
     maxAge: authCookieMaxAgeSeconds,
     ...(domain ? { domain } : {}),
   });
-  redirect("/voluntarios");
+  redirect(user.role === "admin" ? "/admin" : "/voluntarios");
 }
