@@ -21,7 +21,7 @@ from app.db.models.activities import Activity
 from app.db.models.activity_evidence import ActivityEvidence
 from app.db.models.activity_members import ActivityMember
 from app.db.models.identity import User
-from app.api.v1.auth import require_admin_session
+from app.pipeline.dependencies import require_admin_session
 
 _log = get_logger(__name__)
 router = APIRouter(prefix="/admin", tags=["admin"])
