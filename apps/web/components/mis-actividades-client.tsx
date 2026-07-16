@@ -357,6 +357,17 @@ export function ActivityCard({
           >
             {isCreated ? "Creador" : "Inscrito"}
           </span>
+          <span
+            className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+              a.is_external_official
+                ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
+                : a.is_private
+                  ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
+                  : "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
+            }`}
+          >
+            {a.is_external_official ? "Oficial" : a.is_private ? "Registro previo" : "Proponer"}
+          </span>
         </div>
       </div>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_auto] sm:items-start">
@@ -371,12 +382,14 @@ export function ActivityCard({
           <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:justify-end sm:gap-2">
             {isCreated ? (
             <>
-              <Link
-                href={`/voluntarios/${a.id}/admin`}
-                className="rounded-md bg-[#eaebed] px-3 py-1.5 text-xs font-medium text-zinc-700 shadow-sm transition hover:brightness-95 dark:bg-zinc-700 dark:text-zinc-200"
-              >
-                Administrar
-              </Link>
+              {!a.is_private && (
+                <Link
+                  href={`/voluntarios/${a.id}/admin`}
+                  className="rounded-md bg-[#eaebed] px-3 py-1.5 text-xs font-medium text-zinc-700 shadow-sm transition hover:brightness-95 dark:bg-zinc-700 dark:text-zinc-200"
+                >
+                  Administrar
+                </Link>
+              )}
               <Link
                 href={`/voluntarios/${a.id}/editar`}
                 className="rounded-md bg-[#eaebed] px-3 py-1.5 text-xs font-medium text-zinc-700 shadow-sm transition hover:brightness-95 dark:bg-zinc-700 dark:text-zinc-200"

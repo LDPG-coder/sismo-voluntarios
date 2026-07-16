@@ -13,6 +13,22 @@ type ActivityEvidenceProps = {
   maxImages?: number;
 };
 
+
+function FilePreview({ file }: { file: File }) {
+  const [src, setSrc] = useState<string | null>(null);
+  useEffect(() => {
+    const url = URL.createObjectURL(file);
+    setSrc(url);
+    return () => URL.revokeObjectURL(url);
+  }, [file]);
+  if (!src) return null;
+  return (
+    <div className="relative h-16 w-16 overflow-hidden rounded-md border border-zinc-200 dark:border-zinc-700">
+      <img src={src} alt={file.name} className="h-full w-full object-cover" />
+    </div>
+  );
+}
+
 export function ActivityEvidence({
   activityId,
   currentUserId,
@@ -181,9 +197,12 @@ export function ActivityEvidence({
             return (
               <div key={ev.id} className="relative">
                 <img
-                  src={ev.image_url}
+                  src={ev.image_url?.startsWith("http") ? ev.image_url : API + ev.image_url}
                   alt="Comprobante de la actividad"
                   className="aspect-square w-full rounded-lg border border-zinc-200 object-cover dark:border-zinc-800"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80' fill='%23a1a1aa'%3E%3Crect width='80' height='80' rx='8'/%3E%3Ctext x='40' y='44' text-anchor='middle' font-size='12'%3EError%3C/text%3E%3C/svg%3E";
+                  }}
                 />
                 {isCreatorEvidence && (
                   <span className="absolute left-1.5 top-1.5 rounded-full bg-emerald-600 px-2 py-0.5 text-[10px] font-medium text-white">
@@ -223,12 +242,7 @@ export function ActivityEvidence({
           {files.length > 0 && (
             <div className="mt-3 flex flex-wrap gap-2">
               {files.map((f, i) => (
-                <span
-                  key={`${f.name}-${i}`}
-                  className="rounded-md bg-zinc-100 px-2 py-1 text-xs text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300"
-                >
-                  {f.name}
-                </span>
+                <FilePreview key={f.name + '-' + i} file={f} />
               ))}
             </div>
           )}

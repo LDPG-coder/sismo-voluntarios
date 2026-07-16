@@ -1,7 +1,17 @@
-import { requireSession } from "@/lib/auth/require-session";
+"use client";
+
+import { useState } from "react";
+import { ActivityTypeSelector } from "@/components/activity-type-selector";
 import { CrearActivityClient } from "@/components/crear-activity-client";
 
-export default async function CrearActivityPage() {
-  await requireSession();
-  return <CrearActivityClient />;
+type ActivityType = "proponer" | "oficial" | "realizada";
+
+export default function CrearActivityPage() {
+  const [selectedType, setSelectedType] = useState<ActivityType | null>(null);
+
+  if (!selectedType) {
+    return <ActivityTypeSelector onSelect={setSelectedType} />;
+  }
+
+  return <CrearActivityClient activityType={selectedType} onBack={() => setSelectedType(null)} />;
 }

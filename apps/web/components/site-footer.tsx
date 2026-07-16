@@ -58,18 +58,18 @@ export function SiteFooter() {
           >
             Términos y condiciones
           </a>
-          <Link
-            href="#"
+          <a
+            href="mailto:sismoAvaa@gmail.com?subject=Reporte%20de%20error%20-%20Sismo"
             className="text-red-600 transition-colors hover:text-red-700 dark:text-red-500 dark:hover:text-red-400"
           >
             Reportar error
-          </Link>
-          <Link
-            href="#"
+          </a>
+          <a
+            href="mailto:sismoAvaa@gmail.com?subject=Feedback%20-%20Sismo"
             className="text-emerald-600 transition-colors hover:text-emerald-700 dark:text-emerald-500 dark:hover:text-emerald-400"
           >
             Dejar feedback
-          </Link>
+          </a>
         </nav>
 
         <div className="flex items-center justify-center gap-5">

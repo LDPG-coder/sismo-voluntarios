@@ -15,7 +15,13 @@ const INPUT_cls =
 const INPUT_LOADING_cls =
   "w-full rounded-md bg-white px-3 py-2 text-sm animate-shimmer relative overflow-hidden disabled:cursor-not-allowed disabled:opacity-50 dark:bg-zinc-800";
 
-export function CrearActivityClient() {
+export function CrearActivityClient({
+  activityType = "proponer",
+  onBack,
+}: {
+  activityType?: "proponer" | "oficial" | "realizada";
+  onBack?: () => void;
+} = {}) {
   const router = useRouter();
   const reqInputRef = useRef<HTMLInputElement>(null);
   const abortRef = useRef<AbortController | null>(null);
@@ -53,6 +59,9 @@ export function CrearActivityClient() {
   const aiEnabledRef = useRef(aiEnabled);
   aiEnabledRef.current = aiEnabled;
 
+  const isRealizada = activityType === "realizada";
+  const isOficial = activityType === "oficial";
+
   const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
   const mountedRef = useRef(false);
@@ -87,6 +96,7 @@ export function CrearActivityClient() {
     } catch {}
     mountedRef.current = true;
     setDraftReady(true);
+    if (activityType === "oficial") setShowExternal(true);
   }, []);
 
   useEffect(() => {
@@ -347,12 +357,13 @@ export function CrearActivityClient() {
       max_participants: maxParticipants ? parseInt(maxParticipants) : null,
       requirements: requirements.join(", "),
       contact_info: contactInfo || null,
-      external_beneficiary: isInternal ? null : extBeneficiary || null,
-      external_supervisor: isInternal ? null : extSupervisor || null,
-      external_supervisor_email: isInternal ? null : extSupervisorEmail || null,
-      external_assigned_hours: isInternal ? null : extHours ? parseFloat(extHours) : null,
-      external_relevant_data: isInternal ? null : extRelevantData.trim() || null,
-      is_internal: isInternal,
+      external_beneficiary: isInternal || isRealizada ? null : isOficial ? extBeneficiary || null : null,
+      external_supervisor: isInternal || isRealizada ? null : isOficial ? extSupervisor || null : null,
+      external_supervisor_email: isInternal || isRealizada ? null : isOficial ? extSupervisorEmail || null : null,
+      external_assigned_hours: isInternal || isRealizada ? null : isOficial ? extHours ? parseFloat(extHours) : null : null,
+      external_relevant_data: isInternal || isRealizada ? null : isOficial ? extRelevantData.trim() || null : null,
+      is_internal: isRealizada ? false : isInternal,
+      is_private: isRealizada || undefined,
     };
 
     const res = await fetch(`${API}/api/v1/activities`, {
@@ -384,7 +395,7 @@ export function CrearActivityClient() {
         >
           &larr; Volver
         </button>
-        <h1 className="mb-2 text-xl font-bold">Crear actividad</h1>
+        <h1 className="mb-2 text-xl font-bold">{typeLabel}</h1>
         <p className="mb-6 text-sm text-zinc-500">
           Escribe la descripcion y los campos se rellenan solos.
         </p>
@@ -757,7 +768,8 @@ export function CrearActivityClient() {
             </div>
           )}
 
-          {error && (
+          )}{/* Fin IA section */}
+        {error && (
             <p className="rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700 dark:border-rose-900 dark:bg-rose-950 dark:text-rose-300">{error}</p>
           )}
 
@@ -768,9 +780,13 @@ export function CrearActivityClient() {
           >
             {submitting
               ? "Guardando..."
-              : isPastActivity
+              : isRealizada
                 ? "Registrar actividad realizada"
-                : "Crear actividad"}
+                : isOficial
+                  ? "Crear voluntariado oficial"
+                  : isPastActivity
+                    ? "Registrar actividad realizada"
+                    : "Crear actividad"}
           </button>
         </form>
       </main>
