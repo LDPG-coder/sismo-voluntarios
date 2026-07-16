@@ -34,6 +34,7 @@ from app.db.models import (
     Notification,
     User,
 )
+from app.db.models.activities import _compute_realized_hours
 from app.pipeline.dependencies import require_admin_session, require_session
 from app.storage.service import (
     MediaError,
@@ -63,6 +64,7 @@ def _serialize_activity(
         "date_time": a.date_time.isoformat() if a.date_time else None,
         "end_time": a.end_time.isoformat() if a.end_time else None,
         "estimated_duration_min": a.estimated_duration_min,
+        "realized_hours": a.realized_hours,
         "max_participants": a.max_participants,
         "requirements": a.requirements,
         "contact_info": a.contact_info,
@@ -411,6 +413,7 @@ def validate_external_activity(
     a.validated_at = datetime.now(UTC)
     a.validated_by = admin.id
     a.validation_notes = body.notes
+    a.realized_hours = _compute_realized_hours(a)
     db.commit()
     _notify_validation_change(
         db,
@@ -797,6 +800,7 @@ def create_activity(
         creator_id=user.id,
         status=ActivityStatus.active.value,
     )
+    a.realized_hours = _compute_realized_hours(a)
     a.tenant_id = MVP_TENANT_ID
     db.add(a)
     db.commit()
@@ -838,6 +842,7 @@ def update_activity(
             a.external_supervisor_email = None
             a.external_assigned_hours = None
 
+    a.realized_hours = _compute_realized_hours(a)
     db.commit()
     db.refresh(a)
     creator = db.get(User, a.creator_id)
@@ -1060,17 +1065,29 @@ def list_attendees(
         raise ApiError(ErrorCode.activity_not_found, "activity not found")
 
     # The creator must be able to see their own attendees to administer the
-    # activity. Other external (public) accounts cannot browse attendees, to
-    # protect PII; SEP users and SISMO admins may.
+    # activity. Members may see who else is inscribed (name + photo, no email).
+    # Other external (public, non-member) accounts cannot browse attendees, to
+    # protect PII; SEP users and SISMO admins may see everything (incl. email).
     is_creator = str(a.creator_id) == str(user.id)
     # Las actividades privadas solo las administra su creador.
     if a.is_private and not is_creator:
         raise ApiError(ErrorCode.activity_not_found, "activity not found")
-    if (
-        not is_creator
-        and user.auth_source != "sep"
-        and user.role != UserRole.admin.value
-    ):
+
+    member = db.execute(
+        select(ActivityMember).where(
+            ActivityMember.activity_id == a.id,
+            ActivityMember.user_id == user.id,
+            ActivityMember.status == "active",
+        )
+    ).scalar_one_or_none()
+    is_member = member is not None
+
+    can_see_emails = (
+        is_creator
+        or user.auth_source == "sep"
+        or user.role == UserRole.admin.value
+    )
+    if not (is_creator or is_member or can_see_emails):
         raise ApiError(
             ErrorCode.auth_forbidden,
             "no tienes permiso para ver los inscritos de esta actividad",
@@ -1085,7 +1102,7 @@ def list_attendees(
         {
             "user_id": str(m.user_id),
             "name": u.name or u.email,
-            "email": u.email if is_creator else None,
+            "email": u.email if can_see_emails else None,
             "photo_url": u.photo_url,
             "attended": m.attended,
             "status": m.status,
