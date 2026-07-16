@@ -95,7 +95,7 @@ export function ActivityAdminClient() {
 
   if (loading) {
     return (
-      <div className="min-h-screen">
+      <div>
         <ActivityAdminSkeleton />
       </div>
     );
@@ -108,8 +108,8 @@ export function ActivityAdminClient() {
   const availableAfter = newMax - currentInscribed;
 
   return (
-    <div className="min-h-screen">
-      <main className="mx-auto max-w-2xl px-4 py-8">
+    <div>
+      <main className="mx-auto max-w-2xl px-4 pt-8 pb-4">
         <button onClick={() => router.back()} className="mb-4 text-sm text-zinc-500 hover:text-zinc-700">
           &larr; Volver
         </button>

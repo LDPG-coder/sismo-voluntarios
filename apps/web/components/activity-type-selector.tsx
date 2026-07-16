@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 type ActivityType = "proponer" | "oficial" | "realizada";
 
 interface ActivityTypeSelectorProps {
@@ -10,7 +12,7 @@ const TYPES = [
   {
     type: "proponer" as const,
     title: "Proponer",
-    description: "Crea una actividad para que otros becarios se inscriban.",
+    description: "Propón una actividad a la que vayas para que otros becarios puedan sumarse.",
     icon: (
       <svg className="h-8 w-8" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
@@ -26,7 +28,7 @@ const TYPES = [
   {
     type: "oficial" as const,
     title: "Voluntariados oficiales",
-    description: "Registra una actividad con empresa validada que amerita documentación.",
+    description: "Comparte aquí voluntariados externos que puedan ser avalados formalmente y más becarios puedan unirse.",
     icon: (
       <svg className="h-8 w-8" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18M9 6.75h1.5m-1.5 3h1.5m-1.5 3h1.5m3-6H15m-1.5 3H15m-1.5 3H15M9 21v-3.375c0-.621.504-1.125 1.125-1.125h3.75c.621 0 1.125.504 1.125 1.125V21" />
@@ -42,7 +44,7 @@ const TYPES = [
   {
     type: "realizada" as const,
     title: "Registro previo",
-    description: "Documenta una actividad ya realizada con comprobantes fotográficos.",
+    description: "Documenta cualquier actividad de voluntariado que hayas realizado por tu cuenta.",
     icon: (
       <svg className="h-8 w-8" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -59,7 +61,16 @@ const TYPES = [
 
 export function ActivityTypeSelector({ onSelect }: ActivityTypeSelectorProps) {
   return (
-    <div className="mx-auto max-w-2xl px-4 py-8">
+    <div className="mx-auto max-w-2xl px-4 pt-8 pb-4">
+      <Link
+        href="/voluntarios"
+        className="mb-4 inline-flex items-center gap-1 text-sm text-zinc-500 transition hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
+      >
+        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+        </svg>
+        Volver
+      </Link>
       <h1 className="mb-2 text-xl font-semibold">Nueva actividad</h1>
       <p className="mb-6 text-sm text-zinc-500 dark:text-zinc-400">
         Elegí el tipo de actividad que querés crear.

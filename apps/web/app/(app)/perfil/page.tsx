@@ -8,8 +8,8 @@ export default async function PerfilPage() {
   if (!user) return null;
 
   return (
-    <div className="min-h-screen">
-      <main className="mx-auto max-w-lg px-4 py-8">
+    <div>
+      <main className="mx-auto max-w-lg px-4 pt-8 pb-4">
         <h1 className="mb-6 text-xl font-bold">Mi perfil</h1>
 
         <div className="space-y-6">

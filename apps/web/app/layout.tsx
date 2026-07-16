@@ -22,11 +22,11 @@ export default function RootLayout({
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
-      <body className="flex min-h-screen flex-col bg-[#f4f5f7] text-zinc-900 antialiased dark:bg-[#0c0b0a] dark:text-zinc-100">
-        <ThemeSync />
-        <div className="flex-1">{children}</div>
-        <SiteFooter />
-      </body>
+    <body className="min-h-screen bg-[#f4f5f7] text-zinc-900 antialiased dark:bg-[#0c0b0a] dark:text-zinc-100">
+      <ThemeSync />
+      {children}
+      <SiteFooter />
+    </body>
     </html>
   );
 }
