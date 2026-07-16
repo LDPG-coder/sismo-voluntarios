@@ -37,6 +37,8 @@ services:
       SISMO_DB_NAME: ${SISMO_DB_NAME:-sismo}
       SISMO_DB_USER: ${SISMO_DB_USER:-sismo}
       SISMO_REDIS_URL: ${SISMO_REDIS_URL:-redis://redis:6379/0}
+      # URL publica absoluta de multimedia (servida por la API en /api/v1/media).
+      SISMO_MEDIA_PUBLIC_BASE_URL: ${SISMO_MEDIA_PUBLIC_BASE_URL:-https://api.sismo.lat/api/v1/media}
       SISMO_GOOGLE_CLIENT_ID: ${SISMO_GOOGLE_CLIENT_ID:-}
       SISMO_GOOGLE_REDIRECT_URI: ${SISMO_GOOGLE_REDIRECT_URI:-https://api.sismo.lat/api/v1/auth/callback}
       SISMO_OPENAI_API_KEY: ${SISMO_OPENAI_API_KEY:-}

@@ -28,7 +28,11 @@ COPY alembic.ini .
 COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
-RUN chown -R appuser:appuser /app
+# El volumen de multimedia se monta en /data/media en runtime. Creamos y
+# asignamos el directorio al usuario no-root ANTES de declarar USER: si el
+# volumen esta vacio, Docker propaga esta propiedad/perms al inicializarlo,
+# evitando PermissionError al escribir comprobantes.
+RUN mkdir -p /data/media && chown -R appuser:appuser /app /data/media
 USER appuser
 
 # Entrypoint inyecta los Docker secrets como env antes de arrancar

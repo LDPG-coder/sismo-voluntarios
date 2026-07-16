@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { ThemeSync } from "@/components/theme-sync";
+import { SiteFooter } from "@/components/site-footer";
 
 export const metadata: Metadata = {
   title: "Sismo Voluntarios",
@@ -21,9 +22,10 @@ export default function RootLayout({
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
-      <body className="min-h-screen bg-[#f4f5f7] text-zinc-900 antialiased dark:bg-[#0c0b0a] dark:text-zinc-100">
+      <body className="flex min-h-screen flex-col bg-[#f4f5f7] text-zinc-900 antialiased dark:bg-[#0c0b0a] dark:text-zinc-100">
         <ThemeSync />
-        {children}
+        <div className="flex-1">{children}</div>
+        <SiteFooter />
       </body>
     </html>
   );
