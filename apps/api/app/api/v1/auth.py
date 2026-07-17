@@ -34,7 +34,31 @@ _FINISH_PATH = "/auth/finish"
 _LOGIN_PATH = "/login"
 
 
-def _web_origin(settings: Settings) -> str:
+def _web_origin(settings: Settings, request: Request | None = None) -> str:
+    # Prefer the pagina que inicio el flujo de OAuth (header Referer del
+    # navegador) para devolver al usuario a la misma web que disparo el login,
+    # en lugar de una origen de produccion hardcoded. Solo se confia en el
+    # Referer si su host esta en la lista de origenes conocidos (evita
+    # open-redirect).
+    allowed: set[str] = set()
+    if settings.web_origin:
+        allowed.add(settings.web_origin.rstrip("/"))
+    for o in settings.api_cors_origins or []:
+        allowed.add(o.rstrip("/"))
+    allowed.update(
+        {
+            "http://localhost:3001",
+            "https://localhost:3001",
+            "http://localhost:3002",
+            "https://localhost:3002",
+        }
+    )
+    referer = (request.headers.get("referer") or "").strip() if request else ""
+    if referer:
+        parsed = urllib.parse.urlparse(referer)
+        host = f"{parsed.scheme}://{parsed.netloc}".rstrip("/")
+        if host in allowed:
+            return host
     if settings.web_origin:
         return settings.web_origin.rstrip("/")
     raw = settings.api_cors_origins[0] if settings.api_cors_origins else "http://localhost:3001"
@@ -43,6 +67,10 @@ def _web_origin(settings: Settings) -> str:
 
 def _redirect(target: str) -> Response:
     return Response(status_code=302, headers={"Location": target})
+
+
+def _login_error_redirect(settings: Settings, request: Request, error: str) -> Response:
+    return _redirect(f"{_web_origin(settings, request)}{_LOGIN_PATH}?error={error}")
 
 
 # -- Public OAuth endpoints ----------------------------------------
@@ -54,10 +82,18 @@ def auth_login(
     settings: Annotated[Settings, Depends(get_settings)],
     db: Annotated[Session, Depends(get_db)],
 ) -> Response:
+    # Este endpoint es navegado directamente por el navegador (enlace
+    # "Continuar con Google"), asi que NUNCA debe devolver un JSON de error:
+    # ante cualquier fallo se redirige a la pagina de login del web con un
+    # parametro de error que la UI muestra como banner.
     if not settings.oauth_enabled:
-        raise ApiError(ErrorCode.auth_oauth_not_configured, "Google OAuth is not configured")
-    state = oauth.issue_oauth_state(db)
-    target = oauth.build_google_authorize_url(settings, state=state)
+        return _login_error_redirect(settings, request, "oauth_not_configured")
+    try:
+        state = oauth.issue_oauth_state(db)
+        target = oauth.build_google_authorize_url(settings, state=state)
+    except Exception as exc:  # noqa: BLE001 - nunca mostrar JSON al navegador
+        _log.error("oauth.login.failed", error=str(exc))
+        return _login_error_redirect(settings, request, "oauth_error")
     _log.info("oauth.login.redirect", target_host=urllib.parse.urlparse(target).netloc)
     return _redirect(target)
 
@@ -71,34 +107,40 @@ def auth_callback(
     state: str | None = None,
 ) -> Response:
     if not settings.oauth_enabled:
-        raise ApiError(ErrorCode.auth_oauth_not_configured, "Google OAuth is not configured")
-    if not code or not state:
-        return _redirect(f"{_web_origin(settings)}{_LOGIN_PATH}?error=oauth_missing_params")
-
+        return _login_error_redirect(settings, request, "oauth_not_configured")
     try:
+        if not code or not state:
+            return _redirect(
+                f"{_web_origin(settings, request)}{_LOGIN_PATH}?error=oauth_missing_params"
+            )
+
         outcome = oauth.complete_google_callback(db, settings, code=code, state=state)
+
+        user = outcome.user
+        user.last_login_at = datetime.now(UTC)
+        db.commit()
+        db.refresh(user)
+
+        one_time_code = oauth.issue_exchange_code(
+            db, user_id=user.id, role=user.role, status=user.status,
+            ttl=float(settings.oauth_exchange_ttl_seconds),
+        )
     except oauth.OAuthStateError:
-        return _redirect(f"{_web_origin(settings)}{_LOGIN_PATH}?error=oauth_state")
+        return _redirect(f"{_web_origin(settings, request)}{_LOGIN_PATH}?error=oauth_state")
     except oauth.OAuthCodeExchangeError as exc:
         _log.error("oauth.callback.code_exchange_failed", error=str(exc))
-        return _redirect(f"{_web_origin(settings)}{_LOGIN_PATH}?error=oauth_exchange")
+        return _redirect(f"{_web_origin(settings, request)}{_LOGIN_PATH}?error=oauth_exchange")
     except oauth.OAuthIdTokenError as exc:
         _log.error("oauth.callback.id_token_invalid", error=str(exc))
-        return _redirect(f"{_web_origin(settings)}{_LOGIN_PATH}?error=oauth_id_token")
+        return _redirect(f"{_web_origin(settings, request)}{_LOGIN_PATH}?error=oauth_id_token")
     except oauth.OAuthNotInvitedError:
-        return _redirect(f"{_web_origin(settings)}{_LOGIN_PATH}?error=not_invited")
+        return _redirect(f"{_web_origin(settings, request)}{_LOGIN_PATH}?error=not_invited")
+    except Exception as exc:  # noqa: BLE001 - nunca mostrar JSON al navegador
+        _log.error("oauth.callback.failed", error=str(exc))
+        return _login_error_redirect(settings, request, "oauth_error")
 
-    user = outcome.user
-    user.last_login_at = datetime.now(UTC)
-    db.commit()
-    db.refresh(user)
-
-    one_time_code = oauth.issue_exchange_code(
-        db, user_id=user.id, role=user.role, status=user.status,
-        ttl=float(settings.oauth_exchange_ttl_seconds),
-    )
     _log.info("oauth.callback.success", user_id=str(user.id), role=user.role, created=outcome.created)
-    target = f"{_web_origin(settings)}{_FINISH_PATH}?code={urllib.parse.quote(one_time_code)}"
+    target = f"{_web_origin(settings, request)}{_FINISH_PATH}?code={urllib.parse.quote(one_time_code)}"
     return _redirect(target)
 
 

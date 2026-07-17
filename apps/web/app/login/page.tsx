@@ -91,5 +91,19 @@ async function ErrorBanner({
       </p>
     );
   }
+  if (params.error === "oauth_not_configured") {
+    return (
+      <p role="alert" className="mb-4 rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700 dark:border-rose-900 dark:bg-rose-950 dark:text-rose-300">
+        El inicio de sesion con Google no esta configurado en este entorno.
+      </p>
+    );
+  }
+  if (params.error === "oauth_error") {
+    return (
+      <p role="alert" className="mb-4 rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700 dark:border-rose-900 dark:bg-rose-950 dark:text-rose-300">
+        No se pudo iniciar sesion con Google. Intenta de nuevo.
+      </p>
+    );
+  }
   return null;
 }
