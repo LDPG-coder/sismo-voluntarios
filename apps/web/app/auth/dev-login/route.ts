@@ -20,63 +20,34 @@ import { generateCsrfToken } from "@/lib/auth/csrf";
 // persista antes de la navegación.
 const DEV_USER_ID = "11111111-1111-1111-1111-111111111111";
 
-const API_BASE =
-  process.env.INTERNAL_API_URL ??
-  process.env.NEXT_PUBLIC_API_URL ??
-  "http://localhost:8000";
-
 export async function GET(request: Request) {
   if (process.env.NODE_ENV === "production") {
     return new Response("not found", { status: 404 });
   }
 
-  const url = new URL(request.url);
-  const cedula = url.searchParams.get("cedula");
-
-  let userId = DEV_USER_ID;
-  let role: "admin" | "volunteer" = "admin";
-  let authSource: "sep" | "google" = "sep";
-  let displayName = "Dev Admin";
-
-  if (cedula) {
-    try {
-      const res = await fetch(`${API_BASE}/api/v1/auth/dev-user?cedula=${cedula}`, {
-        cache: "no-store",
-      });
-      if (res.ok) {
-        const found = await res.json();
-        if (found && found.id) {
-          userId = found.id;
-          role = found.role === "admin" ? "admin" : "volunteer";
-          authSource = found.auth_source === "sep" ? "sep" : "google";
-          displayName = found.name || displayName;
-        }
-      }
-    } catch {
-      // fallback to dev user
-    }
-  }
-
   const sessionCookie = encodeSession({
-    user_id: userId,
-    role,
+    user_id: DEV_USER_ID,
+    role: "admin",
     status: "active",
   });
   const csrfToken = generateCsrfToken();
   const domain = cookieDomain();
   const { sameSite, secure } = cookieSameSite();
 
-  const commonFlags = `${secure ? " Secure;" : ""} SameSite=${
+  const cookieFlags = `HttpOnly;${secure ? " Secure;" : ""} SameSite=${
     sameSite === "none" ? "None" : "Lax"
   }; Path=/; Max-Age=${authCookieMaxAgeSeconds}${domain ? `; Domain=${domain}` : ""}`;
 
-  const html = `<!DOCTYPE html><html><head><meta http-equiv="refresh" content="0;url=/voluntarios"></head><body>Redirigiendo a Voluntarios…</body></html>`;
+  const webOrigin =
+    process.env.NEXT_PUBLIC_WEB_ORIGIN ?? "http://localhost:3001";
+
+  const html = `<!DOCTYPE html><html><head><meta http-equiv="refresh" content="0;url=/admin"></head><body>Redirigiendo a Sismo Admin…</body></html>`;
 
   const response = new NextResponse(html, {
     status: 200,
     headers: { "Content-Type": "text/html" },
   });
-  response.headers.append("Set-Cookie", `${authCookieName}=${sessionCookie};HttpOnly;${commonFlags}`);
-  response.headers.append("Set-Cookie", `${csrfCookieName}=${csrfToken};${commonFlags}`);
+  response.headers.append("Set-Cookie", `${authCookieName}=${sessionCookie};${cookieFlags}`);
+  response.headers.append("Set-Cookie", `${csrfCookieName}=${csrfToken};${cookieFlags}`);
   return response;
 }
