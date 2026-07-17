@@ -50,3 +50,7 @@ archive/
 Makefile
 README.md
 next-env.d.ts
+
+# Playwright artifacts (local runs)
+apps/web/test-results/
+apps/web/tmp/

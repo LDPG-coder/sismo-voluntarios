@@ -56,19 +56,32 @@ export default function VoluntariosPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [pendingJoin, setPendingJoin] = useState<string | null>(null);
 
+  // Durante la induccion se piden las publicaciones de ejemplo (include_demo).
+  const [includeDemo, setIncludeDemo] = useState(false);
+
   useEffect(() => {
     localStorage.setItem("voluntarios-view", activeView);
   }, [activeView]);
 
   useEffect(() => {
+    setIncludeDemo(
+      typeof window !== "undefined" &&
+        !localStorage.getItem("sismo_onboarding_done"),
+    );
+  }, []);
+
+  useEffect(() => {
     const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
     const opts: RequestInit = { credentials: "include" };
+    const zoneParam = activeZone ? `?zone=${activeZone}` : "";
+    const sep = zoneParam ? "&" : "?";
+    const zonesUrl = includeDemo
+      ? `${API}/api/v1/activities/zones?include_demo=true`
+      : `${API}/api/v1/activities/zones`;
     Promise.all([
-      fetch(`${API}/api/v1/activities/zones`, opts).then((r) =>
-        r.ok ? r.json() : []
-      ),
+      fetch(zonesUrl, opts).then((r) => (r.ok ? r.json() : [])),
       fetch(
-        `${API}/api/v1/activities${activeZone ? `?zone=${activeZone}` : ""}`,
+        `${API}/api/v1/activities${zoneParam}${sep}include_demo=${includeDemo}`,
         opts
       ).then((r) => (r.ok ? r.json() : [])),
       fetch(`${API}/api/v1/activities/enrolled`, opts).then((r) =>
@@ -87,7 +100,14 @@ export default function VoluntariosPage() {
         setLoading(false);
       })
       .catch(() => setLoading(false));
-  }, [activeZone]);
+  }, [activeZone, includeDemo]);
+
+  // Al terminar el tour, el becario ya no ve las publicaciones de ejemplo.
+  useEffect(() => {
+    const onDone = () => setIncludeDemo(false);
+    window.addEventListener("sismo:onboarding-done", onDone);
+    return () => window.removeEventListener("sismo:onboarding-done", onDone);
+  }, []);
 
   const handleSelectActivity = (activity: Activity) => {
     setModalActivity(activity);
@@ -175,7 +195,7 @@ export default function VoluntariosPage() {
   return (
     <div>
       <main className="mx-auto max-w-6xl px-4 pt-8 pb-4">
-        <div className="mb-6">
+        <div className="mb-6" data-tour="feed">
           <h1 className="text-2xl font-bold tracking-tight">
             Actividades de voluntariado
           </h1>

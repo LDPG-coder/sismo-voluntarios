@@ -121,6 +121,10 @@ class Settings(BaseSettings):
     # A pending invitation (the user created by POST /auth/invite) is valid for
     # this many days before it must be re-issued.
     referral_expiry_days: int = 30
+    # Publicaciones de ejemplo de la induccion (is_demo): se auto-eliminan de la
+    # BD este numero de dias despues de sembrarse, independientemente de si el
+    # becario vio el tour.
+    demo_activities_ttl_days: int = 3
     ai_rate_limit_per_min: int = 600
     ai_rate_limit_burst: int = 200
 

@@ -23,7 +23,7 @@ export function MobileFabNav() {
   const items = isAdmin
     ? [
         ...navItems,
-        { href: "/admin", label: "Administrar", Icon: GridIcon },
+        { href: "/admin", label: "Administrar", Icon: GridIcon, tourKey: undefined },
       ]
     : navItems;
 
@@ -52,6 +52,7 @@ export function MobileFabNav() {
                 href={item.href}
                 role="menuitem"
                 aria-current={active ? "page" : undefined}
+                data-tour={item.tourKey}
                 onClick={() => setOpen(false)}
                 className={cn(
                   "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition",

@@ -71,6 +71,8 @@ def _serialize_activity(
         "is_external_official": bool(a.external_beneficiary),
         "is_internal": bool(a.is_internal),
         "is_private": bool(a.is_private),
+        "is_demo": bool(a.is_demo),
+        "demo_until": a.demo_until.isoformat() if a.demo_until else None,
         "creator_id": str(a.creator_id),
         "status": a.status,
         "member_count": member_count,
@@ -160,6 +162,7 @@ def list_activities(
     db: Annotated[Session, Depends(get_db)],
     zone: str | None = None,
     status: str | None = "active",
+    include_demo: bool = False,
 ) -> list[dict]:
     q = select(Activity)
     if zone:
@@ -174,6 +177,10 @@ def list_activities(
     # aparecen en descubrimiento: pertenecen solo a su creador y sirven para
     # validar horas externas.
     q = q.where(Activity.is_private.is_(False))
+    # Por defecto se ocultan las publicaciones de ejemplo de la induccion. Solo
+    # se incluyen cuando el cliente lo pide (el becario esta en el tour).
+    if not include_demo:
+        q = q.where(Activity.is_demo.is_(False))
     # The discovery feed shows activities published by *others*; the user's own
     # creations live under "Mis actividades" (Creadas), not here.
     q = q.where(Activity.creator_id != user.id)
@@ -189,17 +196,23 @@ def list_activities(
 def list_zones(
     user: Annotated[User, Depends(require_session)],
     db: Annotated[Session, Depends(get_db)],
+    include_demo: bool = False,
 ) -> list[dict]:
     # Counts must mirror the discovery feed (GET /activities): exclude the
     # user's own activities and the activities they've already joined, so the
     # filter tags don't advertise counts the list itself hides. Tambien se
     # excluyen las actividades cuya fecha de inicio ya paso.
-    rows = db.execute(
+    zone_q = (
         select(Activity.zone, func.count())
         .where(Activity.status == ActivityStatus.active.value)
         .where(Activity.date_time >= datetime.now(UTC))
         .where(Activity.is_private.is_(False))
         .where(Activity.creator_id != user.id)
+    )
+    if not include_demo:
+        zone_q = zone_q.where(Activity.is_demo.is_(False))
+    rows = db.execute(
+        zone_q
         .where(Activity.id.notin_(_enrolled_activity_ids_subquery(user.id)))
         .group_by(Activity.zone)
     ).all()

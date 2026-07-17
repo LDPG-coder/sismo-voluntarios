@@ -50,13 +50,22 @@ export function ActivityCard({ activity, isEnrolled, onJoin, onCeded }: Activity
 
   return (
     <>
-      <Link href={`/voluntarios/${activity.id}`} className="block">
+      <Link
+        href={`/voluntarios/${activity.id}`}
+        className="block"
+        data-tour={activity.is_demo ? "demo-post" : undefined}
+      >
       <div className={isHoursType ? "emerald-border-animated rounded-lg p-[2px]" : ""}>
       <div className={innerCls}>
-        <div className="mb-2">
+        <div className="mb-2 flex flex-wrap items-center gap-2">
           <span className="inline-block rounded-full bg-[#eaebed] px-2.5 py-0.5 text-xs font-medium text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400">
             {activity.zone}
           </span>
+          {activity.is_demo && (
+            <span className="inline-block rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-700 dark:bg-amber-900/40 dark:text-amber-300">
+              Ejemplo · temporal
+            </span>
+          )}
         </div>
 
         <h3 className="font-semibold text-zinc-900 dark:text-zinc-100">

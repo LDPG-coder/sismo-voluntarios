@@ -57,6 +57,7 @@ export function HeaderBar({ leftSlot }: { leftSlot?: React.ReactNode }) {
           <Link
             href="/voluntarios/crear"
             aria-label="Crear actividad"
+            data-tour="header-crear"
             className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-600 text-white transition hover:bg-emerald-700 dark:bg-emerald-600 dark:hover:bg-emerald-700"
           >
             <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
@@ -67,12 +68,13 @@ export function HeaderBar({ leftSlot }: { leftSlot?: React.ReactNode }) {
         <NotificationsBell />
         <ThemeToggle />
         <div className="relative">
-          <button
-            type="button"
-            onClick={() => setProfileOpen(!profileOpen)}
-            aria-label="Mi perfil"
-            className="group relative flex h-9 w-9 items-center justify-center overflow-hidden rounded-md bg-[#eaebed] transition dark:bg-zinc-800"
-          >
+           <button
+             type="button"
+             onClick={() => setProfileOpen(!profileOpen)}
+             aria-label="Mi perfil"
+             data-tour="header-perfil"
+             className="group relative flex h-9 w-9 items-center justify-center overflow-hidden rounded-md bg-[#eaebed] transition dark:bg-zinc-800"
+           >
             {user?.photo_url ? (
               <img src={displayPhoto(user.photo_url) ?? ""} alt="" className="h-full w-full object-cover" />
             ) : (

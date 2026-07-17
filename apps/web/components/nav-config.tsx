@@ -6,6 +6,8 @@ export type NavItem = {
   Icon: ComponentType<SVGProps<SVGSVGElement>>;
   /** Optional custom active matcher; falls back to exact path match. */
   match?: (pathname: string) => boolean;
+  /** Optional selector hook for the onboarding tour (`data-tour`). */
+  tourKey?: string;
 };
 
 export function ActivitiesIcon(props: SVGProps<SVGSVGElement>) {
@@ -312,11 +314,11 @@ export function LogoutIcon(props: SVGProps<SVGSVGElement>) {
 }
 
 export const navItems: NavItem[] = [
-  { href: "/voluntarios", label: "Actividades", Icon: ActivitiesIcon },
+  { href: "/voluntarios", label: "Actividades", Icon: ActivitiesIcon, tourKey: "nav-actividades" },
   // [INCUBADORA] Seccion desactivada temporalmente: no debe verse en prod.
   // Reactivar descomentando esta entrada (y el resto de la seccion Incubadora).
   // { href: "/incubadora", label: "Incubadora", Icon: IncubatorIcon },
-  { href: "/mis-actividades", label: "Mis actividades", Icon: MyActivitiesIcon },
+  { href: "/mis-actividades", label: "Mis actividades", Icon: MyActivitiesIcon, tourKey: "nav-mis-actividades" },
   { href: "/voluntarios/crear", label: "Crear", Icon: CreateIcon },
   { href: "/perfil", label: "Mi perfil", Icon: ProfileIcon },
 ];

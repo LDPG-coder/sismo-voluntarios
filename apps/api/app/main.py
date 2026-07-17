@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -9,16 +11,29 @@ from app.core.errors import register_error_handlers
 from app.core.logging import configure_logging, get_logger
 from app.middleware.csrf import CsrfMiddleware
 from app.middleware.rate_limit import RateLimitMiddleware
+from app.services.demo_cleanup import start_demo_cleanup_scheduler
 
 configure_logging()
 log = get_logger("app.main")
 
 settings = get_settings()
 
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Limpieza programada de las publicaciones de ejemplo de la induccion.
+    stop_cleanup = start_demo_cleanup_scheduler()
+    try:
+        yield
+    finally:
+        stop_cleanup()
+
+
 app = FastAPI(
     title="Sismo Voluntarios API",
     version="0.1.0",
     debug=settings.debug,
+    lifespan=lifespan,
 )
 
 app.add_middleware(

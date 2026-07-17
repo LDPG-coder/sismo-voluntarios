@@ -23,7 +23,7 @@ export function FloatingNav() {
   const items = isAdmin
     ? [
         ...navItems,
-        { href: "/admin", label: "Administrar", Icon: GridIcon },
+        { href: "/admin", label: "Administrar", Icon: GridIcon, tourKey: undefined },
       ]
     : navItems;
 
@@ -63,6 +63,7 @@ export function FloatingNav() {
               href={item.href}
               title={item.label}
               aria-current={active ? "page" : undefined}
+              data-tour={item.tourKey}
               className={cn(
                 "group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition",
                 active

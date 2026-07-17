@@ -12,11 +12,13 @@ export type Activity = {
   contact_info: string | null;
   is_external_official?: boolean;
   is_internal?: boolean;
+  is_private?: boolean;
+  is_demo?: boolean;
+  demo_until?: string | null;
   creator_id: string;
   status: string;
   member_count: number;
   my_attended?: boolean | null;
-  is_private?: boolean;
   external_relevant_data?: string | null;
   validated_at?: string | null;
   validated_by?: string | null;

@@ -49,6 +49,11 @@ class Activity(Base, IdMixin, TimestampMixin, TenantMixin):
     is_private = Column(Boolean, nullable=False, default=False, server_default="false")
     creator_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False, index=True)
 
+    # Publicaciones de ejemplo para la induccion de becarios: se muestran
+    # durante el tour (include_demo) y se auto-eliminan tras `demo_until`.
+    is_demo = Column(Boolean, nullable=False, default=False, server_default="false")
+    demo_until = Column(DateTime(timezone=True), nullable=True)
+
     # Flujo de validacion de actividades externas: cuando un administrador
     # valida la actividad (status=validated) se registran fecha y responsable.
     validated_at = Column(DateTime(timezone=True), nullable=True)

@@ -2,6 +2,7 @@ import { fetchCurrentUser } from "@/lib/auth/me";
 import { SessionProvider } from "@/components/session-provider";
 import { AppShell } from "@/components/app-shell";
 import { ExternalShell } from "@/components/external-shell";
+import { TourProvider } from "@/components/onboarding/onboarding-tour";
 import { getSepNavigation } from "@/lib/sep-nav";
 
 // Chrome is chosen by the user's account type:
@@ -25,11 +26,13 @@ export default async function AppLayout({
 
   return (
     <SessionProvider initialUser={user}>
-      {isSep ? (
-        <AppShell sepNav={sepNav}>{children}</AppShell>
-      ) : (
-        <ExternalShell>{children}</ExternalShell>
-      )}
+      <TourProvider>
+        {isSep ? (
+          <AppShell sepNav={sepNav}>{children}</AppShell>
+        ) : (
+          <ExternalShell>{children}</ExternalShell>
+        )}
+      </TourProvider>
     </SessionProvider>
   );
 }
