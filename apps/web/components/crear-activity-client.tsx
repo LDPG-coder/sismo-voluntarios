@@ -208,7 +208,7 @@ export function CrearActivityClient({
         const res = await fetch(`/api/ai/suggest/stream`, {
           method: "POST",
           credentials: "include",
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": "application/json", ...csrfHeaders("POST") },
           body: JSON.stringify({ description: desc }),
           signal: ctrl.signal,
         });
@@ -405,7 +405,6 @@ export function CrearActivityClient({
           <div>
             <div className="mb-1 flex items-center justify-between">
               <label className="text-sm font-medium">Descripción *</label>
-              {isRealizada ? null : (
               <button
                 type="button"
                 onClick={() => {
@@ -423,7 +422,6 @@ export function CrearActivityClient({
                   <div className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform ${aiEnabled ? "translate-x-4" : "translate-x-0.5"}`} />
                 </div>
               </button>
-              )}
             </div>
             <textarea
               ref={descriptionRef}
