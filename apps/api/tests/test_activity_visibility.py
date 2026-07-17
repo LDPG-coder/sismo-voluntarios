@@ -101,17 +101,24 @@ def test_creator_can_view_own_attendees(client, db):
     assert resp.status_code == 200
 
 
-def test_external_non_creator_cannot_view_attendees(client, db):
+def test_external_non_creator_can_view_attendees_but_not_emails(client, db):
     admin = make_user(db, role="admin", status="active")
     ext = make_user(db, auth_source="google", status="active")
+    member = make_user(db, auth_source="google", status="active")
     act_id = _create_activity(client, admin)
+    _join(client, member, act_id)
+    # Any authenticated user can now see who is inscribed (name + photo)...
     resp = client.get(
         f"/api/v1/activities/{act_id}/attendees",
         cookies=auth_cookies(ext),
         headers=auth_headers(),
     )
-    assert resp.status_code == 403
-    assert resp.json()["error"]["code"] == "auth.forbidden"
+    assert resp.status_code == 200
+    body = resp.json()
+    ids = [m["user_id"] for m in body]
+    assert str(member.id) in ids
+    # ...but not their email addresses (only creator/SEP/admin may).
+    assert all(m["email"] is None for m in body)
 
 
 def test_sep_can_view_attendees(client, db):

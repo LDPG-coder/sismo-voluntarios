@@ -9,6 +9,7 @@ import {
   type ReactNode,
 } from "react";
 import { createPortal } from "react-dom";
+import { usePathname } from "next/navigation";
 import { ONBOARDING_STEPS } from "@/lib/onboarding/steps";
 import { useSession } from "@/components/session-provider";
 
@@ -32,6 +33,7 @@ export function TourProvider({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState(0);
   const { user } = useSession();
+  const pathname = usePathname();
 
   const start = useCallback(() => {
     setStep(0);
@@ -47,20 +49,27 @@ export function TourProvider({ children }: { children: ReactNode }) {
     setStep(0);
   }, []);
 
-  // Arranque automatico para becarios (voluntarios) en su primera sesion.
+  // Arranque automatico para becarios (voluntarios) en su primera sesion,
+  // unicamente en el feed (/voluntarios). En otras rutas no salta solo.
   useEffect(() => {
     if (!user) return;
     if (user.role === "admin") return;
     if (typeof window === "undefined") return;
+    // Forzar el tour con ?tour=1 (util para probarlo sin borrar el flag).
+    if (new URLSearchParams(window.location.search).get("tour") === "1") {
+      setOpen(true);
+      return;
+    }
+    if (pathname !== "/voluntarios") return;
     if (localStorage.getItem(FLAG)) return;
     const t = window.setTimeout(() => setOpen(true), 800);
     return () => window.clearTimeout(t);
-  }, [user]);
+  }, [user, pathname]);
 
   return (
     <TourContext.Provider value={{ start }}>
       {children}
-      {!open && user?.role !== "admin" && (
+      {!open && user?.role !== "admin" && pathname === "/voluntarios" && (
         <button
           type="button"
           onClick={start}

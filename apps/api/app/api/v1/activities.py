@@ -148,11 +148,12 @@ def _serialize_activities_batch(
 
 
 def _enrolled_activity_ids_subquery(user_id: UUID):
-    """Subquery of activity ids where `user_id` is an active member, used to
-    hide already-joined activities from discovery surfaces."""
+    """Subquery of activity ids where `user_id` is an active or ceded member,
+    used to hide already-joined activities (and ones the user has already
+    ceded) from discovery surfaces."""
     return select(ActivityMember.activity_id).where(
         ActivityMember.user_id == user_id,
-        ActivityMember.status == "active",
+        ActivityMember.status.in_(["active", "ceded"]),
     )
 
 
@@ -244,6 +245,23 @@ def enrolled_activities(
         select(Activity)
         .join(ActivityMember, ActivityMember.activity_id == Activity.id)
         .where(ActivityMember.user_id == user.id, ActivityMember.status == "active")
+        .order_by(Activity.date_time.desc())
+    )
+    activities = db.execute(q).scalars().all()
+    return _serialize_activities_batch(activities, db, user_id=user.id)
+
+
+@router.get("/ceded")
+def ceded_activities(
+    user: Annotated[User, Depends(require_session)],
+    db: Annotated[Session, Depends(get_db)],
+) -> list[dict]:
+    """Actividades cuyo cupo el usuario cedio (status="ceded"). Quedan
+    visibles para el que cedio aunque ya no esté inscrito."""
+    q = (
+        select(Activity)
+        .join(ActivityMember, ActivityMember.activity_id == Activity.id)
+        .where(ActivityMember.user_id == user.id, ActivityMember.status == "ceded")
         .order_by(Activity.date_time.desc())
     )
     activities = db.execute(q).scalars().all()
@@ -709,10 +727,12 @@ def check_membership(
         select(ActivityMember).where(
             ActivityMember.activity_id == a.id,
             ActivityMember.user_id == user.id,
-            ActivityMember.status == "active",
         )
     ).scalar_one_or_none()
-    return {"is_member": member is not None}
+    return {
+        "is_member": member is not None and member.status == "active",
+        "status": member.status if member else None,
+    }
 
 
 # -- Authenticated endpoints ---------------------------------------
@@ -927,7 +947,14 @@ def join_activity(
     if existing:
         if existing.status == "active":
             raise ApiError(ErrorCode.activity_already_joined, "ya estás inscrito")
-        # Reactivar una cesión previa del mismo becario
+        if existing.status == "ceded":
+            # Quien cedio su cupo no puede reinscribirse; el cupo vuelve a el
+            # solo si el receptor lo rechaza (transfer/reject).
+            raise ApiError(
+                ErrorCode.activity_already_joined,
+                "ya cediste tu cupo en esta actividad; no puedes reinscribirte",
+            )
+        # Reactivar una inscripcion cancelada previa del mismo becario.
         existing.status = "active"
         existing.attended = None
         existing.ceded_at = None
@@ -1042,28 +1069,114 @@ def transfer_membership(
         select(ActivityMember).where(
             ActivityMember.activity_id == a.id,
             ActivityMember.user_id == to_user.id,
-            ActivityMember.status == "active",
         )
     ).scalar_one_or_none()
+    if existing and existing.status in ("active", "pending_transfer"):
+        raise ApiError(ErrorCode.activity_already_joined, "ese becario ya tiene cupo o uno pendiente en esta actividad")
     if existing:
-        raise ApiError(ErrorCode.activity_already_joined, "ese becario ya está inscrito")
+        # Reactivar una fila cedida/cancelada previa como cupo pendiente.
+        existing.status = "pending_transfer"
+        existing.attended = None
+        existing.ceded_at = None
+        existing.ceded_by = user.id
+    else:
+        db.add(
+            ActivityMember(
+                activity_id=a.id,
+                user_id=to_user.id,
+                status="pending_transfer",
+                attended=None,
+                ceded_by=user.id,
+            )
+        )
 
     src.status = "ceded"
     src.ceded_at = datetime.now(UTC)
-    db.add(ActivityMember(activity_id=a.id, user_id=to_user.id, status="active", attended=None))
 
     n = Notification(
         user_id=to_user.id,
         activity_id=a.id,
         type="activity_transferred",
         title=f"Te cedieron un cupo en {a.title}",
-        message=f"{user.name or user.email} te cedió su cupo en la actividad '{a.title}'.",
+        message=f"{user.name or user.email} te cedió su cupo en la actividad '{a.title}'. Aceptalo o rechazalo desde la actividad.",
     )
     n.tenant_id = MVP_TENANT_ID
     db.add(n)
 
     db.commit()
     _log.info("activity.transferred", activity_id=str(a.id), from_user=str(user.id), to_user=str(to_user.id))
+    return {"ok": True}
+
+
+@router.post("/{activity_id}/transfer/accept")
+def accept_transfer(
+    activity_id: str,
+    user: Annotated[User, Depends(require_session)],
+    db: Annotated[Session, Depends(get_db)],
+) -> dict:
+    a = db.get(Activity, UUID(activity_id))
+    if not a:
+        raise ApiError(ErrorCode.activity_not_found, "activity not found")
+    pending = db.execute(
+        select(ActivityMember).where(
+            ActivityMember.activity_id == a.id,
+            ActivityMember.user_id == user.id,
+            ActivityMember.status == "pending_transfer",
+        )
+    ).scalar_one_or_none()
+    if not pending:
+        raise ApiError(ErrorCode.activity_not_found, "no tienes un cupo pendiente en esta actividad")
+    pending.status = "active"
+    pending.ceded_at = None
+    # Avisar a quien cedio que el receptor acepto el cupo.
+    if pending.ceded_by:
+        n = Notification(
+            user_id=pending.ceded_by,
+            activity_id=a.id,
+            type="activity_transfer_accepted",
+            title=f"{user.name or user.email} aceptó tu cupo en {a.title}",
+            message=f"{user.name or user.email} aceptó el cupo que le cediste en la actividad '{a.title}'.",
+        )
+        n.tenant_id = MVP_TENANT_ID
+        db.add(n)
+    db.commit()
+    _log.info("activity.transfer.accepted", activity_id=str(a.id), user=str(user.id))
+    return {"ok": True}
+
+
+@router.post("/{activity_id}/transfer/reject")
+def reject_transfer(
+    activity_id: str,
+    user: Annotated[User, Depends(require_session)],
+    db: Annotated[Session, Depends(get_db)],
+) -> dict:
+    a = db.get(Activity, UUID(activity_id))
+    if not a:
+        raise ApiError(ErrorCode.activity_not_found, "activity not found")
+    pending = db.execute(
+        select(ActivityMember).where(
+            ActivityMember.activity_id == a.id,
+            ActivityMember.user_id == user.id,
+            ActivityMember.status == "pending_transfer",
+        )
+    ).scalar_one_or_none()
+    if not pending:
+        raise ApiError(ErrorCode.activity_not_found, "no tienes un cupo pendiente en esta actividad")
+    # El cupo vuelve al que lo cedio.
+    if pending.ceded_by:
+        src = db.execute(
+            select(ActivityMember).where(
+                ActivityMember.activity_id == a.id,
+                ActivityMember.user_id == pending.ceded_by,
+                ActivityMember.status == "ceded",
+            )
+        ).scalar_one_or_none()
+        if src:
+            src.status = "active"
+            src.ceded_at = None
+    db.delete(pending)
+    db.commit()
+    _log.info("activity.transfer.rejected", activity_id=str(a.id), user=str(user.id))
     return {"ok": True}
 
 
@@ -1095,16 +1208,14 @@ def list_attendees(
     ).scalar_one_or_none()
     is_member = member is not None
 
+    # Los inscritos (nombre + foto) son visibles para cualquier usuario
+    # autenticado, aunque no este inscrito, para que se pueda ver quien
+    # participa. Solo el creador, usuarios SEP y admins de SISMO ven el email.
     can_see_emails = (
         is_creator
         or user.auth_source == "sep"
         or user.role == UserRole.admin.value
     )
-    if not (is_creator or is_member or can_see_emails):
-        raise ApiError(
-            ErrorCode.auth_forbidden,
-            "no tienes permiso para ver los inscritos de esta actividad",
-        )
 
     members = db.execute(
         select(ActivityMember, User)

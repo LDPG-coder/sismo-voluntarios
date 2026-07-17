@@ -68,6 +68,7 @@ export default function ActivityDetailPage() {
   const [certUploading, setCertUploading] = useState(false);
   const [certError, setCertError] = useState<string | null>(null);
   const [isMember, setIsMember] = useState(false);
+  const [myStatus, setMyStatus] = useState<string | null>(null);
   const { user } = useSession();
 
   const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
@@ -180,16 +181,45 @@ export default function ActivityDetailPage() {
       ]);
       const act = await actRes.json();
       const att = attRes.ok ? await attRes.json() : [];
-      const mem = memRes.ok ? await memRes.json() : { is_member: false };
+      const mem = memRes.ok ? await memRes.json() : { is_member: false, status: null };
       setActivity(act);
       setAttendees(att);
       setIsMember(Boolean(mem.is_member));
+      setMyStatus(mem.status ?? null);
     } catch {
       // silencioso
     } finally {
       setLoading(false);
     }
   }, [params.id, API]);
+
+  const handleAcceptTransfer = async () => {
+    if (!activity) return;
+    setProcessing(true);
+    try {
+      const res = await fetch(
+        `${API}/api/v1/activities/${activity.id}/transfer/accept`,
+        { method: "POST", credentials: "include", headers: csrfHeaders("POST") }
+      );
+      if (res.ok) await refresh();
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  const handleRejectTransfer = async () => {
+    if (!activity) return;
+    setProcessing(true);
+    try {
+      const res = await fetch(
+        `${API}/api/v1/activities/${activity.id}/transfer/reject`,
+        { method: "POST", credentials: "include", headers: csrfHeaders("POST") }
+      );
+      if (res.ok) await refresh();
+    } finally {
+      setProcessing(false);
+    }
+  };
 
   useEffect(() => {
     refresh();
@@ -416,6 +446,30 @@ export default function ActivityDetailPage() {
               </div>
             )}
           </div>
+
+          {myStatus === "pending_transfer" && !isCreator && (
+            <div className="mt-4 rounded-md border border-indigo-200 bg-indigo-50 p-3 dark:border-indigo-800 dark:bg-indigo-950/30">
+              <p className="text-sm text-indigo-900 dark:text-indigo-200">
+                Tienes un cupo pendiente en esta actividad.
+              </p>
+              <div className="mt-2 flex gap-2">
+                <button
+                  onClick={handleAcceptTransfer}
+                  disabled={processing}
+                  className="rounded-md bg-emerald-600 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-emerald-700 disabled:opacity-50 dark:bg-emerald-500"
+                >
+                  {processing ? "Procesando..." : "Aceptar"}
+                </button>
+                <button
+                  onClick={handleRejectTransfer}
+                  disabled={processing}
+                  className="rounded-md bg-zinc-200 px-3 py-1.5 text-sm font-medium text-zinc-700 transition hover:bg-zinc-300 disabled:opacity-50 dark:bg-zinc-800 dark:text-zinc-200"
+                >
+                  Rechazar
+                </button>
+              </div>
+            </div>
+          )}
 
           {activeAttendees.length > 0 && (
             <div className="mt-6 border-t border-zinc-200 pt-4 dark:border-zinc-700">

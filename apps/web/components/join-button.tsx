@@ -27,7 +27,7 @@ export function JoinButton({
   user: User;
   onChange?: () => void;
 }) {
-  const [status, setStatus] = useState<"loading" | "idle" | "done" | "left">("loading");
+  const [status, setStatus] = useState<"loading" | "idle" | "done" | "left" | "ceded">("loading");
   const [memberCount, setMemberCount] = useState(activity.member_count);
   const [confirming, setConfirming] = useState(false);
   const [ceding, setCeding] = useState(false);
@@ -62,7 +62,11 @@ export function JoinButton({
     })
       .then((r) => (r.ok ? r.json() : { is_member: false }))
       .then((data) => {
-        setStatus(data.is_member ? "done" : "idle");
+        if (data.status === "ceded") {
+          setStatus("left");
+        } else {
+          setStatus(data.is_member ? "done" : "idle");
+        }
       })
       .catch(() => {
         setStatus("idle");
@@ -109,7 +113,7 @@ export function JoinButton({
           onCancel={() => setCeding(false)}
           onCeded={() => {
             onChange?.();
-            setStatus("left");
+            setStatus("ceded");
           }}
         />
       </div>
@@ -131,6 +135,14 @@ export function JoinButton({
           onConfirm={confirmJoin}
         />
       </>
+    );
+  }
+
+  if (status === "ceded") {
+    return (
+      <span className="text-sm font-medium text-zinc-500 dark:text-zinc-400">
+        Cupo cedido
+      </span>
     );
   }
 

@@ -8,11 +8,12 @@ import { displayPhoto } from "@/lib/photo";
 type ActivityCardProps = {
   activity: Activity;
   isEnrolled?: boolean;
+  isCeded?: boolean;
   onJoin?: (id: string) => void;
   onCeded?: (id: string) => void;
 };
 
-export function ActivityCard({ activity, isEnrolled, onJoin, onCeded }: ActivityCardProps) {
+export function ActivityCard({ activity, isEnrolled, isCeded, onJoin, onCeded }: ActivityCardProps) {
   const [ceding, setCeding] = useState(false);
   const isExternalOfficial = activity.is_external_official;
   const isInternal = activity.is_internal;
@@ -141,6 +142,10 @@ export function ActivityCard({ activity, isEnrolled, onJoin, onCeded }: Activity
             >
               Ceder cupo
             </button>
+          ) : isCeded ? (
+            <span className="rounded-lg bg-zinc-100 px-3 py-1 text-xs font-medium text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400">
+              Cupo cedido
+            </span>
           ) : (
             <button
               onClick={(e) => {

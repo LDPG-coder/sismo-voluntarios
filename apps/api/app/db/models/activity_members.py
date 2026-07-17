@@ -19,3 +19,4 @@ class ActivityMember(Base, IdMixin, TimestampMixin):
     attended = Column(Boolean, nullable=True, default=None)
     status = Column(String(20), nullable=False, default="active", server_default="active")
     ceded_at = Column(DateTime(timezone=True), nullable=True)
+    ceded_by = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
