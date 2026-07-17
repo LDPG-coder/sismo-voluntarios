@@ -10,10 +10,6 @@ import { useSession } from "@/components/session-provider";
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
-// Tope de actividades visibles por sección en la pestaña "Creadas". Al superar
-// el tope, el título de la sección enlaza a la página de "ver todas".
-const MAX_CREATED_PER_SECTION = 5;
-
 export interface Activity {
   id: string;
   title: string;
@@ -36,14 +32,16 @@ export interface Activity {
   created_at: string;
 }
 
-type Tab = "created" | "enrolled";
+type Tab = "created" | "enrolled" | "ceded";
 
 export function MisActividadesClient() {
   const [tab, setTab] = useState<Tab>("created");
   const [created, setCreated] = useState<Activity[]>([]);
   const [enrolled, setEnrolled] = useState<Activity[]>([]);
+  const [ceded, setCeded] = useState<Activity[]>([]);
   const [loadingCreated, setLoadingCreated] = useState(true);
   const [loadingEnrolled, setLoadingEnrolled] = useState(true);
+  const [loadingCeded, setLoadingCeded] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [confirmAction, setConfirmAction] = useState<{ id: string; title: string; action: "cancel" | "archive" } | null>(null);
   const [processing, setProcessing] = useState(false);
@@ -62,6 +60,12 @@ export function MisActividadesClient() {
       .then((d) => setEnrolled(Array.isArray(d) ? d : []))
       .catch(() => {})
       .finally(() => setLoadingEnrolled(false));
+
+    fetch(`${API}/api/v1/activities/ceded`, { credentials: "include" })
+      .then((r) => (r.ok ? r.json() : []))
+      .then((d) => setCeded(Array.isArray(d) ? d : []))
+      .catch(() => {})
+      .finally(() => setLoadingCeded(false));
   }, []);
 
   const handleAction = async () => {
@@ -87,8 +91,9 @@ export function MisActividadesClient() {
     }
   };
 
-  const activities = tab === "created" ? created : enrolled;
-  const loading = tab === "created" ? loadingCreated : loadingEnrolled;
+  const activities = tab === "created" ? created : tab === "enrolled" ? enrolled : ceded;
+  const loading = tab === "created" ? loadingCreated : tab === "enrolled" ? loadingEnrolled : loadingCeded;
+  const variant: "created" | "enrolled" | "ceded" = tab;
   const active = activities.filter((a) => a.status === "active");
   const archived = activities.filter((a) => a.status === "archived");
   const cancelled = activities.filter((a) => a.status === "cancelled");
@@ -130,6 +135,13 @@ export function MisActividadesClient() {
           >
             Inscritas
           </TabButton>
+          <TabButton
+            active={tab === "ceded"}
+            onClick={() => setTab("ceded")}
+            count={ceded.length}
+          >
+            Cedidos
+          </TabButton>
         </div>
 
         {error && (
@@ -147,6 +159,7 @@ export function MisActividadesClient() {
               count={pendingConfirm.length}
               items={pendingConfirm}
               isCreated={isCreated}
+              variant={variant}
               estado="pending"
             />
             <Section
@@ -154,6 +167,7 @@ export function MisActividadesClient() {
               count={active.length}
               items={active}
               isCreated={isCreated}
+              variant={variant}
               estado="active"
               onArchive={(id, title) => setConfirmAction({ id, title, action: "archive" })}
               onCancel={(id, title) => setConfirmAction({ id, title, action: "cancel" })}
@@ -164,6 +178,7 @@ export function MisActividadesClient() {
               count={archived.length}
               items={archived}
               isCreated={isCreated}
+              variant={variant}
               estado="archived"
             />
             <Section
@@ -171,6 +186,7 @@ export function MisActividadesClient() {
               count={cancelled.length}
               items={cancelled}
               isCreated={isCreated}
+              variant={variant}
               estado="cancelled"
             />
           </>
@@ -259,6 +275,7 @@ function Section({
   count,
   items,
   isCreated,
+  variant = "created",
   estado,
   onArchive,
   onCancel,
@@ -268,21 +285,15 @@ function Section({
   count: number;
   items: Activity[];
   isCreated: boolean;
+  variant?: "created" | "enrolled" | "ceded";
   estado: string;
   onArchive?: (id: string, title: string) => void;
   onCancel?: (id: string, title: string) => void;
   onCeded?: (id: string) => void;
 }) {
   if (count === 0) return null;
-  const limited =
-    isCreated && count > MAX_CREATED_PER_SECTION;
-  const visible = limited ? items.slice(0, MAX_CREATED_PER_SECTION) : items;
-  const allHref = `/mis-actividades/todas?tab=created&estado=${estado}`;
-  const titleEl = isCreated ? (
-    <Link href={allHref} className="hover:underline">
-      {title} ({count})
-    </Link>
-  ) : (
+  const visible = items;
+  const titleEl = (
     <>
       {title} ({count})
     </>
@@ -298,20 +309,13 @@ function Section({
             key={a.id}
             activity={a}
             isCreated={isCreated}
+            variant={variant}
             onArchive={onArchive}
             onCancel={onCancel}
             onCeded={onCeded}
           />
         ))}
       </div>
-      {limited && (
-        <Link
-          href={allHref}
-          className="mt-2 inline-block text-xs font-medium text-emerald-600 hover:underline dark:text-emerald-400"
-        >
-          Ver todas ({count})
-        </Link>
-      )}
     </section>
   );
 }
@@ -319,12 +323,14 @@ function Section({
 export function ActivityCard({
   activity: a,
   isCreated,
+  variant = "created",
   onArchive,
   onCancel,
   onCeded,
 }: {
   activity: Activity;
   isCreated: boolean;
+  variant?: "created" | "enrolled" | "ceded";
   onArchive?: (id: string, title: string) => void;
   onCancel?: (id: string, title: string) => void;
   onCeded?: (id: string) => void;
@@ -353,12 +359,14 @@ export function ActivityCard({
         <div className="flex items-center gap-1.5">
           <span
             className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
-              isCreated
-                ? "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400"
-                : "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
+              variant === "ceded"
+                ? "bg-zinc-200 text-zinc-600 dark:bg-zinc-700 dark:text-zinc-300"
+                : isCreated
+                  ? "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400"
+                  : "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
             }`}
           >
-            {isCreated ? "Creador" : "Inscrito"}
+            {variant === "ceded" ? "Cedido" : isCreated ? "Creador" : "Inscrito"}
           </span>
           <span
             className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
@@ -448,7 +456,9 @@ function EmptyState({ tab }: { tab: Tab }) {
       <p className="text-sm text-zinc-500">
         {tab === "created"
           ? "No has creado ninguna actividad aun."
-          : "No te has inscrito en ninguna actividad aun."}
+          : tab === "enrolled"
+            ? "No te has inscrito en ninguna actividad aun."
+            : "No has cedido ningun cupo aun."}
       </p>
       <Link
         href="/voluntarios"

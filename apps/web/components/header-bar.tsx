@@ -65,7 +65,9 @@ export function HeaderBar({ leftSlot }: { leftSlot?: React.ReactNode }) {
             </svg>
           </Link>
         )}
-        <NotificationsBell />
+        <span data-tour="header-notif">
+          <NotificationsBell />
+        </span>
         <ThemeToggle />
         <div className="relative">
            <button

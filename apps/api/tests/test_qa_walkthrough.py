@@ -595,7 +595,19 @@ def test_ceder_externo_solo_a_externo(client, db):
         headers=auth_headers(),
     )
     assert resp.status_code == 200
-    # El receptor ahora aparece enrolado.
+    # El receptor aun no esta inscrito activamente: su cupo queda pendiente
+    # hasta que lo acepte.
+    resp = client.get(
+        f"/api/v1/activities/{data['id']}/membership",
+        cookies=auth_cookies(target_ext), headers=auth_headers(),
+    )
+    assert resp.json()["status"] == "pending_transfer"
+    # Al aceptarlo, aparece en sus inscritas.
+    resp = client.post(
+        f"/api/v1/activities/{data['id']}/transfer/accept",
+        cookies=auth_cookies(target_ext), headers=auth_headers(),
+    )
+    assert resp.status_code == 200
     resp = client.get(
         "/api/v1/activities/enrolled", cookies=auth_cookies(target_ext), headers=auth_headers()
     )
@@ -669,12 +681,14 @@ def test_inscritos_pii_email_segun_rol(client, db):
     )
     assert resp.status_code == 200
     assert all(x["email"] is None for x in resp.json())
-    # Externo ajeno (no creador, no miembro) no puede ver inscritos.
+    # Externo ajeno (no creador, no miembro) ahora si puede ver la lista de
+    # inscritos (nombre + foto), pero sin emails.
     resp = client.get(
         f"/api/v1/activities/{data['id']}/attendees",
         cookies=auth_cookies(ext_outsider), headers=auth_headers(),
     )
-    assert resp.status_code == 403
+    assert resp.status_code == 200
+    assert all(x["email"] is None for x in resp.json())
 
 
 # -- Constancia externa ----------------------------------------------------

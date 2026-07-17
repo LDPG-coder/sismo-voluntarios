@@ -12,6 +12,7 @@ type ActivityDetailModalProps = {
   activity: Activity | null;
   user: User;
   isEnrolled?: boolean;
+  isCeded?: boolean;
   isOpen: boolean;
   onClose: () => void;
   onJoin?: (activityId: string) => void;
@@ -22,6 +23,7 @@ export function ActivityDetailModal({
   activity,
   user,
   isEnrolled = false,
+  isCeded = false,
   isOpen,
   onClose,
   onJoin,
@@ -171,6 +173,10 @@ export function ActivityDetailModal({
               >
                 Ceder cupo
               </button>
+            ) : isCeded ? (
+              <p className="flex-1 text-center text-sm text-zinc-500 dark:text-zinc-400">
+                Cupo cedido
+              </p>
             ) : (
               <button
                 onClick={() => onJoin?.(activity.id)}

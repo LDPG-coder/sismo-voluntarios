@@ -44,6 +44,7 @@ export default function VoluntariosPage() {
   const [activeZone, setActiveZone] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [enrolledIds, setEnrolledIds] = useState<Set<string>>(new Set());
+  const [cededIds, setCededIds] = useState<Set<string>>(new Set());
   const { user } = useSession();
 
   const [activeView, setActiveView] = useState<ViewType>("list");
@@ -87,16 +88,25 @@ export default function VoluntariosPage() {
       fetch(`${API}/api/v1/activities/enrolled`, opts).then((r) =>
         r.ok ? r.json() : []
       ),
+      fetch(`${API}/api/v1/activities/ceded`, opts).then((r) =>
+        r.ok ? r.json() : []
+      ),
     ])
-      .then(([zonesData, activitiesData, enrolledData]) => {
+      .then(([zonesData, activitiesData, enrolledData, cededData]) => {
         setZones(Array.isArray(zonesData) ? zonesData : []);
         setActivities(Array.isArray(activitiesData) ? activitiesData : []);
-        const ids = new Set<string>(
+        const enrolled = new Set<string>(
           (Array.isArray(enrolledData) ? enrolledData : []).map(
             (a: Activity) => a.id
           )
         );
-        setEnrolledIds(ids);
+        setEnrolledIds(enrolled);
+        const ceded = new Set<string>(
+          (Array.isArray(cededData) ? cededData : []).map(
+            (a: Activity) => a.id
+          )
+        );
+        setCededIds(ceded);
         setLoading(false);
       })
       .catch(() => setLoading(false));
@@ -234,6 +244,7 @@ export default function VoluntariosPage() {
                     key={a.id}
                     activity={a}
                     isEnrolled={enrolledIds.has(a.id)}
+                    isCeded={cededIds.has(a.id)}
                     onJoin={requestJoin}
                     onCeded={handleCeded}
                   />
@@ -294,6 +305,7 @@ export default function VoluntariosPage() {
         activity={modalActivity}
         user={user}
         isEnrolled={modalActivity ? enrolledIds.has(modalActivity.id) : false}
+        isCeded={modalActivity ? cededIds.has(modalActivity.id) : false}
         isOpen={isModalOpen}
         onClose={() => {
           setIsModalOpen(false);
