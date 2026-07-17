@@ -473,3 +473,23 @@ def reset_photo(
 #     if not u or is_invitation_expired(u, settings.referral_expiry_days):
 #         raise ApiError(ErrorCode.referral_invalid, "código de referido inválido o expirado")
 #     return {"valid": True}
+
+
+# ---------------------------------------------------------------------------
+# Dev-only: lookup user by cedula (no auth required)
+# ---------------------------------------------------------------------------
+import os as _os
+
+
+@router.get("/dev-user")
+def dev_user_by_cedula(
+    cedula: str,
+    db: Annotated[Session, Depends(get_db)],
+) -> dict:
+    """Return user info by cedula. ONLY for local dev — disabled in production."""
+    if _os.getenv("NODE_ENV") == "production":
+        raise ApiError(ErrorCode.auth_unauthenticated, "not available")
+    u = db.execute(select(User).where(User.cedula == cedula)).scalar_one_or_none()
+    if not u:
+        raise ApiError(ErrorCode.auth_user_not_found, f"no user with cedula {cedula}")
+    return serialize_user(u)

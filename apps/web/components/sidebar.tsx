@@ -30,11 +30,13 @@ export function Sidebar({
   open,
   onClose,
   sepNav = [],
+  sticky = true,
 }: {
   user: User;
   open: boolean;
   onClose: () => void;
   sepNav?: SepNavItem[];
+  sticky?: boolean;
 }) {
   const pathname = usePathname();
   const [volOpen, setVolOpen] = useState(true);
@@ -131,12 +133,14 @@ export function Sidebar({
 
   return (
     <>
-      <aside className="hidden border-zinc-200 lg:sticky lg:top-3 lg:z-30 lg:flex lg:h-[calc(100vh-1.5rem)] lg:w-72 lg:flex-col lg:m-3 lg:overflow-hidden lg:rounded-2xl lg:border lg:border-zinc-200 dark:border-zinc-800">
-        {navContent}
-      </aside>
+      {sticky && (
+        <aside className="hidden border-zinc-200 lg:sticky lg:top-3 lg:z-30 lg:flex lg:h-[calc(100vh-1.5rem)] lg:w-72 lg:flex-col lg:m-3 lg:overflow-hidden lg:rounded-2xl lg:border lg:border-zinc-200 dark:border-zinc-800">
+          {navContent}
+        </aside>
+      )}
 
       {open && (
-        <div className="lg:hidden">
+        <div className={sticky ? "lg:hidden" : ""}>
           <div className="fixed inset-0 z-40 bg-black/50" onClick={onClose} />
           <aside className="fixed inset-y-0 left-0 z-50 w-72 overflow-hidden rounded-r-2xl border-r border-zinc-200 dark:border-zinc-800">
             {navContent}

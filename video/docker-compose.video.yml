@@ -1,0 +1,8 @@
+# Video-only override: keeps INTERNAL_API_URL (needed for server-side session in
+# the docker dev stack) out of the project's main .env. Used solely when capturing
+# the onboarding video. Apply with:
+#   docker compose -f infra/docker-compose.dev.yml -f video/docker-compose.video.yml up -d --force-recreate web
+services:
+  web:
+    environment:
+      - INTERNAL_API_URL=http://api:8011
