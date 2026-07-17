@@ -41,10 +41,14 @@ function getActivityBlock(
   const startHour =
     activityDate.getHours() + activityDate.getMinutes() / 60;
 
-  let duration = (activity.estimated_duration_min || 60) / 60;
-  if (activity.end_time) {
+  let duration: number;
+  if (activity.estimated_duration_min) {
+    duration = activity.estimated_duration_min / 60;
+  } else if (activity.end_time) {
     const endDate = new Date(activity.end_time);
     duration = (endDate.getTime() - activityDate.getTime()) / (1000 * 60 * 60);
+  } else {
+    duration = 1;
   }
 
   return { startHour, duration: Math.max(duration, 0.5) };
