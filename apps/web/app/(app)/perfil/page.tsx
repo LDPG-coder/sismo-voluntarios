@@ -14,8 +14,11 @@ export default async function PerfilPage() {
         <h1 className="mb-6 text-xl font-bold">Mi perfil</h1>
 
         <PageGuide id="perfil" title="Tu perfil">
-          Completa tu nombre y foto para que coordinadores y otros voluntarios te
-          reconozcan dentro del programa.
+          Completa tu nombre para que coordinadores y otros voluntarios te
+          reconozcan. La foto es opcional: si no tienes una se muestra un ícono
+          por defecto, y es normal que unos voluntarios tengan foto y otros no.
+          Si agregas la tuya, aparecerá en tu perfil y en las actividades donde
+          participes.
         </PageGuide>
 
 
