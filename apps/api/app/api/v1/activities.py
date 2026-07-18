@@ -164,6 +164,8 @@ def list_activities(
     zone: str | None = None,
     status: str | None = "active",
     include_demo: bool = False,
+    limit: int = 20,
+    offset: int = 0,
 ) -> list[dict]:
     q = select(Activity)
     if zone:
@@ -175,7 +177,7 @@ def list_activities(
     # (GET /activities/{id}) y desde el perfil del organizador (GET /activities/mine).
     q = q.where(Activity.date_time >= datetime.now(UTC))
     # Las actividades privadas (registros de actividades ya realizadas) nunca
-    # aparecen en descubrimiento: pertenecen solo a su creador y sirven para
+    # aparece en descubrimiento: pertenecen solo a su creador y sirven para
     # validar horas externas.
     q = q.where(Activity.is_private.is_(False))
     # Por defecto se ocultan las publicaciones de ejemplo de la induccion. Solo
@@ -189,6 +191,11 @@ def list_activities(
     # new activities to enroll in, not ones they're already part of.
     q = q.where(Activity.id.notin_(_enrolled_activity_ids_subquery(user.id)))
     q = q.order_by(Activity.date_time.desc())
+    # Paginacion del feed de descubrimiento para no traer todas las actividades
+    # de una vez cuando el volumen crezca.
+    limit = max(1, min(limit, 50))
+    offset = max(0, offset)
+    q = q.limit(limit).offset(offset)
     activities = db.execute(q).scalars().all()
     return _serialize_activities_batch(activities, db, user_id=user.id)
 

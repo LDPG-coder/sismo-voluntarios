@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef, useCallback } from "react";
 import { ViewSelector, type ViewType } from "@/components/view-selector";
 import { ActivityCard } from "@/components/activity-card";
 import { ActivityGanttView } from "@/components/activity-gantt-view";
@@ -18,8 +18,7 @@ import {
 import type { Activity } from "@/lib/types";
 import { csrfHeaders } from "@/lib/auth/csrf-client";
 import { useSession } from "@/components/session-provider";
-
-type Zone = { name: string; count: number };
+import { ZONES } from "@/lib/zones";
 
 function getWeekStart(date: Date): Date {
   const d = new Date(date);
@@ -40,12 +39,18 @@ function isSameDay(a: Date, b: Date): boolean {
 
 export default function VoluntariosPage() {
   const [activities, setActivities] = useState<Activity[]>([]);
-  const [zones, setZones] = useState<Zone[]>([]);
+  const [zoneCounts, setZoneCounts] = useState<Record<string, number>>({});
   const [activeZone, setActiveZone] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [enrolledIds, setEnrolledIds] = useState<Set<string>>(new Set());
   const [cededIds, setCededIds] = useState<Set<string>>(new Set());
   const { user } = useSession();
+
+  const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+  const FEED_LIMIT = 20;
+  const offsetRef = useRef(0);
+  const [hasMore, setHasMore] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
 
   const [activeView, setActiveView] = useState<ViewType>("list");
 
@@ -64,18 +69,30 @@ export default function VoluntariosPage() {
     localStorage.setItem("voluntarios-view", activeView);
   }, [activeView]);
 
+  const loadActivities = useCallback(
+    async (reset: boolean) => {
+      const opts: RequestInit = { credentials: "include" };
+      const zoneParam = activeZone ? `?zone=${activeZone}` : "";
+      const sep = zoneParam ? "&" : "?";
+      const off = reset ? 0 : offsetRef.current;
+      const res = await fetch(
+        `${API}/api/v1/activities${zoneParam}${sep}include_demo=true&limit=${FEED_LIMIT}&offset=${off}`,
+        opts
+      );
+      const data: Activity[] = res.ok ? await res.json() : [];
+      setActivities((prev) => (reset ? data : [...prev, ...data]));
+      setHasMore(data.length === FEED_LIMIT);
+      offsetRef.current = reset ? data.length : off + data.length;
+    },
+    [activeZone],
+  );
+
+  // Metadatos del feed (zonas, inscritas, cedidas) al cambiar de zona.
   useEffect(() => {
-    const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
     const opts: RequestInit = { credentials: "include" };
-    const zoneParam = activeZone ? `?zone=${activeZone}` : "";
-    const sep = zoneParam ? "&" : "?";
     const zonesUrl = `${API}/api/v1/activities/zones?include_demo=true`;
     Promise.all([
       fetch(zonesUrl, opts).then((r) => (r.ok ? r.json() : [])),
-      fetch(
-        `${API}/api/v1/activities${zoneParam}${sep}include_demo=true`,
-        opts
-      ).then((r) => (r.ok ? r.json() : [])),
       fetch(`${API}/api/v1/activities/enrolled`, opts).then((r) =>
         r.ok ? r.json() : []
       ),
@@ -83,25 +100,47 @@ export default function VoluntariosPage() {
         r.ok ? r.json() : []
       ),
     ])
-      .then(([zonesData, activitiesData, enrolledData, cededData]) => {
-        setZones(Array.isArray(zonesData) ? zonesData : []);
-        setActivities(Array.isArray(activitiesData) ? activitiesData : []);
-        const enrolled = new Set<string>(
-          (Array.isArray(enrolledData) ? enrolledData : []).map(
-            (a: Activity) => a.id
-          )
+      .then(([zonesData, enrolledData, cededData]) => {
+        const counts: Record<string, number> = {};
+        (Array.isArray(zonesData) ? zonesData : []).forEach(
+          (z: { name: string; count: number }) => {
+            counts[z.name] = z.count;
+          },
         );
-        setEnrolledIds(enrolled);
-        const ceded = new Set<string>(
-          (Array.isArray(cededData) ? cededData : []).map(
-            (a: Activity) => a.id
-          )
+        setZoneCounts(counts);
+        setEnrolledIds(
+          new Set(
+            (Array.isArray(enrolledData) ? enrolledData : []).map(
+              (a: Activity) => a.id,
+            ),
+          ),
         );
-        setCededIds(ceded);
-        setLoading(false);
+        setCededIds(
+          new Set(
+            (Array.isArray(cededData) ? cededData : []).map(
+              (a: Activity) => a.id,
+            ),
+          ),
+        );
       })
-      .catch(() => setLoading(false));
+      .catch(() => {});
   }, [activeZone]);
+
+  // Carga de actividades (paginada) al cambiar de zona o de vista.
+  useEffect(() => {
+    setLoading(true);
+    offsetRef.current = 0;
+    loadActivities(true)
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, [activeZone, activeView, loadActivities]);
+
+  const handleLoadMore = () => {
+    setLoadingMore(true);
+    loadActivities(false)
+      .catch(() => {})
+      .finally(() => setLoadingMore(false));
+  };
 
   const handleSelectActivity = (activity: Activity) => {
     setModalActivity(activity);
@@ -121,7 +160,6 @@ export default function VoluntariosPage() {
   };
 
   const handleJoin = (activityId: string) => {
-    const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
     fetch(`${API}/api/v1/activities/${activityId}/join`, {
       method: "POST",
       credentials: "include",
@@ -199,7 +237,7 @@ export default function VoluntariosPage() {
         </div>
 
         <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
-          <ZoneFilter zones={zones} active={activeZone} onChange={setActiveZone} />
+          <ZoneFilter zones={ZONES} counts={zoneCounts} active={activeZone} onChange={setActiveZone} />
           <ViewSelector active={activeView} onChange={setActiveView} />
         </div>
 
@@ -280,6 +318,18 @@ export default function VoluntariosPage() {
                   }
                 }}
               />
+            )}
+
+            {hasMore && (
+              <div className="mt-6 flex justify-center">
+                <button
+                  onClick={handleLoadMore}
+                  disabled={loadingMore}
+                  className="rounded-lg border border-zinc-300 bg-white px-5 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50 disabled:opacity-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700"
+                >
+                  {loadingMore ? "Cargando..." : "Cargar más"}
+                </button>
+              </div>
             )}
           </>
         )}

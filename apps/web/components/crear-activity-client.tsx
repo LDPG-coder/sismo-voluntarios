@@ -3,11 +3,10 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { csrfHeaders } from "@/lib/auth/csrf-client";
+import { ZONES } from "@/lib/zones";
 
 const DRAFT_KEY = "sismo-activity-draft";
 const DRAFT_DEBOUNCE_MS = 800;
-
-const ZONES = ["Caracas", "Guatire", "Guarenas", "La Guaira", "Altos Mirandinos", "Caucagua"];
 
 const INPUT_cls =
   "w-full rounded-md bg-white px-3 py-2 text-sm placeholder:text-zinc-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-zinc-800 dark:placeholder:text-zinc-500";
