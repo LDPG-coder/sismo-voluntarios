@@ -1,4 +1,4 @@
-"""Siembra las 3 publicaciones de ejemplo para la induccion de becarios.
+"""Siembra las publicaciones de ejemplo para la induccion de becarios.
 
 Estas actividades llevan ``is_demo = True`` y ``demo_until`` = ahora + TTL
 (ver ``SISMO_DEMO_ACTIVITIES_TTL_DAYS``, default 3 dias). Se muestran en el
@@ -31,43 +31,88 @@ DEMO_AUTHOR_EMAIL = "demo.onboarding@sismo.local"
 DEMO_AUTHOR_NAME = "SISMO (Ejemplo)"
 
 
-# (titulo, descripcion, zona, direccion, duracion_min, dias_desde_hoy, interna)
+# (titulo, descripcion, zona, direccion, duracion_min, dias_desde_hoy,
+#  interna, oficial_externa, privada, max_participantes)
 DEMO_ACTIVITIES = [
     dict(
         title="Ejemplo: Jornada de limpieza del río",
         description=(
-            "Publicacion de ejemplo para practicar. En una actividad real tu "
-            "ofreces una actividad asi para que otros voluntarios se inscriban."
+            "Publicación de ejemplo para practicar. En una actividad real TÚ "
+            "ofreces una actividad así para que otros voluntarios se inscriban. "
+            "Fíjate en el botón “Ceder cupo” que aparece cuando te anotas."
         ),
         zone="Parque Lineal, San Cristóbal",
         address="Bajada del puente, junto al malecón",
         dur=180,
-        days=3,
+        days=2,
         internal=True,
+        external=False,
+        private=False,
+        max=15,
     ),
     dict(
         title="Ejemplo: Apoyo en comedor comunitario",
         description=(
-            "Publicacion de ejemplo para practicar. Aqui puedes inscribirte "
-            "(“Unirme”) para participar como voluntario: esto es “recibir”."
+            "Publicación de ejemplo para practicar. Aquí puedes inscribirte "
+            "(“Unirme”) para participar como voluntario: esto es “recibir” horas "
+            "dentro del programa."
         ),
         zone="Sector La Ladera, San Cristóbal",
         address="Casa comunitaria, calle principal",
         dur=240,
-        days=4,
+        days=3,
         internal=False,
+        external=False,
+        private=False,
+        max=20,
     ),
     dict(
         title="Ejemplo: Taller de educación ambiental",
         description=(
-            "Publicacion de ejemplo para practicar. Explora las distintas "
-            "actividades disponibles y descubre donde sumar tus horas."
+            "Publicación de ejemplo con registro previo. Observa la etiqueta "
+            "“Registro previo”: son actividades cerradas donde el creador aprueba "
+            "tu participación antes de confirmarte."
         ),
         zone="Sede AVAA, San Cristóbal",
         address="Av. Universidad, local AVAA",
         dur=120,
         days=5,
         internal=False,
+        external=False,
+        private=True,
+        max=12,
+    ),
+    dict(
+        title="Ejemplo: Jornada médica voluntaria",
+        description=(
+            "Publicación de ejemplo oficial (etiqueta “Oficial”). Estas las "
+            "publica la coordinación SEP; usa el filtro por zona para encontrar "
+            "actividades cerca de ti."
+        ),
+        zone="Plaza Venezuela, Chacao",
+        address="Frente al teatro, entrada principal",
+        dur=300,
+        days=7,
+        internal=False,
+        external=True,
+        private=False,
+        max=30,
+    ),
+    dict(
+        title="Ejemplo: Reforestación en el Ávila",
+        description=(
+            "Publicación de ejemplo para practicar. Cambia de vista (lista, "
+            "calendario, mapa) y filtra por zona para explorar las actividades "
+            "disponibles."
+        ),
+        zone="Teleférico, El Ávila",
+        address="Estación La California",
+        dur=240,
+        days=10,
+        internal=True,
+        external=False,
+        private=False,
+        max=25,
     ),
 ]
 
@@ -141,11 +186,12 @@ def main() -> None:
                 date_time=dt,
                 end_time=end,
                 estimated_duration_min=d["dur"],
-                max_participants=10,
+                max_participants=d.get("max", 10),
                 requirements="Llevar ganas de ayudar.",
                 contact_info="—",
-                is_internal=d["internal"],
-                is_private=False,
+                is_internal=d.get("internal", False),
+                is_private=d.get("private", False),
+                external_beneficiary=("Coordinación SEP" if d.get("external") else None),
                 is_demo=True,
                 demo_until=demo_until,
                 creator_id=author.id,

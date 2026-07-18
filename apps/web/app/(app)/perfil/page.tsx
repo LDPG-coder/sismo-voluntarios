@@ -1,6 +1,7 @@
 import { requireSession } from "@/lib/auth/require-session";
 import { fetchCurrentUser } from "@/lib/auth/me";
 import { ProfilePhoto } from "@/components/profile-photo";
+import { PageGuide } from "@/components/page-guide";
 
 export default async function PerfilPage() {
   await requireSession();
@@ -11,6 +12,12 @@ export default async function PerfilPage() {
     <div>
       <main className="mx-auto max-w-lg px-4 pt-8 pb-4">
         <h1 className="mb-6 text-xl font-bold">Mi perfil</h1>
+
+        <PageGuide id="perfil" title="Tu perfil">
+          Completa tu nombre y foto para que coordinadores y otros voluntarios te
+          reconozcan dentro del programa.
+        </PageGuide>
+
 
         <div className="space-y-6">
           <ProfilePhoto initialPhotoUrl={user.photo_url} defaultPhotoUrl={user.google_photo_url} />

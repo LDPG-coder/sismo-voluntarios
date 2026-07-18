@@ -10,6 +10,8 @@ import {
   List,
 } from "lucide-react";
 import { displayPhoto } from "@/lib/photo";
+import { useSession } from "@/components/session-provider";
+import { PageGuide } from "@/components/page-guide";
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
@@ -99,6 +101,7 @@ function statusLabel(s: string): string {
 }
 
 export function AdminDashboardClient() {
+  const { user } = useSession();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
@@ -183,6 +186,12 @@ export function AdminDashboardClient() {
 
   return (
       <main className="mx-auto max-w-5xl overflow-x-hidden px-4 pt-8 pb-4">
+      {user?.role === "admin" && (
+        <PageGuide id="admin" title="Panel de administración">
+          Aquí supervisas usuarios, actividades y validaciones. Usa los filtros
+          para exportar reportes y da seguimiento a las horas del programa.
+        </PageGuide>
+      )}
       {/* Header */}
       <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
