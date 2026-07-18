@@ -57,32 +57,23 @@ export default function VoluntariosPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [pendingJoin, setPendingJoin] = useState<string | null>(null);
 
-  // Durante la induccion se piden las publicaciones de ejemplo (include_demo).
-  const [includeDemo, setIncludeDemo] = useState(false);
-
+  // Las publicaciones de ejemplo (include_demo) siempre se muestran en el
+  // feed de descubrimiento para que cualquier becario pueda practicar con
+  // ellas, no solo durante la induccion.
   useEffect(() => {
     localStorage.setItem("voluntarios-view", activeView);
   }, [activeView]);
-
-  useEffect(() => {
-    setIncludeDemo(
-      typeof window !== "undefined" &&
-        !localStorage.getItem("sismo_onboarding_done"),
-    );
-  }, []);
 
   useEffect(() => {
     const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
     const opts: RequestInit = { credentials: "include" };
     const zoneParam = activeZone ? `?zone=${activeZone}` : "";
     const sep = zoneParam ? "&" : "?";
-    const zonesUrl = includeDemo
-      ? `${API}/api/v1/activities/zones?include_demo=true`
-      : `${API}/api/v1/activities/zones`;
+    const zonesUrl = `${API}/api/v1/activities/zones?include_demo=true`;
     Promise.all([
       fetch(zonesUrl, opts).then((r) => (r.ok ? r.json() : [])),
       fetch(
-        `${API}/api/v1/activities${zoneParam}${sep}include_demo=${includeDemo}`,
+        `${API}/api/v1/activities${zoneParam}${sep}include_demo=true`,
         opts
       ).then((r) => (r.ok ? r.json() : [])),
       fetch(`${API}/api/v1/activities/enrolled`, opts).then((r) =>
@@ -110,14 +101,7 @@ export default function VoluntariosPage() {
         setLoading(false);
       })
       .catch(() => setLoading(false));
-  }, [activeZone, includeDemo]);
-
-  // Al terminar el tour, el becario ya no ve las publicaciones de ejemplo.
-  useEffect(() => {
-    const onDone = () => setIncludeDemo(false);
-    window.addEventListener("sismo:onboarding-done", onDone);
-    return () => window.removeEventListener("sismo:onboarding-done", onDone);
-  }, []);
+  }, [activeZone]);
 
   const handleSelectActivity = (activity: Activity) => {
     setModalActivity(activity);
