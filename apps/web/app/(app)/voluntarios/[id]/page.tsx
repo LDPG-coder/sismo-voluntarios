@@ -8,6 +8,7 @@ import { AttendeeList } from "@/components/attendee-list";
 import { ActivityEvidence } from "@/components/activity-evidence";
 import { ActivityValidationClient } from "@/components/activity-validation-client";
 import { ActivityDetailSkeleton } from "@/components/skeletons";
+import { PageGuide } from "@/components/page-guide";
 import { csrfHeaders } from "@/lib/auth/csrf-client";
 import { useSession } from "@/components/session-provider";
 import { displayPhoto } from "@/lib/photo";
@@ -286,6 +287,11 @@ export default function ActivityDetailPage() {
   return (
     <div>
       <main className="mx-auto max-w-2xl px-4 pt-8 pb-4">
+        <PageGuide id="detalle" title="Detalle de la actividad">
+          Aquí ves la información completa, quién la creó y los inscritos. Si es
+          tuya, puedes validar asistencia; si te inscribiste, aquí gestionas tu
+          cupo.
+        </PageGuide>
         <button onClick={() => router.back()} className="mb-4 text-sm text-zinc-500 hover:text-zinc-700">
           &larr; Volver
         </button>
