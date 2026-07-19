@@ -12,7 +12,12 @@ export default async function LoginPage({
       <PrivacyNotice />
       <div className="my-auto flex w-full flex-col items-center gap-8">
         <header className="text-center">
-          <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500">
+          <img
+            src="/icon-wtbg.png"
+            alt="Sismo Voluntarios"
+            className="mx-auto h-14 w-14 rounded-xl border border-zinc-200 object-contain shadow-sm dark:border-zinc-700"
+          />
+          <p className="mt-3 text-xs font-semibold uppercase tracking-wider text-zinc-500">
             Sismo - Voluntarios de ProExcelencia
           </p>
           <h1 className="mt-1 text-2xl font-bold tracking-tight">Iniciar sesion</h1>
@@ -67,13 +72,6 @@ async function ErrorBanner({
     return (
       <p role="alert" className="mb-4 rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700 dark:border-rose-900 dark:bg-rose-950 dark:text-rose-300">
         Su cuenta esta suspendida. Contacta al administrador.
-      </p>
-    );
-  }
-  if (params.error === "not_invited") {
-    return (
-      <p role="alert" className="mb-4 rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700 dark:border-rose-900 dark:bg-rose-950 dark:text-rose-300">
-        Tu cuenta no esta registrada en SISMO.
       </p>
     );
   }
