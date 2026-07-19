@@ -6,6 +6,7 @@ import { SiteFooter } from "@/components/site-footer";
 export const metadata: Metadata = {
   title: "Sismo Voluntarios",
   description: "Plataforma de voluntariado en tu zona",
+  icons: { icon: "/icon-wtbg.png" },
 };
 
 export const dynamic = "force-dynamic";
