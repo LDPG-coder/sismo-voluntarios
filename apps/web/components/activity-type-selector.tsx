@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 
-type ActivityType = "proponer" | "oficial" | "realizada";
+type ActivityType = "proponer" | "realizada";
 
 interface ActivityTypeSelectorProps {
   onSelect: (type: ActivityType) => void;
@@ -24,22 +24,6 @@ const TYPES = [
     textClass: "text-emerald-700 dark:text-emerald-400",
     hoverClass: "hover:border-emerald-400 dark:hover:border-emerald-600",
     iconBg: "bg-emerald-100 dark:bg-emerald-900/40",
-  },
-  {
-    type: "oficial" as const,
-    title: "Voluntariados oficiales",
-    description: "Comparte aquí voluntariados externos que puedan ser avalados formalmente y más becarios puedan unirse.",
-    icon: (
-      <svg className="h-8 w-8" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18M9 6.75h1.5m-1.5 3h1.5m-1.5 3h1.5m3-6H15m-1.5 3H15m-1.5 3H15M9 21v-3.375c0-.621.504-1.125 1.125-1.125h3.75c.621 0 1.125.504 1.125 1.125V21" />
-      </svg>
-    ),
-    color: "blue",
-    bgClass: "bg-blue-50 dark:bg-blue-900/20",
-    borderClass: "border-blue-200 dark:border-blue-800",
-    textClass: "text-blue-700 dark:text-blue-400",
-    hoverClass: "hover:border-blue-400 dark:hover:border-blue-600",
-    iconBg: "bg-blue-100 dark:bg-blue-900/40",
   },
   {
     type: "realizada" as const,

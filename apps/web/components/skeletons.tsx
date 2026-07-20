@@ -73,7 +73,7 @@ export function VoluntariosGanttSkeleton() {
                 className="border-r border-zinc-100 px-1 py-2 text-center text-xs text-zinc-400 dark:border-zinc-800 dark:text-zinc-500"
                 style={{ width: HOUR_WIDTH }}
               >
-                {h === 12 ? "12 PM" : h > 12 ? `${h - 12} PM` : `${h} AM`}
+                {`${String(h % 24).padStart(2, "0")}:00`}
               </div>
             ))}
           </div>
@@ -361,7 +361,7 @@ export function MisActividadesSkeleton() {
 /* --------------------------- Admin usuarios ----------------------------- */
 
 export function UsuariosTableSkeleton() {
-  const headers = ["Email", "Nombre", "Telefono", "Rol", "Estado", ""];
+  const headers = ["Email", "Nombre", "Teléfono", "Rol", "Estado", ""];
   return (
     <div className="overflow-x-auto">
       <table className="w-full text-left text-sm">

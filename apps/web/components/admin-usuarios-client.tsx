@@ -60,31 +60,6 @@ export function AdminUsuariosClient() {
   const [noPhotoTotal, setNoPhotoTotal] = useState<number | null>(null);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [processing, setProcessing] = useState(false);
-  const [exporting, setExporting] = useState(false);
-
-  const handleExportExternal = async () => {
-    setExporting(true);
-    try {
-      const res = await fetch(
-        `${API}/api/v1/activities/admin/export-external?status=all`,
-        { credentials: "include" },
-      );
-      if (!res.ok) throw new Error("Error al exportar");
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `actividades_externas_${new Date().toISOString().slice(0, 10)}.zip`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
-    } catch {
-      // silencioso
-    } finally {
-      setExporting(false);
-    }
-  };
 
   useEffect(() => {
     fetchUsers();
@@ -164,13 +139,6 @@ export function AdminUsuariosClient() {
         <div className="mb-6 flex items-center justify-between">
           <h1 className="text-xl font-bold">Gestionar Usuarios</h1>
           <div className="flex items-center gap-2">
-            <button
-              onClick={handleExportExternal}
-              disabled={exporting}
-              className="rounded-md border border-zinc-300 px-3 py-1.5 text-sm font-medium transition hover:bg-zinc-50 disabled:opacity-50 dark:border-zinc-600 dark:hover:bg-zinc-800"
-            >
-              {exporting ? "Exportando..." : "Exportar actividades externas"}
-            </button>
             <Link
               href="/voluntarios"
               className="text-sm text-zinc-500 hover:text-zinc-700"
@@ -244,7 +212,7 @@ export function AdminUsuariosClient() {
                    <th className="pb-2 font-medium">Email</th>
                    <th className="pb-2 font-medium">Nombre</th>
                    <th className="pb-2 font-medium">Cedula</th>
-                   <th className="pb-2 font-medium">Telefono</th>
+                   <th className="pb-2 font-medium">Teléfono</th>
                    <th className="pb-2 font-medium">Rol</th>
                    <th className="pb-2 font-medium">Estado</th>
                    <th className="pb-2 font-medium"></th>
@@ -343,7 +311,7 @@ export function AdminUsuariosClient() {
                 />
               </div>
               <div>
-                <label className="mb-1 block text-xs font-medium text-zinc-500">Telefono</label>
+                <label className="mb-1 block text-xs font-medium text-zinc-500">Teléfono</label>
                 <input
                   type="text"
                   value={editingUser.phone || ""}

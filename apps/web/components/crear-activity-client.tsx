@@ -18,7 +18,7 @@ export function CrearActivityClient({
   activityType = "proponer",
   onBack,
 }: {
-  activityType?: "proponer" | "oficial" | "realizada";
+  activityType?: "proponer" | "realizada";
   onBack?: () => void;
 } = {}) {
   const router = useRouter();
@@ -37,14 +37,6 @@ export function CrearActivityClient({
   const [requirements, setRequirements] = useState<string[]>([]);
   const [reqInput, setReqInput] = useState("");
 
-  const [showExternal, setShowExternal] = useState(false);
-  const [extBeneficiary, setExtBeneficiary] = useState("");
-  const [extSupervisor, setExtSupervisor] = useState("");
-  const [extSupervisorEmail, setExtSupervisorEmail] = useState("");
-  const [extHours, setExtHours] = useState("");
-  const [extRelevantData, setExtRelevantData] = useState("");
-
-  // Voluntariado interno: suma horas al programa. Excluyente con externo oficial.
   const [isInternal, setIsInternal] = useState(false);
 
   const [submitting, setSubmitting] = useState(false);
@@ -59,8 +51,7 @@ export function CrearActivityClient({
   aiEnabledRef.current = aiEnabled;
 
   const isRealizada = activityType === "realizada";
-  const isOficial = activityType === "oficial";
-  const typeLabel = isRealizada ? "Registrar actividad realizada" : isOficial ? "Crear voluntariado oficial" : "Crear actividad";
+  const typeLabel = isRealizada ? "Registrar actividad realizada" : "Crear actividad";
 
   const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
@@ -85,18 +76,12 @@ export function CrearActivityClient({
           if (saved.maxParticipants) setMaxParticipants(saved.maxParticipants);
           if (saved.contactInfo) setContactInfo(saved.contactInfo);
           if (saved.requirements?.length) setRequirements(saved.requirements);
-          if (typeof saved.showExternal === "boolean") setShowExternal(saved.showExternal);
-          if (saved.extBeneficiary) setExtBeneficiary(saved.extBeneficiary);
-          if (saved.extSupervisor) setExtSupervisor(saved.extSupervisor);
-          if (saved.extSupervisorEmail) setExtSupervisorEmail(saved.extSupervisorEmail);
-          if (saved.extHours) setExtHours(saved.extHours);
           if (typeof saved.isInternal === "boolean") setIsInternal(saved.isInternal);
         }
       }
     } catch {}
     mountedRef.current = true;
     setDraftReady(true);
-    if (activityType === "oficial") setShowExternal(true);
   }, []);
 
   useEffect(() => {
@@ -118,11 +103,6 @@ export function CrearActivityClient({
             contactInfo,
             requirements,
             aiEnabled,
-            showExternal,
-            extBeneficiary,
-            extSupervisor,
-            extSupervisorEmail,
-            extHours,
             isInternal,
           }),
         );
@@ -131,7 +111,7 @@ export function CrearActivityClient({
     return () => {
       if (draftTimerRef.current) clearTimeout(draftTimerRef.current);
     };
-  },     [description, title, zone, rawAddress, dateTime, endDateTime, estimatedDuration, maxParticipants, contactInfo, requirements, aiEnabled, showExternal, extBeneficiary, extSupervisor, extSupervisorEmail, extHours, isInternal]);
+  },     [description, title, zone, rawAddress, dateTime, endDateTime, estimatedDuration, maxParticipants, contactInfo, requirements, aiEnabled, isInternal]);
 
   useEffect(() => {
     if (!aiEnabled) return;
@@ -211,32 +191,6 @@ export function CrearActivityClient({
           body: JSON.stringify({ description: desc }),
           signal: ctrl.signal,
         });
-    const extAnyFilled = !!(
-      extBeneficiary ||
-      extSupervisor ||
-      extSupervisorEmail ||
-      extHours
-    );
-    if (extAnyFilled) {
-      const extComplete =
-        extBeneficiary.trim() &&
-        extSupervisor.trim() &&
-        extSupervisorEmail.trim() &&
-        extHours.trim();
-      if (!extComplete) {
-        setError(
-          "Si completas datos de Voluntariados oficiales Externos, todos los campos son obligatorios",
-        );
-        setSubmitting(false);
-        return;
-      }
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(extSupervisorEmail.trim())) {
-        setError("El correo del supervisor no es válido");
-        setSubmitting(false);
-        return;
-      }
-    }
-
     if (!res.ok) {
           setAiThinking(false);
           return;
@@ -357,11 +311,6 @@ export function CrearActivityClient({
       max_participants: maxParticipants ? parseInt(maxParticipants) : null,
       requirements: requirements.join(", "),
       contact_info: contactInfo || null,
-      external_beneficiary: isInternal || isRealizada ? null : isOficial ? extBeneficiary || null : null,
-      external_supervisor: isInternal || isRealizada ? null : isOficial ? extSupervisor || null : null,
-      external_supervisor_email: isInternal || isRealizada ? null : isOficial ? extSupervisorEmail || null : null,
-      external_assigned_hours: isInternal || isRealizada ? null : isOficial ? extHours ? parseFloat(extHours) : null : null,
-      external_relevant_data: isInternal || isRealizada ? null : isOficial ? extRelevantData.trim() || null : null,
       is_internal: isRealizada ? false : isInternal,
       is_private: isRealizada || undefined,
     };
@@ -588,7 +537,7 @@ export function CrearActivityClient({
               disabled={aiThinking}
               className={aiThinking ? INPUT_LOADING_cls : INPUT_cls}
             />
-            <p className="mt-1 text-xs text-zinc-400">Numero de telefono, usuario de Telegram/WhatsApp, o enlace al grupo</p>
+            <p className="mt-1 text-xs text-zinc-400">Número de teléfono, usuario de Telegram/WhatsApp, o enlace al grupo</p>
           </div>
           )}
 
@@ -626,29 +575,16 @@ export function CrearActivityClient({
           </div>
           )}
 
-          {/* Voluntariado interno: suma horas al programa. Excluyente con externo oficial. */}
+          {/* Voluntariado interno: suma horas al programa. */}
           {/* TODO (control por rol): de momento este checkbox es visible para
               cualquier usuario con permiso de crear actividades. Si en el futuro
               solo deben poder marcarlo ciertos roles (coordinadores, staff,
               becarios de AVAA), condicionar este bloque al rol del usuario, p.ej.
               envolverlo en {(user.role === "admin" || user.role === "coordinator" || ...) && (...)}. */}
-          {isRealizada || isOficial ? null : (
+          {isRealizada ? null : (
           <button
             type="button"
-            onClick={() =>
-              setIsInternal((v) => {
-                const next = !v;
-                if (next) {
-                  // Exclusividad: al marcar interno se descarta lo externo oficial.
-                  setShowExternal(false);
-                  setExtBeneficiary("");
-                  setExtSupervisor("");
-                  setExtSupervisorEmail("");
-                  setExtHours("");
-                }
-                return next;
-              })
-            }
+            onClick={() => setIsInternal((v) => !v)}
             className={`flex w-full items-start gap-3 rounded-lg border px-4 py-3 text-left transition ${
               isInternal
                 ? "border-emerald-400 bg-emerald-50 dark:border-emerald-500/60 dark:bg-emerald-950/30"
@@ -684,88 +620,6 @@ export function CrearActivityClient({
           </button>
           )}
 
-          {isOficial ? (
-          <div className={`rounded-lg border border-zinc-200 transition dark:border-zinc-700 ${isInternal ? "pointer-events-none opacity-50" : ""}`}>
-            <button
-              type="button"
-              onClick={() => setShowExternal((v) => !v)}
-              disabled={isInternal}
-              className="flex w-full items-center justify-between px-4 py-3 text-sm font-medium disabled:cursor-not-allowed"
-            >
-              <span>Voluntariados oficiales Externos</span>
-              <svg
-                className={`h-4 w-4 transition-transform ${showExternal ? "rotate-180" : ""}`}
-                viewBox="0 0 20 20"
-                fill="currentColor"
-                aria-hidden="true"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M5.23 7.21a.75.75 0 011.06.02L10 11.17l3.71-3.94a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"
-                  clipRule="evenodd"
-                />
-              </svg>
-            </button>
-            {showExternal && (
-              <div className="space-y-4 border-t border-zinc-200 px-4 py-4 dark:border-zinc-700">
-                <p className="text-xs text-zinc-400">
-                  Si completas cualquier campo, todos se vuelven obligatorios al crear la actividad.
-                </p>
-                <div>
-                  <label className="mb-1 block text-sm font-medium">Beneficiario *</label>
-                  <input
-                    type="text"
-                    value={extBeneficiary}
-                    onChange={(e) => setExtBeneficiary(e.target.value)}
-                    className={INPUT_cls}
-                  />
-                </div>
-                <div>
-                  <label className="mb-1 block text-sm font-medium">Supervisor de la actividad *</label>
-                  <input
-                    type="text"
-                    value={extSupervisor}
-                    onChange={(e) => setExtSupervisor(e.target.value)}
-                    className={INPUT_cls}
-                  />
-                </div>
-                <div>
-                  <label className="mb-1 block text-sm font-medium">Correo del supervisor *</label>
-                  <input
-                    type="email"
-                    value={extSupervisorEmail}
-                    onChange={(e) => setExtSupervisorEmail(e.target.value)}
-                    placeholder="Ej: supervisor@organizacion.org"
-                    className={INPUT_cls}
-                  />
-                </div>
-                <div>
-                  <label className="mb-1 block text-sm font-medium">Horas asignadas *</label>
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.5"
-                    value={extHours}
-                    onChange={(e) => setExtHours(e.target.value)}
-                    placeholder="Ej: 4"
-                    className={INPUT_cls}
-                  />
-                </div>
-                <div>
-                  <label className="mb-1 block text-sm font-medium">Datos relevantes</label>
-                  <textarea
-                    value={extRelevantData}
-                    onChange={(e) => setExtRelevantData(e.target.value)}
-                    rows={3}
-                    placeholder="Contexto, logros, observaciones u otra informacion relevante de la actividad externa"
-                    className={INPUT_cls}
-                  />
-                </div>
-              </div>
-            )}
-          </div>
-          ) : null}
-
           {isPastActivity && (
             <div className="rounded-lg border border-amber-300 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-950/30">
               <p className="text-sm font-semibold text-amber-800 dark:text-amber-300">
@@ -794,11 +648,9 @@ export function CrearActivityClient({
               ? "Guardando..."
               : isRealizada
                 ? "Registrar actividad realizada"
-                : isOficial
-                  ? "Crear voluntariado oficial"
-                  : isPastActivity
-                    ? "Registrar actividad realizada"
-                    : "Crear actividad"}
+                : isPastActivity
+                  ? "Registrar actividad realizada"
+                  : "Crear actividad"}
           </button>
         </form>
       </main>

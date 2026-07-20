@@ -79,7 +79,7 @@ export function JoinButton({
   if (!user) {
     return (
       <p className="text-sm text-zinc-500">
-        Inicia sesion para unirte a esta actividad.
+        Inicia sesión para unirte a esta actividad.
       </p>
     );
   }

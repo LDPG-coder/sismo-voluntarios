@@ -6,14 +6,37 @@ import {
   Users,
   ClipboardList,
   CheckCircle2,
-  AlertCircle,
   List,
 } from "lucide-react";
 import { displayPhoto } from "@/lib/photo";
 import { useSession } from "@/components/session-provider";
 import { PageGuide } from "@/components/page-guide";
+import { ColumnSelector, type ColumnDef } from "@/components/column-selector";
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+
+const EXPORT_COLUMNS: readonly ColumnDef[] = [
+  { key: "becario_id", label: "ID becario" },
+  { key: "becario_email", label: "Email becario" },
+  { key: "becario_nombre", label: "Nombre becario" },
+  { key: "becario_telefono", label: "Teléfono becario" },
+  { key: "becario_auth_source", label: "Auth becario" },
+  { key: "actividad_id", label: "ID actividad" },
+  { key: "titulo", label: "Título" },
+  { key: "tipo", label: "Tipo" },
+  { key: "zona", label: "Zona" },
+  { key: "direccion", label: "Dirección" },
+  { key: "fecha_inicio", label: "Fecha inicio" },
+  { key: "fecha_fin", label: "Fecha fin" },
+  { key: "descripcion", label: "Descripción" },
+  { key: "horas_realizadas", label: "Horas realizadas" },
+  { key: "duracion_estimada_min", label: "Duración est." },
+  { key: "estado", label: "Estado" },
+  { key: "estado_label", label: "Estado (label)" },
+  { key: "n_evidencias", label: "Nº evidencias" },
+  { key: "enlaces_comprobantes", label: "Enlaces comprobantes" },
+  { key: "referencias_archivo", label: "Referencias archivo" },
+] as const;
 
 interface DashboardStats {
   total_users: number;
@@ -21,7 +44,6 @@ interface DashboardStats {
   active_activities: number;
   completed_activities: number;
   total_members: number;
-  pending_validation: number;
   total_evidence: number;
   recent_activities: {
     id: string;
@@ -48,12 +70,9 @@ const STATUS_BADGES: Record<string, string> = {
   active: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300",
   archived: "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400",
   cancelled: "bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300",
-  pending_validation: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300",
-  validated: "bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300",
 };
 
 const TYPE_BADGES: Record<string, string> = {
-  Oficial: "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300",
   Interno: "bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300",
   ProExcelencia: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300",
   "Registro previo": "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400",
@@ -94,8 +113,6 @@ function statusLabel(s: string): string {
     active: "Programada",
     archived: "Realizada",
     cancelled: "Cancelada",
-    pending_validation: "Pendiente",
-    validated: "Validada",
   };
   return map[s] || s;
 }
@@ -109,8 +126,10 @@ export function AdminDashboardClient() {
   const [filtroFecha, setFiltroFecha] = useState("");
   const [filtroDesde, setFiltroDesde] = useState("");
   const [filtroHasta, setFiltroHasta] = useState("");
-  const [filtroInstitucion, setFiltroInstitucion] = useState("");
   const [filtroEstado, setFiltroEstado] = useState("");
+  const [selectedColumns, setSelectedColumns] = useState<Set<string>>(
+    () => new Set(EXPORT_COLUMNS.map((c) => c.key)),
+  );
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -132,8 +151,10 @@ export function AdminDashboardClient() {
       if (filtroFecha) params.set("fecha", filtroFecha);
       if (filtroDesde) params.set("desde", filtroDesde);
       if (filtroHasta) params.set("hasta", filtroHasta);
-      if (filtroInstitucion.trim()) params.set("institucion", filtroInstitucion.trim());
       if (filtroEstado) params.set("estado", filtroEstado);
+      if (selectedColumns.size < EXPORT_COLUMNS.length) {
+        params.set("columns", Array.from(selectedColumns).join(","));
+      }
       const qs = params.toString();
       const res = await fetch(
         `${API}/api/v1/admin/export${qs ? `?${qs}` : ""}`,
@@ -240,16 +261,6 @@ export function AdminDashboardClient() {
             />
           </label>
           <label className="flex flex-col gap-1 text-xs text-zinc-500 dark:text-zinc-400">
-            Institución (beneficiario)
-            <input
-              type="text"
-              value={filtroInstitucion}
-              onChange={(e) => setFiltroInstitucion(e.target.value)}
-              placeholder="ej. Escuela"
-              className="rounded-md border border-zinc-200 bg-white px-2 py-1.5 text-sm text-zinc-800 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
-            />
-          </label>
-          <label className="flex flex-col gap-1 text-xs text-zinc-500 dark:text-zinc-400">
             Estado
             <select
               value={filtroEstado}
@@ -258,8 +269,6 @@ export function AdminDashboardClient() {
             >
               <option value="">Todos</option>
               <option value="active">Programada</option>
-              <option value="pending_validation">Pendiente</option>
-              <option value="validated">Validada</option>
               <option value="archived">Realizada</option>
               <option value="cancelled">Cancelada</option>
             </select>
@@ -292,19 +301,20 @@ export function AdminDashboardClient() {
             />
           </label>
         </div>
+        <div className="mt-3 border-t border-zinc-100 pt-3 dark:border-zinc-800">
+          <ColumnSelector
+            columns={EXPORT_COLUMNS}
+            selected={selectedColumns}
+            onChange={setSelectedColumns}
+          />
+        </div>
       </div>
 
       {/* KPIs */}
-      <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-4">
+      <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-3">
         <KPICard label="Voluntarios" value={stats.total_users} icon={Users} accent="text-emerald-500" />
         <KPICard label="Actividades" value={stats.total_activities} icon={ClipboardList} accent="text-blue-500" />
         <KPICard label="Inscripciones" value={stats.total_members} icon={CheckCircle2} accent="text-purple-500" />
-        <KPICard
-          label="Pendientes validación"
-          value={stats.pending_validation}
-          icon={AlertCircle}
-          accent="text-amber-500"
-        />
       </div>
 
       {/* Quick links */}

@@ -17,7 +17,12 @@ type ActivityGanttViewProps = {
 
 const DEFAULT_START_HOUR = 6;
 const DEFAULT_END_HOUR = 22;
+const MAX_AXIS_END = 30;
 const HOUR_WIDTH = 100;
+
+function formatHour(h: number) {
+  return `${String(h % 24).padStart(2, "0")}:00`;
+}
 
 type ActivityBlock = {
   activity: Activity;
@@ -125,7 +130,7 @@ export function ActivityGanttView({
     }
 
     const dynStart = Math.max(0, Math.min(minStart, DEFAULT_START_HOUR));
-    const dynEnd = Math.min(24, Math.max(maxEnd, DEFAULT_END_HOUR));
+    const dynEnd = Math.min(MAX_AXIS_END, Math.max(maxEnd, DEFAULT_END_HOUR));
 
     const hoursList: number[] = [];
     for (let h = dynStart; h <= dynEnd; h++) {
@@ -217,15 +222,7 @@ export function ActivityGanttView({
                 className="border-r border-zinc-100 px-1 py-2 text-center text-xs text-zinc-400 dark:border-zinc-700 dark:text-zinc-500"
                 style={{ width: HOUR_WIDTH }}
               >
-                {hour === 0
-                  ? "12 AM"
-                  : hour === 12
-                  ? "12 PM"
-                  : hour === 24
-                  ? "12 AM"
-                  : hour > 12
-                  ? `${hour - 12} PM`
-                  : `${hour} AM`}
+                {formatHour(hour)}
               </div>
             ))}
           </div>
@@ -288,8 +285,8 @@ export function ActivityGanttView({
                       top: index * 84 + 6,
                     }}
                   >
-                    {(block.activity.is_external_official || block.activity.is_internal) && <ExternalOfficialGem />}
-                    <span className={`line-clamp-2 leading-tight ${block.activity.is_external_official || block.activity.is_internal ? "pl-5" : ""}`}>{block.activity.title}</span>
+                    {block.activity.is_internal && <ExternalOfficialGem />}
+                    <span className={`line-clamp-2 leading-tight ${block.activity.is_internal ? "pl-5" : ""}`}>{block.activity.title}</span>
                     {conflict === "emergency" && (
                       <span className="ml-1 text-xs">⚠</span>
                     )}

@@ -130,7 +130,7 @@ export function CrearPropuestaClient({
       const tooLarge = kind === "image" ? imageTooLarge(file) : docTooLarge(file);
       const limit = kind === "image" ? MAX_IMAGE_BYTES : MAX_DOC_BYTES;
       if (tooLarge) {
-        setError(`"${file.name}" supera el limite de ${Math.round(limit / 1024 / 1024)} MB`);
+        setError(`"${file.name}" supera el límite de ${Math.round(limit / 1024 / 1024)} MB`);
         continue;
       }
       const data = await readFileAsDataURL(file);
@@ -148,7 +148,7 @@ export function CrearPropuestaClient({
   const submit = async () => {
     setError(null);
     if (!title.trim() || !category.trim()) {
-      setError("El titulo y la categoria son obligatorios.");
+      setError("El título y la categoría son obligatorios.");
       return;
     }
     setSubmitting(true);
@@ -214,7 +214,7 @@ export function CrearPropuestaClient({
           <h1 className="text-2xl font-bold tracking-tight">{projectId ? "Editar propuesta" : "Proponer un proyecto"}</h1>
           <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
             {projectId
-              ? "Actualiza tu propuesta mientras esta en evaluacion."
+              ? "Actualiza tu propuesta mientras está en evaluación."
               : "Construye una propuesta completa para que la comunidad la evalue y mejore."}
           </p>
         </div>
@@ -228,8 +228,8 @@ export function CrearPropuestaClient({
               <Field label="Titulo">
                 <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Nombre del proyecto" />
               </Field>
-              <Field label="Categoria" hint="Ej. Educacion, Medio ambiente, Salud">
-                <Input value={category} onChange={(e) => setCategory(e.target.value)} placeholder="Categoria" />
+              <Field label="Categoría" hint="Ej. Educación, Medio ambiente, Salud">
+                <Input value={category} onChange={(e) => setCategory(e.target.value)} placeholder="Categoría" />
               </Field>
               <label className="flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-400">
                 <input
@@ -343,10 +343,10 @@ export function CrearPropuestaClient({
 
           <Card>
             <CardHeader>
-              <CardTitle>Imagenes y documentos</CardTitle>
+              <CardTitle>Imágenes y documentos</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <Field label="Imagenes" hint="Hasta 4 MB por archivo">
+              <Field label="Imágenes" hint="Hasta 4 MB por archivo">
                 <input
                   type="file"
                   accept="image/*"

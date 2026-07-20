@@ -49,7 +49,6 @@ archive/
 # Misc
 Makefile
 README.md
-AGENTS.md
 next-env.d.ts
 
 # Playwright artifacts (local runs)

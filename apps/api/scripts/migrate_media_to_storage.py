@@ -57,30 +57,6 @@ def _migrate_users(db, dry_run: bool) -> int:
     return count
 
 
-def _migrate_certificates(db, dry_run: bool) -> int:
-    rows = db.execute(
-        select(Activity).where(
-            Activity.external_certificate.isnot(None),
-            Activity.external_certificate.like("data:%"),
-            Activity.certificate_asset_id.is_(None),
-        )
-    ).scalars().all()
-    count = 0
-    for a in rows:
-        mime, raw = decode_data_url(a.external_certificate)
-        if not dry_run:
-            asset = save_media(
-                db, owner_type=MediaOwnerType.ACTIVITY_CERTIFICATE, owner_id=a.id,
-                kind="document", content_type=mime, data=raw, created_by=a.creator_id,
-                filename="constancia.pdf",
-            )
-            db.flush()
-            a.certificate_asset_id = asset.id
-            a.external_certificate = media_url(asset)
-        count += 1
-    return count
-
-
 def _migrate_evidence(db, dry_run: bool) -> int:
     rows = db.execute(
         select(ActivityEvidence).where(
@@ -134,7 +110,6 @@ def main() -> None:
     try:
         summary = {
             "users": _migrate_users(db, dry_run),
-            "certificates": _migrate_certificates(db, dry_run),
             "evidence": _migrate_evidence(db, dry_run),
             "incubator": _migrate_incubator(db, dry_run),
         }

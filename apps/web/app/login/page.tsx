@@ -20,7 +20,7 @@ export default async function LoginPage({
           <p className="mt-3 text-xs font-semibold uppercase tracking-wider text-zinc-500">
             Sismo - Voluntarios de ProExcelencia
           </p>
-          <h1 className="mt-1 text-2xl font-bold tracking-tight">Iniciar sesion</h1>
+          <h1 className="mt-1 text-2xl font-bold tracking-tight">Iniciar sesión</h1>
           <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
             Accede para unirte a actividades de voluntariado en tu zona.
           </p>
@@ -30,7 +30,7 @@ export default async function LoginPage({
 
         <div className="w-full space-y-4 rounded-lg border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-[#18181b]">
           <p className="text-sm text-zinc-700 dark:text-zinc-200">
-            Inicia sesion con tu cuenta de Google para participar.
+            Inicia sesión con tu cuenta de Google para participar.
           </p>
           <a
             href={`${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"}/api/v1/auth/login`}
@@ -78,7 +78,7 @@ async function ErrorBanner({
   if (params.error === "oauth_state") {
     return (
       <p role="alert" className="mb-4 rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700 dark:border-rose-900 dark:bg-rose-950 dark:text-rose-300">
-        La sesion de OAuth expiro. Intenta de nuevo.
+        La sesión de OAuth expiró. Intenta de nuevo.
       </p>
     );
   }
@@ -92,14 +92,14 @@ async function ErrorBanner({
   if (params.error === "oauth_not_configured") {
     return (
       <p role="alert" className="mb-4 rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700 dark:border-rose-900 dark:bg-rose-950 dark:text-rose-300">
-        El inicio de sesion con Google no esta configurado en este entorno.
+        El inicio de sesión con Google no está configurado en este entorno.
       </p>
     );
   }
   if (params.error === "oauth_error") {
     return (
       <p role="alert" className="mb-4 rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700 dark:border-rose-900 dark:bg-rose-950 dark:text-rose-300">
-        No se pudo iniciar sesion con Google. Intenta de nuevo.
+        No se pudo iniciar sesión con Google. Intenta de nuevo.
       </p>
     );
   }

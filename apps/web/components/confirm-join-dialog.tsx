@@ -36,7 +36,7 @@ export function ConfirmJoinDialog({
       />
       <div className="relative w-full max-w-md rounded-xl border border-zinc-200 bg-white p-6 shadow-2xl dark:border-zinc-800 dark:bg-[#18181b]">
         <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">
-          ¿Estas seguro de que deseas unirte a esta actividad?
+          ¿Estás seguro de que deseas unirte a esta actividad?
         </h3>
         <p className="mt-3 text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">
           Desde tu confirmación el organizador cuenta con tu apoyo en la

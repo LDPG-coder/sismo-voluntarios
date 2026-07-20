@@ -60,8 +60,6 @@ interfaz:
 | `ReferralBox` / `InviteForm` en perfil | Eliminados | `app/(app)/perfil/page.tsx` |
 
 El código desactivado se conserva **comentado** para facilitar su restauración.
-El login de Google para una cuenta que no existe previamente responde con
-`auth.not_invited` y el mensaje "Tu cuenta no está registrada en SISMO."
 
 ## Cambios en el backend (`apps/api`)
 

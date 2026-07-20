@@ -22,7 +22,6 @@ export interface Activity {
   max_participants: number | null;
   requirements: string | null;
   contact_info: string | null;
-  is_external_official?: boolean;
   is_internal?: boolean;
   is_private?: boolean;
   creator_id: string;
@@ -67,6 +66,19 @@ export function MisActividadesClient() {
       .catch(() => {})
       .finally(() => setLoadingCeded(false));
   }, []);
+
+  // Asegura la publicacion privada de practica (induccion) para el becario.
+  // Idempotente en el servidor: cubre usuarios que ya terminaron el tour o
+  // cuyo disparo inicial no llego. Solo aplica a no-admin.
+  useEffect(() => {
+    if (!user) return;
+    if (user.role === "admin") return;
+    fetch(`${API}/api/v1/activities/demo/ensure`, {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json", ...csrfHeaders("POST") },
+    }).catch(() => {});
+  }, [user]);
 
   const handleAction = async () => {
     if (!confirmAction) return;
@@ -206,6 +218,11 @@ export function MisActividadesClient() {
                 ? `"${confirmAction.title}" sera marcada como realizada. Los inscritos seran notificados.`
                 : `"${confirmAction.title}" sera cancelada. Los inscritos seran notificados.`}
             </p>
+            {confirmAction.action === "archive" && (
+              <p className="mb-4 text-xs text-amber-600 dark:text-amber-400">
+                Nota: una vez marcada como realizada, los inscritos ya no podran subir comprobantes de asistencia.
+              </p>
+            )}
             <div className="flex gap-3">
               <button
                 onClick={() => setConfirmAction(null)}
@@ -370,14 +387,12 @@ export function ActivityCard({
           </span>
           <span
             className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
-              a.is_external_official
-                ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
-                : a.is_private
-                  ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
-                  : "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
+              a.is_private
+                ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
+                : "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
             }`}
           >
-            {a.is_external_official ? "Oficial" : a.is_private ? "Registro previo" : "Proponer"}
+            {a.is_private ? "Registro previo" : "Proponer"}
           </span>
         </div>
       </div>
@@ -455,10 +470,10 @@ function EmptyState({ tab }: { tab: Tab }) {
     <div className="py-12 text-center">
       <p className="text-sm text-zinc-500">
         {tab === "created"
-          ? "No has creado ninguna actividad aun."
+          ? "No has creado ninguna actividad aún."
           : tab === "enrolled"
-            ? "No te has inscrito en ninguna actividad aun."
-            : "No has cedido ningun cupo aun."}
+            ? "No te has inscrito en ninguna actividad aún."
+            : "No has cedido ningún cupo aún."}
       </p>
       <Link
         href="/voluntarios"

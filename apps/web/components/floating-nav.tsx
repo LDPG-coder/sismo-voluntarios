@@ -29,7 +29,7 @@ export function FloatingNav() {
 
   return (
     <nav
-      aria-label="Navegacion del modulo"
+      aria-label="Navegación del módulo"
       className={cn(
         "fixed right-4 top-1/2 z-30 hidden -translate-y-1/2 flex-col rounded-2xl border border-zinc-200/40 bg-white/50 p-2 shadow-md shadow-zinc-900/5 backdrop-blur transition-all duration-200 hover:border-zinc-200/70 hover:bg-white/90 hover:shadow-lg hover:shadow-zinc-900/10 lg:flex dark:border-zinc-800/40 dark:bg-zinc-950/50 dark:hover:border-zinc-800/70 dark:hover:bg-zinc-950/90 dark:hover:shadow-black/40",
         expanded ? "w-56" : "w-[60px]",
@@ -38,7 +38,7 @@ export function FloatingNav() {
       <button
         type="button"
         onClick={() => setExpanded((v) => !v)}
-        aria-label={expanded ? "Contraer navegacion" : "Expandir navegacion"}
+        aria-label={expanded ? "Contraer navegación" : "Expandir navegación"}
         aria-expanded={expanded}
         className="mb-1 flex h-9 w-full items-center justify-center rounded-xl text-zinc-500 transition hover:bg-[#eaebed] dark:text-zinc-400 dark:hover:bg-zinc-800"
       >

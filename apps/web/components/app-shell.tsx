@@ -26,7 +26,7 @@ export function AppShell({
             <button
               type="button"
               onClick={() => setOpen(true)}
-              aria-label="Abrir menu"
+              aria-label="Abrir menú"
               className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#e9eaec] text-zinc-700 transition hover:bg-[#f1f2f4] dark:bg-transparent dark:text-zinc-300 dark:hover:bg-zinc-800"
             >
               <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>

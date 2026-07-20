@@ -37,7 +37,6 @@ class DashboardStats(BaseModel):
     active_activities: int
     completed_activities: int
     total_members: int
-    pending_validation: int
     total_evidence: int
     recent_activities: list[dict]
     recent_users: list[dict]
@@ -59,8 +58,6 @@ def _activity_summary(a: Activity, member_count: int = 0) -> dict:
     type_label = "ProExcelencia"
     if a.is_internal:
         type_label = "Interno"
-    elif a.external_beneficiary:
-        type_label = "Oficial"
     elif a.is_private:
         type_label = "Registro previo"
     return {
@@ -91,11 +88,6 @@ def get_dashboard(
         select(func.count(Activity.id)).where(Activity.status == ActivityStatus.archived.value)
     ).scalar() or 0
     total_members = db.execute(select(func.count(ActivityMember.id))).scalar() or 0
-    pending_validation = db.execute(
-        select(func.count(Activity.id)).where(
-            Activity.status == ActivityStatus.pending_validation.value
-        )
-    ).scalar() or 0
     total_evidence = db.execute(select(func.count(ActivityEvidence.id))).scalar() or 0
 
     # Recent activities (last 10)
@@ -123,7 +115,6 @@ def get_dashboard(
         active_activities=active_activities,
         completed_activities=completed_activities,
         total_members=total_members,
-        pending_validation=pending_validation,
         total_evidence=total_evidence,
         recent_activities=recent_activities,
         recent_users=recent_users,
@@ -144,15 +135,13 @@ def export_all_csv(
     with __import__("zipfile").ZipFile(buf, "w", __import__("zipfile").ZIP_DEFLATED) as zf:
         # --- actividades.csv ---
         activities = db.execute(
-            select(Activity).order_by(Activity.created_at.desc())
+            select(Activity).where(Activity.is_demo.is_(False)).order_by(Activity.created_at.desc())
         ).scalars().all()
         act_rows = []
         for a in activities:
             type_label = "ProExcelencia"
             if a.is_internal:
                 type_label = "Interno"
-            elif a.external_beneficiary:
-                type_label = "Oficial"
             elif a.is_private:
                 type_label = "Registro previo"
             creator = db.get(User, a.creator_id)
@@ -177,7 +166,11 @@ def export_all_csv(
             zf.writestr("actividades.csv", out.getvalue())
 
         # --- participantes.csv ---
-        members = db.execute(select(ActivityMember)).scalars().all()
+        members = db.execute(
+            select(ActivityMember)
+            .join(Activity, ActivityMember.activity_id == Activity.id)
+            .where(Activity.is_demo.is_(False))
+        ).scalars().all()
         member_rows = []
         for m in members:
             user = db.get(User, m.user_id)

@@ -34,6 +34,7 @@ write_secret() {
 write_secret sismo_db_password        SISMO_DB_PASSWORD
 write_secret sismo_session_secret     SISMO_SESSION_SECRET
 write_secret sismo_google_client_secret SISMO_GOOGLE_CLIENT_SECRET
+write_secret supabase_key             SUPABASE_KEY
 
 echo ""
 echo "Secretos generados en infra/secrets/ (gitignored, no commitear)."

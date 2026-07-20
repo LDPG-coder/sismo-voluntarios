@@ -40,7 +40,7 @@ export function MobileFabNav() {
       {open && (
         <div
           role="menu"
-          aria-label="Navegacion del modulo"
+          aria-label="Navegación del módulo"
           className="fixed bottom-20 right-4 z-50 w-56 rounded-2xl border border-zinc-200 bg-white p-2 shadow-xl dark:border-zinc-800 dark:bg-zinc-950"
         >
           {items.map((item) => {
@@ -72,7 +72,7 @@ export function MobileFabNav() {
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        aria-label={open ? "Cerrar navegacion" : "Abrir navegacion"}
+        aria-label={open ? "Cerrar navegación" : "Abrir navegación"}
         aria-expanded={open}
         className="fixed bottom-4 right-4 z-50 flex h-12 w-12 items-center justify-center rounded-full border border-zinc-200/80 bg-white/90 text-emerald-600 shadow-lg shadow-zinc-900/10 backdrop-blur transition hover:bg-white hover:shadow-xl hover:shadow-zinc-900/15 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:shadow-emerald-500/40 dark:border-zinc-700/80 dark:bg-zinc-900/90 dark:text-emerald-400 dark:shadow-black/40 dark:hover:bg-zinc-900 dark:hover:shadow-black/60 dark:focus-visible:shadow-emerald-400/30"
       >

@@ -184,7 +184,7 @@ export function ProjectDetailClient({ id }: { id: string }) {
 
         {project.status === "evaluating" && (
           <div className="mt-4 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm dark:border-amber-900/40 dark:bg-amber-950/30">
-            En evaluacion comunitaria: <strong>{project.evaluation.percentage}%</strong> del quorum
+            En evaluación comunitaria: <strong>{project.evaluation.percentage}%</strong> del quorum
             ({project.evaluation.count}/{project.evaluation.target} evaluaciones).
           </div>
         )}
@@ -309,7 +309,7 @@ export function ProjectDetailClient({ id }: { id: string }) {
 
             <Card>
               <CardHeader>
-                <CardTitle>Rendicion de cuentas</CardTitle>
+                <CardTitle>Rendición de cuentas</CardTitle>
               </CardHeader>
               <CardContent>
                 <AccountabilitySection
@@ -341,7 +341,7 @@ export function ProjectDetailClient({ id }: { id: string }) {
 
             <Card>
               <CardHeader>
-                <CardTitle>Evaluacion comunitaria</CardTitle>
+                <CardTitle>Evaluación comunitaria</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3 text-sm">
                 <div className="grid grid-cols-2 gap-2">
@@ -364,7 +364,7 @@ export function ProjectDetailClient({ id }: { id: string }) {
                   </div>
                 )}
                 <p className="text-xs text-zinc-400">
-                  {project.evaluation.count} evaluacion(es) · quorum {project.evaluation.target}
+                  {project.evaluation.count} evaluación(es) · quorum {project.evaluation.target}
                 </p>
               </CardContent>
             </Card>

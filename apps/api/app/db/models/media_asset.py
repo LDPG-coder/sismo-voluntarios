@@ -19,7 +19,6 @@ class MediaOwnerType:
 
     USER_PHOTO = "user_photo"
     ACTIVITY_EVIDENCE = "activity_evidence"
-    ACTIVITY_CERTIFICATE = "activity_certificate"
     INCUBATOR_ATTACHMENT = "incubator_attachment"
 
 

@@ -133,7 +133,7 @@ export function NavBar() {
                   className="flex items-center gap-3 px-4 py-2.5 text-sm text-rose-600 transition hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-900/20"
                 >
                   <LogoutIcon className="h-4 w-4" />
-                  Cerrar sesion
+                  Cerrar sesión
                 </a>
               </div>
             </>
@@ -204,7 +204,7 @@ export function NavBar() {
                     href="/auth/logout"
                     className="flex items-center justify-between px-4 py-2.5 text-sm text-rose-600 transition hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-900/20"
                   >
-                    <span>Cerrar sesion</span>
+                    <span>Cerrar sesión</span>
                     <LogoutIcon className="h-4 w-4 mr-1" />
                   </a>
                 </div>

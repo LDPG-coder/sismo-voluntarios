@@ -124,7 +124,7 @@ class Settings(BaseSettings):
     # Publicaciones de ejemplo de la induccion (is_demo): se auto-eliminan de la
     # BD este numero de dias despues de sembrarse, independientemente de si el
     # becario vio el tour.
-    demo_activities_ttl_days: int = 3
+    demo_activities_ttl_days: int = 1
     ai_rate_limit_per_min: int = 600
     ai_rate_limit_burst: int = 200
 

@@ -36,10 +36,10 @@ export function ConfirmLeaveDialog({
       />
       <div className="relative w-full max-w-md rounded-xl border border-zinc-200 bg-white p-6 shadow-2xl dark:border-zinc-800 dark:bg-[#18181b]">
         <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">
-          ¿Estas seguro de que deseas abandonar esta actividad?
+          ¿Estás seguro de que deseas abandonar esta actividad?
         </h3>
         <p className="mt-3 text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">
-          Al abandonar ya no apareceras como inscrito y el organizador no contara
+          Al abandonar ya no aparecerás como inscrito y el organizador no contará
           con tu apoyo en la actividad.
         </p>
         <div className="mt-6 flex gap-3">

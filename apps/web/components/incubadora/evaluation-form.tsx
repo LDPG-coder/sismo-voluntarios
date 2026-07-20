@@ -94,14 +94,14 @@ export function EvaluationForm({
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data?.error?.message || "No se pudo enviar la evaluacion.");
+        setError(data?.error?.message || "No se pudo enviar la evaluación.");
         setSubmitting(false);
         return;
       }
       onEvaluated();
       onClose();
     } catch {
-      setError("Error de red al enviar la evaluacion.");
+      setError("Error de red al enviar la evaluación.");
       setSubmitting(false);
     }
   };
@@ -162,7 +162,7 @@ export function EvaluationForm({
             Cancelar
           </Button>
           <Button onClick={submit} disabled={submitting}>
-            {submitting ? "Enviando…" : "Enviar evaluacion"}
+            {submitting ? "Enviando…" : "Enviar evaluación"}
           </Button>
         </DialogFooter>
       </DialogContent>

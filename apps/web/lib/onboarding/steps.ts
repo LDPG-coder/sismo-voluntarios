@@ -9,7 +9,7 @@ export type TourStep = {
 export const ONBOARDING_STEPS: TourStep[] = [
   {
     title: "\u00a1Bienvenido a Sismo Voluntarios! \ud83d\udc4b",
-    body: "Te mostramos en 1 min\u00f3tico c\u00f3mo funciona la app y d\u00f3nde encontrar cada secci\u00f3n. Usa \u201cSiguiente\u201d para avanzar o \u201cSaltar\u201d para salir.",
+    body: "Te mostramos en un momento c\u00f3mo funciona la app y d\u00f3nde encontrar cada secci\u00f3n. Usa \u201cSiguiente\u201d para avanzar o \u201cSaltar\u201d para salir.",
   },
   {
     selector: '[data-tour="feed"]',

@@ -12,6 +12,7 @@ import { createPortal } from "react-dom";
 import { usePathname } from "next/navigation";
 import { ONBOARDING_STEPS } from "@/lib/onboarding/steps";
 import { useSession } from "@/components/session-provider";
+import { csrfHeaders } from "@/lib/auth/csrf-client";
 
 const FLAG = "sismo_onboarding_done";
 const TIP_W = 320;
@@ -65,6 +66,21 @@ export function TourProvider({ children }: { children: ReactNode }) {
     const t = window.setTimeout(() => setOpen(true), 800);
     return () => window.clearTimeout(t);
   }, [user, pathname]);
+
+  // Al iniciar la induccion, asegura que el becario tenga su publicacion
+  // privada de practica (aparece en "Mis actividades" como propia). Es
+  // idempotente en el servidor: no crea duplicados si ya la tiene.
+  useEffect(() => {
+    if (!user) return;
+    if (user.role === "admin") return;
+    if (!open) return;
+    const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+    fetch(`${API}/api/v1/activities/demo/ensure`, {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json", ...csrfHeaders("POST") },
+    }).catch(() => {});
+  }, [open, user]);
 
   return (
     <TourContext.Provider value={{ start }}>

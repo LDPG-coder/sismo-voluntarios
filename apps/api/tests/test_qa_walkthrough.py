@@ -1,15 +1,14 @@
 """Recorrido QA integral de actividades (multi-usuario).
 
 Cubre de forma end-to-end lo que el usuario recorre en la app:
-  - Creación de actividades (pública futura, privada pasada, interna, externa oficial)
+  - Creación de actividades (pública futura, privada pasada, interna)
   - Edición (solo creador, toggle interno, `is_private` no se recalcula al editar)
-  - Cambios de estado (cancelar / realizada-archivar; flujo de validación externa)
+  - Cambios de estado (cancelar / realizada-archivar)
   - Orden de los listados (descubrimiento y enrolados por fecha; "mis" por creación)
   - Filtros de descubrimiento (propias, ya-inscritas, pasadas, demo)
   - Público / privado (ocultamiento en feed/zonas, 404 para terceros y admin)
   - Unirse / salir / ceder cupo (cupo agotado, reglas SEP vs externo)
   - Asistencia y PII de inscritos (solo creador marca; email solo para privilegiados)
-  - Constancia externa (portal solo en estado no-activo con asistencia)
 
 Se autentica como usuarios arbitrarios usando las factories (sin OAuth), igual
 que el resto de la suite.
@@ -57,25 +56,6 @@ def _create_activity(client, user, **overrides):
     )
     assert resp.status_code == 200, resp.text
     return resp.json()
-
-
-def _create_external_started(client, user, **overrides):
-    """Actividad externa oficial ya iniciada pero no finalizada: activa, no
-    privada (finished_at = end_time en el futuro) y lista para subir evidencias."""
-    base = {
-        "title": "Voluntariado externo QA",
-        "zone": "Caracas",
-        "raw_address": "Av. Libertador 456",
-        "date_time": _iso(_now() - timedelta(days=1)),
-        "end_time": _iso(_now() + timedelta(days=1)),
-        "external_beneficiary": "Institucion X",
-        "external_supervisor": "Supervisor Y",
-        "external_supervisor_email": "sup@example.com",
-        "external_assigned_hours": 5,
-        "external_relevant_data": "Contexto y logros de la actividad.",
-    }
-    base.update(overrides)
-    return _create_activity(client, user, **base)
 
 
 def _join(client, user, activity_id):
@@ -132,35 +112,6 @@ def test_creacion_pasada_es_privada(client, db):
     assert data["status"] == ActivityStatus.active.value
 
 
-def test_creacion_interna_limpia_campos_externos(client, db):
-    owner = make_user(db, auth_source="sep", status="active")
-    data = _create_activity(
-        client,
-        owner,
-        is_internal=True,
-        external_beneficiary="Institucion X",
-        external_assigned_hours=3,
-    )
-    assert data["is_internal"] is True
-    assert data["is_external_official"] is False
-    # Los campos externos se descartan al ser interna.
-    a = db.get(Activity, __import__("uuid").UUID(data["id"]))
-    assert a.external_beneficiary is None
-    assert a.external_assigned_hours is None
-
-
-def test_creacion_externa_oficial(client, db):
-    owner = make_user(db, auth_source="sep", status="active")
-    data = _create_activity(
-        client,
-        owner,
-        external_beneficiary="Institucion X",
-        external_assigned_hours=4,
-        external_relevant_data="Datos",
-    )
-    assert data["is_external_official"] is True
-
-
 # -- Edición ---------------------------------------------------------------
 
 
@@ -194,24 +145,6 @@ def test_edicion_solo_creador(client, db):
     )
     assert resp.status_code == 200
     assert resp.json()["title"] == "Renombrada"
-
-
-def test_edicion_toggle_interno_limpia_externo(client, db):
-    owner = make_user(db, auth_source="sep", status="active")
-    data = _create_activity(
-        client, owner, external_beneficiary="Institucion X", external_assigned_hours=4
-    )
-    resp = client.patch(
-        f"/api/v1/activities/{data['id']}",
-        json={"is_internal": True},
-        cookies=auth_cookies(owner),
-        headers=auth_headers(),
-    )
-    assert resp.status_code == 200
-    assert resp.json()["is_internal"] is True
-    assert resp.json()["is_external_official"] is False
-    a = db.get(Activity, __import__("uuid").UUID(data["id"]))
-    assert a.external_beneficiary is None
 
 
 def test_edicion_no_recalcula_is_private(client, db):
@@ -268,99 +201,6 @@ def test_cancelar_notifica_inscritos(client, db):
     assert resp.status_code == 200
     types = [n["type"] for n in resp.json()]
     assert "activity_cancelled" in types
-
-
-# -- Estados: validación de actividad externa -----------------------------
-
-
-def test_validacion_externa_flujo_completo(client, db):
-    owner = make_user(db, auth_source="sep", status="active")
-    admin = make_user(db, role="admin", status="active")
-    data = _create_external_started(client, owner)
-    # Sin evidencia aun: rechaza el envio.
-    resp = client.post(
-        f"/api/v1/activities/{data['id']}/submit-validation",
-        cookies=auth_cookies(owner),
-        headers=auth_headers(),
-    )
-    assert resp.status_code != 200
-    # Subimos comprobante y enviamos a validacion.
-    _upload_evidence(client, owner, data["id"])
-    resp = client.post(
-        f"/api/v1/activities/{data['id']}/submit-validation",
-        cookies=auth_cookies(owner),
-        headers=auth_headers(),
-    )
-    assert resp.status_code == 200
-    assert resp.json()["status"] == ActivityStatus.pending_validation.value
-    # Solo el creador puede enviar; un tercero no.
-    third = make_user(db, auth_source="google", status="active")
-    resp = client.post(
-        f"/api/v1/activities/{data['id']}/submit-validation",
-        cookies=auth_cookies(third),
-        headers=auth_headers(),
-    )
-    assert resp.status_code == 403
-    # Admin valida.
-    resp = client.post(
-        f"/api/v1/activities/{data['id']}/validate",
-        json={"notes": "OK"},
-        cookies=auth_cookies(admin),
-        headers=auth_headers(),
-    )
-    assert resp.status_code == 200
-    body = resp.json()
-    assert body["status"] == ActivityStatus.validated.value
-    assert body["validated_by"] == str(admin.id)
-    assert body["validated_at"] is not None
-
-
-def test_validacion_externa_rechazo_devuelve_a_active(client, db):
-    owner = make_user(db, auth_source="sep", status="active")
-    admin = make_user(db, role="admin", status="active")
-    data = _create_external_started(client, owner)
-    _upload_evidence(client, owner, data["id"])
-    client.post(
-        f"/api/v1/activities/{data['id']}/submit-validation",
-        cookies=auth_cookies(owner),
-        headers=auth_headers(),
-    )
-    # Rechazo sin motivo -> error.
-    resp = client.post(
-        f"/api/v1/activities/{data['id']}/reject-validation",
-        json={"notes": ""},
-        cookies=auth_cookies(admin),
-        headers=auth_headers(),
-    )
-    assert resp.status_code != 200
-    # Rechazo con motivo -> vuelve a active.
-    resp = client.post(
-        f"/api/v1/activities/{data['id']}/reject-validation",
-        json={"notes": "Falta informacion"},
-        cookies=auth_cookies(admin),
-        headers=auth_headers(),
-    )
-    assert resp.status_code == 200
-    assert resp.json()["status"] == ActivityStatus.active.value
-
-
-def test_validacion_externa_solo_admin_valida(client, db):
-    owner = make_user(db, auth_source="sep", status="active")
-    not_admin = make_user(db, auth_source="google", status="active")
-    data = _create_external_started(client, owner)
-    _upload_evidence(client, owner, data["id"])
-    client.post(
-        f"/api/v1/activities/{data['id']}/submit-validation",
-        cookies=auth_cookies(owner),
-        headers=auth_headers(),
-    )
-    resp = client.post(
-        f"/api/v1/activities/{data['id']}/validate",
-        json={"notes": "OK"},
-        cookies=auth_cookies(not_admin),
-        headers=auth_headers(),
-    )
-    assert resp.status_code == 403
 
 
 # -- Orden de los listados ------------------------------------------------
@@ -634,7 +474,7 @@ def test_ceder_no_a_si_mismo(client, db):
 def test_asistencia_solo_creador_marca(client, db):
     owner = make_user(db, auth_source="sep", status="active")
     member = make_user(db, auth_source="google", status="active")
-    data = _create_external_started(client, owner)
+    data = _create_activity(client, owner)
     _join(client, member, data["id"])
     # Un miembro no puede marcar asistencia.
     resp = client.post(
@@ -659,7 +499,7 @@ def test_inscritos_pii_email_segun_rol(client, db):
     member = make_user(db, auth_source="google", status="active")
     ext_outsider = make_user(db, auth_source="google", status="active")
     admin = make_user(db, role="admin", status="active")
-    data = _create_external_started(client, owner)
+    data = _create_activity(client, owner)
     _join(client, member, data["id"])
     # Creador (sep) ve email.
     resp = client.get(
@@ -689,54 +529,6 @@ def test_inscritos_pii_email_segun_rol(client, db):
     )
     assert resp.status_code == 200
     assert all(x["email"] is None for x in resp.json())
-
-
-# -- Constancia externa ----------------------------------------------------
-
-
-def test_constancia_externa_portal_y_requisitos(client, db):
-    owner = make_user(db, auth_source="sep", status="active")
-    member = make_user(db, auth_source="google", status="active")
-    data = _create_external_started(client, owner)
-    _join(client, member, data["id"])
-    # Mientras esta activa (sin enviar a validacion) subir constancia falla.
-    resp = client.post(
-        f"/api/v1/activities/{data['id']}/external-certificate",
-        json={"certificate": "data:application/pdf;base64,JVBERi0xLjQK"},
-        cookies=auth_cookies(owner),
-        headers=auth_headers(),
-    )
-    assert resp.status_code != 200
-    # Marcamos asistencia y enviamos a validacion.
-    client.post(
-        f"/api/v1/activities/{data['id']}/attendees/{member.id}/attended",
-        json={"attended": True},
-        cookies=auth_cookies(owner),
-        headers=auth_headers(),
-    )
-    _upload_evidence(client, owner, data["id"])
-    client.post(
-        f"/api/v1/activities/{data['id']}/submit-validation",
-        cookies=auth_cookies(owner),
-        headers=auth_headers(),
-    )
-    # Ahora si se puede subir la constancia.
-    resp = client.post(
-        f"/api/v1/activities/{data['id']}/external-certificate",
-        json={"certificate": "data:application/pdf;base64,JVBERi0xLjQK"},
-        cookies=auth_cookies(owner),
-        headers=auth_headers(),
-    )
-    assert resp.status_code == 200
-    assert resp.json()["external_certificate"]
-    # Solo el creador puede gestionarla.
-    resp = client.post(
-        f"/api/v1/activities/{data['id']}/external-certificate",
-        json={"certificate": "data:application/pdf;base64,JVBERi0xLjQK"},
-        cookies=auth_cookies(member),
-        headers=auth_headers(),
-    )
-    assert resp.status_code == 403
 
 
 def test_google_login_nunca_devuelve_json(client):

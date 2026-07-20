@@ -61,7 +61,7 @@ export function Sidebar({
         <button
           type="button"
           onClick={onClose}
-          aria-label="Cerrar menu"
+          aria-label="Cerrar menú"
           className="flex h-8 w-8 items-center justify-center rounded-lg text-zinc-500 transition hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800"
         >
           <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
@@ -91,7 +91,6 @@ export function Sidebar({
               <div className="mt-1 space-y-1 pl-5">
                 <SubLink href="/voluntarios" label="Voluntariado de Becarios" active={isActive("/voluntarios")} onClick={onClose} />
                 <SubLink href="#" label="Registro" active={false} onClick={onClose} />
-                <SubLink href="#" label="Subir voluntariado externo" active={false} onClick={onClose} />
               </div>
             )}
             <NavLink href="#" label="Oferta de actividades" Icon={CalendarIcon} active={false} iconActive bold onClick={onClose} />
@@ -123,7 +122,7 @@ export function Sidebar({
           className="flex items-center gap-3 rounded-xl px-1.5 py-2.5 text-[13px] font-semibold text-rose-600 transition hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-900/20"
         >
           <LogoutIcon className="h-5 w-5 shrink-0" />
-          Cerrar sesion
+          Cerrar sesión
         </a>
       </div>
     </div>

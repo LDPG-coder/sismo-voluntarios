@@ -35,9 +35,9 @@
 
 - **Migración de esquema:** `alembic upgrade head` aplica la revisión
   `017_media_assets`, que crea la tabla `media_assets` y las FK nullable en
-  `users` (`photo_asset_id`), `activities` (`certificate_asset_id`),
+  `users` (`photo_asset_id`), `activities`,
   `activity_evidence` (`media_asset_id`) e `incubator_attachments`
-  (`media_asset_id`). Las columnas legadas (`photo_url`, `external_certificate`,
+  (`media_asset_id`). Las columnas legadas (`photo_url`,
   `image_url`, `data`) pasan a guardar la **URL de referencia** en vez de base64.
 - **Migración de datos (legacy):** `python scripts/migrate_media_to_storage.py`
   recorre las 4 entidades, decodifica el base64 existente, persiste el archivo
@@ -606,10 +606,10 @@ docker compose exec api alembic revision --autogenerate -m "descripcion"
 | `008_backfill_google_photo_url.py` | Backfill de google_photo_url |
 | `009_add_member_status.py` | Estado de membresía en usuarios |
 | `010_add_user_auth_source.py` | `auth_source` + `sep_user_id` (integración SEP) |
-| `011_add_activity_external_official.py` | Voluntariado oficial externo en actividades |
-| `012_ext_certificate.py` | Constancia para voluntariado externo |
+| `011_add_activity_external_official.py` | Voluntariado oficial externo en actividades (ELIMINADO en 024) |
+| `012_ext_certificate.py` | Constancia para voluntariado externo (ELIMINADO en 024) |
 | `013_incubator.py` | Incubadora de proyectos (desconectada en prod) |
-| `014_add_activity_internal.py` | Voluntariado interno (flag en actividades, excluyente con externo oficial) |
+| `014_add_activity_internal.py` | Voluntariado interno (flag en actividades) |
 | `015_sep_code_challenge.py` | `code_challenge` (PKCE S256) en los one-time exchange codes del login SEP |
 
 ---
