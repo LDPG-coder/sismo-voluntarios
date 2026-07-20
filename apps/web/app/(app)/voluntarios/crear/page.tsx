@@ -5,17 +5,15 @@ import { ActivityTypeSelector } from "@/components/activity-type-selector";
 import { CrearActivityClient } from "@/components/crear-activity-client";
 import { PageGuide } from "@/components/page-guide";
 
-type ActivityType = "proponer" | "oficial" | "realizada";
+type ActivityType = "proponer" | "realizada";
 
 export default function CrearActivityPage() {
   const [selectedType, setSelectedType] = useState<ActivityType | null>(null);
 
   const guide = (
       <PageGuide id="crear" title="Crear una actividad">
-        Como es usualmente, las actividades <strong>internas</strong> suman horas
-        al programa y las <strong>oficiales</strong> tienen que ser validadas con
-        una planilla emitida por quien supervisó la actividad. Pero de momento
-        todas las actividades podrán sumar horas de voluntariado.
+        Las actividades <strong>internas</strong> suman horas al programa.
+        Las actividades realizadas se registran como privadas.
       </PageGuide>
   );
 

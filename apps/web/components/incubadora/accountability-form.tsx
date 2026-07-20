@@ -39,7 +39,7 @@ export function AccountabilitySection({
   const publish = async () => {
     setError(null);
     if (!body.trim()) {
-      setError("La rendicion requiere una explicacion.");
+      setError("La rendición requiere una explicación.");
       return;
     }
     setBusy(true);
@@ -57,13 +57,13 @@ export function AccountabilitySection({
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data?.error?.message || "No se pudo publicar la rendicion.");
+        setError(data?.error?.message || "No se pudo publicar la rendición.");
         setBusy(false);
         return;
       }
       onPublished();
     } catch {
-      setError("Error de red al publicar la rendicion.");
+      setError("Error de red al publicar la rendición.");
       setBusy(false);
     }
   };
@@ -93,7 +93,7 @@ export function AccountabilitySection({
   if (existing && !canPublish) {
     return (
       <div className="space-y-3">
-        <h3 className="text-sm font-semibold">Rendicion de cuentas</h3>
+        <h3 className="text-sm font-semibold">Rendición de cuentas</h3>
         <MarkdownView content={existing.body} />
         {existing.explicacion_cambios && (
           <div>
@@ -113,10 +113,10 @@ export function AccountabilitySection({
 
   return (
     <div className="space-y-3">
-      <h3 className="text-sm font-semibold">Rendicion de cuentas</h3>
+      <h3 className="text-sm font-semibold">Rendición de cuentas</h3>
       {existing && (
         <div className="rounded-md border border-zinc-200 p-3 text-xs text-zinc-500 dark:border-zinc-800">
-          Ya publicaste una rendicion. Puedes actualizarla antes de finalizar.
+          Ya publicaste una rendición. Puedes actualizarla antes de finalizar.
         </div>
       )}
       <div className="space-y-1.5">
@@ -139,7 +139,7 @@ export function AccountabilitySection({
           </Button>
         )}
         <Button onClick={publish} disabled={busy}>
-          {existing ? "Actualizar rendicion" : "Publicar rendicion"}
+          {existing ? "Actualizar rendición" : "Publicar rendición"}
         </Button>
       </div>
     </div>

@@ -38,7 +38,7 @@ export function ProfilePhoto({
     setError(null);
     if (!file) return;
     if (!["image/jpeg", "image/png"].includes(file.type)) {
-      setError("Solo se permiten imagenes JPG o PNG.");
+      setError("Solo se permiten imágenes JPG o PNG.");
       return;
     }
     if (file.size > 4 * 1024 * 1024) {

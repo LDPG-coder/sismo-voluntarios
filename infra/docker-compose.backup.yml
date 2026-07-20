@@ -1,0 +1,56 @@
+# ============================================================
+# Sismo — Backup service (daily pg_dump + media + Supabase)
+# ============================================================
+# Uso:
+#   docker compose -f docker-compose.yml -f docker-compose.backup.yml up -d
+#
+# Ejecución manual:
+#   docker compose -f docker-compose.yml -f docker-compose.backup.yml run --rm backup
+#
+# Backup programado: cron diario a las 03:00 UTC.
+# ============================================================
+
+services:
+  backup:
+    build:
+      context: .
+      dockerfile: Dockerfile.backup
+    restart: unless-stopped
+    environment:
+      SISMO_DB_HOST: postgres
+      SISMO_DB_PORT: "5432"
+      SISMO_DB_NAME: ${SISMO_DB_NAME:-sismo}
+      SISMO_DB_USER: ${SISMO_DB_USER:-sismo}
+      SUPABASE_URL: ${SUPABASE_URL:-}
+      SUPABASE_KEY: ${SUPABASE_KEY:-}
+      BACKUP_RETENTION_LOCAL: "7"
+      BACKUP_RETENTION_REMOTE: "30"
+    secrets:
+      - SISMO_DB_PASSWORD
+      - supabase_key
+    volumes:
+      - backup_data:/backups
+      - media_data:/data/media:ro
+      - ./scripts/backup.sh:/scripts/backup.sh:ro
+    networks:
+      - sismo
+    command: >
+      sh -c '
+        echo "0 */6 * * * /bin/sh /scripts/backup.sh >> /var/log/backup.log 2>&1" > /etc/crontabs/root
+        echo "Running initial backup..."
+        /bin/sh /scripts/backup.sh
+        echo "Starting crond..."
+        crond -f -l 2
+      '
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+
+volumes:
+  backup_data:
+    name: sismo_backup_data
+
+secrets:
+  supabase_key:
+    file: ./secrets/supabase_key

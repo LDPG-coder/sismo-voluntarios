@@ -1,0 +1,6 @@
+# ============================================================
+# Sismo — Backup service (pg_dump + media + Supabase upload)
+# ============================================================
+# Extiende postgres:16-alpine con curl para subir a Supabase.
+FROM postgres:16-alpine
+RUN apk add --no-cache curl jq

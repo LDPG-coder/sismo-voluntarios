@@ -32,39 +32,22 @@ DEMO_AUTHOR_NAME = "SISMO (Ejemplo)"
 
 
 # (titulo, descripcion, zona, direccion, duracion_min, dias_desde_hoy,
-#  interna, oficial_externa, privada, max_participantes)
+#  interna, privada, max_participantes)
 DEMO_ACTIVITIES = [
     dict(
         title="Ejemplo: Ir a centro de acopio a ordenar insumos",
         description=(
             "Publicación de ejemplo para practicar. En una actividad real TÚ "
             "ofreces una actividad así para que otros voluntarios se inscriban. "
-            "Fíjate en el botón “Ceder cupo” que aparece cuando te anotas."
+            'Fíjate en el botón "Ceder cupo" que aparece cuando te anotas.'
         ),
         zone="Caracas",
         address="Centro de acopio AVAA, sala de almacenamiento",
         dur=180,
         days=2,
         internal=True,
-        external=False,
         private=False,
         max=15,
-    ),
-    dict(
-        title="Ejemplo: Jornada recreativa para niños en refugios",
-        description=(
-            "Publicación de ejemplo para practicar. Aquí puedes inscribirte "
-            "(“Unirme”) para participar como voluntario: esto es “recibir” horas "
-            "dentro del programa."
-        ),
-        zone="Guatire",
-        address="Refugio temporal, área de juegos",
-        dur=240,
-        days=3,
-        internal=False,
-        external=False,
-        private=False,
-        max=20,
     ),
     dict(
         title="Ejemplo: Entrega de insumos en el centro comunitario",
@@ -78,25 +61,8 @@ DEMO_ACTIVITIES = [
         dur=120,
         days=5,
         internal=False,
-        external=False,
         private=False,
         max=12,
-    ),
-    dict(
-        title="Ejemplo: Apoyo a proyecto de reciclaje de ropa en centro de acopio",
-        description=(
-            "Publicación de ejemplo oficial (etiqueta “Oficial”). Estas las "
-            "publica la coordinación SEP y deben validarse con una planilla del "
-            "supervisor; de momento también suman horas de voluntariado."
-        ),
-        zone="La Guaira",
-        address="Centro de acopio, zona de clasificación de ropa",
-        dur=300,
-        days=7,
-        internal=False,
-        external=True,
-        private=False,
-        max=30,
     ),
 ]
 
@@ -175,7 +141,6 @@ def main() -> None:
                 contact_info="—",
                 is_internal=d.get("internal", False),
                 is_private=d.get("private", False),
-                external_beneficiary=("Coordinación SEP" if d.get("external") else None),
                 is_demo=True,
                 demo_until=demo_until,
                 creator_id=author.id,

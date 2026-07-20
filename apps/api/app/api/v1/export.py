@@ -37,16 +37,12 @@ _STATUS_LABELS: dict[str, str] = {
     "active": "Programada",
     "archived": "Realizada",
     "cancelled": "Cancelada",
-    "pending_validation": "Pendiente",
-    "validated": "Validada",
 }
 
 
 def _type_label(a: Activity) -> str:
     if a.is_internal:
         return "Interno"
-    if a.external_beneficiary:
-        return "Oficial"
     if a.is_private:
         return "Registro previo"
     return "ProExcelencia"
@@ -69,19 +65,17 @@ def export_report(
     fecha: str | None = Query(default=None, description="Fecha exacta (AAAA-MM-DD) de la actividad"),
     desde: str | None = Query(default=None, description="Inicio del período (AAAA-MM-DD)"),
     hasta: str | None = Query(default=None, description="Fin del período (AAAA-MM-DD)"),
-    institucion: str | None = Query(default=None, description="Beneficiario externo (ILIKE)"),
     estado: str | None = Query(default=None, description="Estado de la actividad"),
+    columns: str | None = Query(default=None, description="Columnas a exportar (comma-separated keys)"),
 ) -> StreamingResponse:
     """Reporte de actividades por becario con comprobantes, en un ZIP (xlsx + media)."""
     fecha_d = _parse_date(fecha, "fecha")
     desde_d = _parse_date(desde, "desde")
     hasta_d = _parse_date(hasta, "hasta")
 
-    q = select(Activity).join(User, Activity.creator_id == User.id)
+    q = select(Activity).join(User, Activity.creator_id == User.id).where(Activity.is_demo.is_(False))
     if estado:
         q = q.where(Activity.status == estado)
-    if institucion:
-        q = q.where(Activity.external_beneficiary.ilike(f"%{institucion}%"))
     if fecha_d is not None:
         q = q.where(cast(Activity.date_time, Date) == fecha_d)
     if desde_d is not None:
@@ -130,15 +124,7 @@ def export_report(
             if asset.reference:
                 evidence_refs.append(asset.reference)
 
-        cert_ref: str | None = None
-        cert_url: str | None = None
-        if a.certificate_asset:
-            cert_url = media_url(a.certificate_asset)
-            if a.certificate_asset.reference:
-                cert_ref = a.certificate_asset.reference
-
-        comprobante_urls = evidence_urls + ([cert_url] if cert_url else [])
-        comprobante_refs = evidence_refs + ([cert_ref] if cert_ref else [])
+        comprobante_urls = evidence_urls
 
         rows.append({
             "becario_id": str(creator.id) if creator else "",
@@ -155,31 +141,32 @@ def export_report(
             "fecha_fin": a.end_time.isoformat() if a.end_time else "",
             "descripcion": a.description or "",
             "horas_realizadas": a.realized_hours if a.realized_hours is not None else "",
-            "horas_asignadas_externas": a.external_assigned_hours if a.external_assigned_hours is not None else "",
             "duracion_estimada_min": a.estimated_duration_min if a.estimated_duration_min is not None else "",
             "estado": a.status,
             "estado_label": _STATUS_LABELS.get(a.status, a.status),
-            "validated_at": a.validated_at.isoformat() if a.validated_at else "",
-            "validation_notes": a.validation_notes or "",
             "n_evidencias": len(evidence_rows),
-            "tiene_certificado": "Sí" if cert_ref else "No",
             "enlaces_comprobantes": " ; ".join(comprobante_urls),
-            "referencias_archivo": " ; ".join(comprobante_refs),
+            "referencias_archivo": " ; ".join(evidence_refs),
         })
 
     # --- Excel ---
     wb = openpyxl.Workbook()
     ws = wb.active
     ws.title = "Reporte Becarios"
-    headers = list(rows[0].keys()) if rows else [
+    all_headers = [
         "becario_id", "becario_email", "becario_nombre", "becario_telefono",
         "becario_auth_source", "actividad_id", "titulo", "tipo", "zona",
         "direccion", "fecha_inicio", "fecha_fin", "descripcion",
-        "horas_realizadas", "horas_asignadas_externas", "duracion_estimada_min",
-        "estado", "estado_label", "validated_at", "validation_notes",
-        "n_evidencias", "tiene_certificado", "enlaces_comprobantes",
+        "horas_realizadas", "duracion_estimada_min",
+        "estado", "estado_label",
+        "n_evidencias", "enlaces_comprobantes",
         "referencias_archivo",
     ]
+    if columns:
+        requested = [c.strip() for c in columns.split(",") if c.strip()]
+        headers = [h for h in requested if h in set(all_headers)]
+    else:
+        headers = list(rows[0].keys()) if rows else all_headers
     ws.append(headers)
     for r in rows:
         ws.append([r.get(h, "") for h in headers])

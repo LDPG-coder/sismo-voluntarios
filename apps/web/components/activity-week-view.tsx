@@ -17,6 +17,7 @@ type ActivityWeekViewProps = {
 
 const DEFAULT_START_HOUR = 6;
 const DEFAULT_END_HOUR = 22;
+const MAX_AXIS_END = 30;
 const HOUR_WIDTH = 100;
 const DAY_LABEL_WIDTH = 90;
 const LANE_HEIGHT = 44;
@@ -59,6 +60,10 @@ function isSameDay(a: Date, b: Date): boolean {
     a.getMonth() === b.getMonth() &&
     a.getDate() === b.getDate()
   );
+}
+
+function formatHour(h: number) {
+  return `${String(h % 24).padStart(2, "0")}:00`;
 }
 
 function packLanes(items: Omit<LaneActivity, "lane">[]): {
@@ -168,7 +173,7 @@ export function ActivityWeekView({
     }
 
     const dynStart = Math.max(0, Math.min(minStart, DEFAULT_START_HOUR));
-    const dynEnd = Math.min(24, Math.max(maxEnd, DEFAULT_END_HOUR));
+    const dynEnd = Math.min(MAX_AXIS_END, Math.max(maxEnd, DEFAULT_END_HOUR));
 
     const hoursList: number[] = [];
     for (let h = dynStart; h <= dynEnd; h++) hoursList.push(h);
@@ -249,21 +254,14 @@ export function ActivityWeekView({
               style={{ width: DAY_LABEL_WIDTH }}
             />
             {hours.map((hour) => (
-              <div
-                key={hour}
-                className="border-r border-zinc-100 px-1 py-2 text-center text-xs text-zinc-400 dark:border-zinc-700 dark:text-zinc-500"
-                style={{ width: HOUR_WIDTH }}
-              >
-                {hour === 0
-                  ? "12 AM"
-                  : hour === 12
-                  ? "12 PM"
-                  : hour === 24
-                  ? "12 AM"
-                  : hour > 12
-                  ? `${hour - 12} PM`
-                  : `${hour} AM`}
-              </div>
+                <div
+                  key={hour}
+                  className="flex h-full w-[100px] shrink-0 flex-col justify-start border-r border-white/10 pt-1 text-left"
+                >
+                  <span className="pl-1 text-[10px] font-medium text-zinc-500 dark:text-white/70">
+                    {formatHour(hour)}
+                  </span>
+                </div>
             ))}
           </div>
 
@@ -372,8 +370,8 @@ export function ActivityWeekView({
                           height: BLOCK_HEIGHT,
                         }}
                       >
-                        {(it.activity.is_external_official || it.activity.is_internal) && <ExternalOfficialGem />}
-                        <div className={`flex items-center gap-1 ${it.activity.is_external_official || it.activity.is_internal ? "pl-5" : ""}`}>
+                        {it.activity.is_internal && <ExternalOfficialGem />}
+                        <div className={`flex items-center gap-1 ${it.activity.is_internal ? "pl-5" : ""}`}>
                           {it.conflict === "emergency" && (
                             <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-rose-500" />
                           )}

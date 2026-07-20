@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 const STORAGE_KEY = "privacy-notice-ack";
 
 const PRIVACY_TEXT =
-  "La información aquí suministrada será utilizada por Proexcelencia únicamente para fines administrativos y de gestión interna, incluyendo la gestión de actividades y procesos relacionados a los becarios.";
+  "La información aquí suministrada será utilizada por ProExcelencia únicamente para fines administrativos y de gestión interna, incluyendo la gestión de actividades y procesos relacionados a los becarios.";
 
 export function PrivacyNotice() {
   const [open, setOpen] = useState(false);

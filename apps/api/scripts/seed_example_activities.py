@@ -1,19 +1,15 @@
 """Siembra actividades de ejemplo entrelazadas para pruebas de UI.
 
 Elige 20 usuarios (obligatoriamente incluye la cedula 30597979 = LUIS DANIEL
-PORTO) y crea actividades de los 3 tipos de registro:
+PORTO) y crea actividades de los 2 tipos de registro:
 
-  * oficial        -> voluntariado externo oficial (is_internal=False + datos
-                      externos: beneficiario, supervisor, horas asignadas).
   * no_oficial     -> tareas internas rapidas (is_internal=True).
   * pasado         -> registro de actividad ya realizada, privada del creador
                       (is_private=True, sin participantes).
 
-...en distintas etapas (status): active (publicada), pending_validation
-(culminada y enviada a revision), validated (culminada y validada), cancelled
-(cancelada) y archived (archivada).
+...en distintas etapas (status): active, cancelled y archived.
 
-Varias de las 20 personas aparecen en la MISMA actividad (como creadora y/o
+Variaciones de las 20 personas aparecen en la MISMA actividad (como creadora y/o
 participante) para ejercitar los avatares de "Publicado por" y de los
 asistentes.
 
@@ -65,49 +61,9 @@ CEDULAS = [
 ]
 U = {i: c for i, c in enumerate(CEDULAS)}
 
-EXT = {
-    "beneficiary": "Comunidad La Esperanza",
-    "supervisor": "Coordinadora María Pérez",
-    "supervisor_email": "supervisor.ejemplo@programaexcelencia.org",
-    "assigned_hours": 8.0,
-    "relevant": "Apoyo en jornada comunitaria de refuerzo escolar y mejoramiento del espacio.",
-}
-
 # Definicion de las actividades. members = [(cedula, attended)] para actividades
 # no privadas. attended: True/False (realizado) o None (aun no culmina).
 ACTIVITIES = [
-    # ---------------- OFICIAL (voluntariado externo oficial) ----------------
-    dict(kind="oficial", status="active", creator=U[1], days=7, dur=240,
-         maxp=10, zone="Urbanización El Bosque, San Cristóbal",
-         address="Calle 4 con Av. Principal, junto a la plaza",
-         desc="Jornada de refuerzo escolar y donación de útiles.",
-         req="Llevar materiales de papelería.", contact="0412-000-0001",
-         members=[(U[2], None), (U[3], None), (U[0], None), (U[4], None)]),
-    dict(kind="oficial", status="validated", creator=U[0], days=-10, dur=300,
-         maxp=8, zone="Barrio El Ave María, San Cristóbal",
-         address="Sector La Ladera, casa comunitaria",
-         desc="Mejoramiento de huerto comunitario con familias del sector.",
-         req="Ropa cómoda y guantes.", contact="0412-000-0002",
-         members=[(U[5], True), (U[6], True), (U[7], True), (U[8], True)]),
-    dict(kind="oficial", status="pending_validation", creator=U[9], days=-5, dur=180,
-         maxp=6, zone="Comunidad Los Mangos, Táriba",
-         address="Cancha deportiva del sector",
-         desc="Jornada de limpieza y pintura de la cancha.",
-         req="Ropa que se pueda manchar.", contact="0412-000-0003",
-         members=[(U[10], True), (U[11], True)]),
-    dict(kind="oficial", status="cancelled", creator=U[12], days=-3, dur=120,
-         maxp=5, zone="Sector El Socorro, San Cristóbal",
-         address="Sala comunitaria",
-         desc="Taller de lectura (cancelada por lluvias).",
-         req="—", contact="0412-000-0004",
-         members=[(U[13], None)]),
-    dict(kind="oficial", status="archived", creator=U[14], days=-20, dur=360,
-         maxp=12, zone="Comunidad La Concordia, Táriba",
-         address="Centro cultural del sector",
-         desc="Festival comunitario de ciencia para niños.",
-         req="Ganas de compartir.", contact="0412-000-0005",
-         members=[(U[15], True), (U[16], True)]),
-
     # ---------------- NO OFICIAL (tareas internas rápidas) ------------------
     dict(kind="no_oficial", status="active", creator=U[2], days=3, dur=90,
          maxp=4, zone="Oficina AVAA, San Cristóbal",
@@ -115,7 +71,7 @@ ACTIVITIES = [
          desc="Acompañamiento en archivo y digitalización de expedientes.",
          req="Conocimientos básicos de office.", contact="0412-000-0011",
          members=[(U[0], None), (U[1], None), (U[17], None), (U[18], None), (U[19], None)]),
-    dict(kind="no_oficial", status="validated", creator=U[3], days=-8, dur=120,
+    dict(kind="no_oficial", status="archived", creator=U[3], days=-8, dur=120,
          maxp=3, zone="Sede AVAA, San Cristóbal",
          address="Sala de reuniones",
          desc="Apoyo en preparación de material para becarios.",
@@ -133,7 +89,7 @@ ACTIVITIES = [
          desc="Jornada interna de acomodo del almacén.",
          req="Ropa cómoda.", contact="0412-000-0014",
          members=[(U[9], True), (U[10], True), (U[11], True)]),
-    dict(kind="no_oficial", status="pending_validation", creator=U[12], days=-4, dur=90,
+    dict(kind="no_oficial", status="active", creator=U[12], days=-4, dur=90,
          maxp=3, zone="Sede AVAA, San Cristóbal",
          address="Sala de cómputo",
          desc="Soporte en registro de asistencia de talleres.",
@@ -141,12 +97,12 @@ ACTIVITIES = [
          members=[(U[13], True)]),
 
     # ---------------- PASADO (registro previo, privado del creador) ---------
-    dict(kind="pasado", status="validated", creator=U[14], days=-30, dur=240,
+    dict(kind="pasado", status="archived", creator=U[14], days=-30, dur=240,
          maxp=0, zone="Comunidad El Palmar, San Cristóbal",
          address="Casa de la cultura",
          desc="Registro previo: apoyo en minga de arbolado.",
          req="—", contact="0412-000-0021", members=[]),
-    dict(kind="pasado", status="pending_validation", creator=U[15], days=-12, dur=180,
+    dict(kind="pasado", status="archived", creator=U[15], days=-12, dur=180,
          maxp=0, zone="Sector El Triunfo, Táriba",
          address="Galerón comunitario",
          desc="Registro previo: mudanza y acondicionamiento de aula.",
@@ -167,7 +123,6 @@ def main() -> None:
             c: db.execute(select(User).where(User.cedula == c)).scalar_one()
             for c in CEDULAS
         }
-        admin = db.execute(select(User).where(User.role == "admin")).scalar_one()
 
         # Limpieza idempotente
         prev = db.execute(
@@ -192,7 +147,6 @@ def main() -> None:
             end = dt + timedelta(minutes=a["dur"])
             is_internal = a["kind"] == "no_oficial"
             is_private = a["kind"] == "pasado"
-            ext = EXT if a["kind"] in ("oficial", "pasado") else {}
 
             act = Activity(
                 title=title,
@@ -209,17 +163,8 @@ def main() -> None:
                 is_private=is_private,
                 creator_id=creator.id,
                 status=a["status"],
-                external_beneficiary=ext.get("beneficiary"),
-                external_supervisor=ext.get("supervisor"),
-                external_supervisor_email=ext.get("supervisor_email"),
-                external_assigned_hours=ext.get("assigned_hours"),
-                external_relevant_data=ext.get("relevant"),
             )
             act.realized_hours = _compute_realized_hours(act)
-            if a["status"] == "validated":
-                act.validated_at = end
-                act.validated_by = admin.id
-                act.validation_notes = "Validada automáticamente (actividad de ejemplo)."
             db.add(act)
             db.flush()
 

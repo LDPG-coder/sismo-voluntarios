@@ -115,16 +115,6 @@ def main() -> None:
                 {"ids": user_ids},
             ).all()
         ]
-        cert_asset_ids = [
-            r[0]
-            for r in db.execute(
-                text(
-                    "SELECT certificate_asset_id FROM activities "
-                    "WHERE creator_id = ANY(:ids) AND certificate_asset_id IS NOT NULL"
-                ),
-                {"ids": user_ids},
-            ).all()
-        ]
         evidence_asset_ids = [
             r[0]
             for r in db.execute(
@@ -183,25 +173,6 @@ def main() -> None:
                 "OR activity_id = ANY(:aids)",
                 {"ids": user_ids, "aids": activity_ids},
             ),
-            # 5. Liberar certificados/validadores en activities.
-            (
-                "activities.certificate_asset_id -> NULL",
-                "UPDATE activities SET certificate_asset_id = NULL "
-                "WHERE creator_id = ANY(:ids)",
-                {"ids": user_ids},
-            ),
-            (
-                "activities.certificate_asset_id (otros) -> NULL",
-                "UPDATE activities SET certificate_asset_id = NULL "
-                "WHERE certificate_asset_id IN ("
-                "SELECT id FROM media_assets WHERE created_by = ANY(:ids))",
-                {"ids": user_ids},
-            ),
-            (
-                "activities.validated_by -> NULL",
-                "UPDATE activities SET validated_by = NULL WHERE validated_by = ANY(:ids)",
-                {"ids": user_ids},
-            ),
             # 6. Actividades creadas por el usuario.
             (
                 "activities (creadas)",
@@ -250,7 +221,6 @@ def main() -> None:
                     "ids": sorted(
                         set(
                             photo_asset_ids
-                            + cert_asset_ids
                             + evidence_asset_ids
                             + attachment_asset_ids
                         )

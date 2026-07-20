@@ -6,7 +6,6 @@ import Link from "next/link";
 import { JoinButton } from "@/components/join-button";
 import { AttendeeList } from "@/components/attendee-list";
 import { ActivityEvidence } from "@/components/activity-evidence";
-import { ActivityValidationClient } from "@/components/activity-validation-client";
 import { ActivityDetailSkeleton } from "@/components/skeletons";
 import { PageGuide } from "@/components/page-guide";
 import { csrfHeaders } from "@/lib/auth/csrf-client";
@@ -29,16 +28,9 @@ type Activity = {
   status: string;
   member_count: number;
   my_attended?: boolean | null;
-  is_external_official?: boolean;
   is_internal?: boolean;
   is_private?: boolean;
   has_attendance?: boolean;
-  external_certificate?: string | null;
-  external_relevant_data?: string | null;
-  validated_at?: string | null;
-  validated_by?: string | null;
-  validated_by_name?: string | null;
-  validation_notes?: string | null;
   creator?: {
     id: string;
     name: string | null;
@@ -65,11 +57,9 @@ export default function ActivityDetailPage() {
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
   const [showCeded, setShowCeded] = useState(false);
-  const [certFile, setCertFile] = useState<File | null>(null);
-  const [certUploading, setCertUploading] = useState(false);
-  const [certError, setCertError] = useState<string | null>(null);
   const [isMember, setIsMember] = useState(false);
   const [myStatus, setMyStatus] = useState<string | null>(null);
+  const [confirmResolve, setConfirmResolve] = useState<{ archive: boolean } | null>(null);
   const { user } = useSession();
 
   const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
@@ -110,63 +100,6 @@ export default function ActivityDetailPage() {
     setAttendees((prev) =>
       prev.map((a) => (a.user_id === userId ? { ...a, attended } : a)),
     );
-  };
-
-  const handleUploadCertificate = async () => {
-    if (!activity || !certFile) return;
-    setCertError(null);
-    if (certFile.type !== "application/pdf") {
-      setCertError("Solo se permiten archivos PDF");
-      return;
-    }
-    if (certFile.size > 6 * 1024 * 1024) {
-      setCertError("El PDF no debe superar los 6 MB");
-      return;
-    }
-    setCertUploading(true);
-    try {
-      const dataUrl = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result as string);
-        reader.onerror = () => reject(new Error("No se pudo leer el archivo"));
-        reader.readAsDataURL(certFile);
-      });
-      const res = await fetch(`${API}/api/v1/activities/${activity.id}/external-certificate`, {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json", ...csrfHeaders("POST") },
-        body: JSON.stringify({ certificate: dataUrl }),
-      });
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error?.message || "Error al subir la constancia");
-      }
-      const data = await res.json();
-      setActivity((prev) => (prev ? { ...prev, external_certificate: data.external_certificate } : prev));
-      setCertFile(null);
-    } catch (e: any) {
-      setCertError(e?.message || "Error al subir la constancia");
-    } finally {
-      setCertUploading(false);
-    }
-  };
-
-  const handleRemoveCertificate = async () => {
-    if (!activity) return;
-    setCertUploading(true);
-    try {
-      const res = await fetch(`${API}/api/v1/activities/${activity.id}/external-certificate`, {
-        method: "DELETE",
-        credentials: "include",
-        headers: { ...csrfHeaders("DELETE") },
-      });
-      if (!res.ok) throw new Error("Error al quitar la constancia");
-      setActivity((prev) => (prev ? { ...prev, external_certificate: null } : prev));
-    } catch {
-      // silencioso
-    } finally {
-      setCertUploading(false);
-    }
   };
 
   const refresh = useCallback(async () => {
@@ -346,23 +279,14 @@ export default function ActivityDetailPage() {
                 {activity.description}
               </InfoRow>
             )}
-            {activity.is_external_official && activity.external_relevant_data && (
-              <InfoRow icon={<DocumentIcon />} label="Datos relevantes">
-                {activity.external_relevant_data}
-              </InfoRow>
-            )}
             <InfoRow icon={<BadgeIcon />} label="Tipo de voluntariado">
-              {activity.is_external_official ? (
-                <span className="font-medium text-emerald-700 dark:text-[#079669]">
-                  Voluntariado externo oficial
-                </span>
-              ) : activity.is_internal ? (
+              {activity.is_internal ? (
                 <span className="font-medium text-emerald-700 dark:text-[#079669]">
                   Voluntariado interno
                 </span>
               ) : (
                 <span className="font-medium text-zinc-600 dark:text-zinc-400">
-                  Voluntariado no oficial
+                  Voluntariado
                 </span>
               )}
             </InfoRow>
@@ -414,14 +338,14 @@ export default function ActivityDetailPage() {
               </p>
               <div className="mt-3 flex flex-wrap gap-2">
                 <button
-                  onClick={() => handleResolve(true)}
+                  onClick={() => setConfirmResolve({ archive: true })}
                   disabled={processing}
                   className="rounded-md bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:opacity-50 dark:bg-emerald-500 dark:text-white"
                 >
                   {processing ? "Procesando..." : "Confirmar realizacion"}
                 </button>
                 <button
-                  onClick={() => handleResolve(false)}
+                  onClick={() => setConfirmResolve({ archive: false })}
                   disabled={processing}
                   className="rounded-md bg-rose-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-rose-700 disabled:opacity-50"
                 >
@@ -557,76 +481,6 @@ export default function ActivityDetailPage() {
             </div>
           )}
 
-          {activity.is_external_official && activity.external_certificate && !isCreator && (
-            <div className="mt-6 border-t border-zinc-200 pt-4 dark:border-zinc-700">
-              <h2 className="mb-2 text-sm font-semibold">Constancia</h2>
-              <a
-                href={activity.external_certificate}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-block rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-emerald-700 dark:bg-emerald-500"
-              >
-                Ver constancia emitida
-              </a>
-            </div>
-          )}
-
-          {isCreator && activity.is_external_official && (activity.status === "archived" || activity.status === "pending_validation" || activity.status === "validated") && (
-            <div className="mt-6 border-t border-zinc-200 pt-4 dark:border-zinc-700">
-              <h2 className="mb-1 text-sm font-semibold">Constancia del voluntariado oficial externo</h2>
-              <p className="mb-3 text-xs text-zinc-500 dark:text-zinc-400">
-                Agrega la constancia emitida por la organizacion, empresa o institucion beneficiaria (solo PDF).
-              </p>
-
-              {activity.external_certificate ? (
-                <div className="flex flex-wrap items-center gap-2">
-                  <a
-                    href={activity.external_certificate}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-block rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-emerald-700 dark:bg-emerald-500"
-                  >
-                    Ver constancia
-                  </a>
-                  <button
-                    type="button"
-                    onClick={handleRemoveCertificate}
-                    disabled={certUploading}
-                    className="rounded-md border border-rose-300 bg-white px-4 py-2 text-sm font-medium text-rose-600 transition hover:bg-rose-50 disabled:opacity-50 dark:border-rose-800 dark:bg-[#18181b] dark:text-rose-400 dark:hover:bg-rose-950"
-                  >
-                    {certUploading ? "Procesando..." : "Quitar"}
-                  </button>
-                </div>
-              ) : (
-                <div>
-                  <input
-                    type="file"
-                    accept="application/pdf,.pdf"
-                    onChange={(e) => setCertFile(e.target.files?.[0] ?? null)}
-                    className="block w-full text-sm text-zinc-600 file:mr-3 file:rounded-md file:border-0 file:bg-[#eaebed] file:px-3 file:py-2 file:text-sm file:font-medium file:text-zinc-700 hover:file:bg-zinc-200 dark:text-zinc-400 dark:file:bg-zinc-800 dark:file:text-zinc-300"
-                  />
-                  {certError && (
-                    <p className="mt-2 text-sm text-rose-600 dark:text-rose-400">{certError}</p>
-                  )}
-                  <button
-                    type="button"
-                    onClick={handleUploadCertificate}
-                    disabled={!certFile || certUploading}
-                    className="mt-3 rounded-md bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:opacity-50 dark:bg-emerald-500"
-                  >
-                    {certUploading ? "Subiendo..." : "Subir constancia (PDF)"}
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
-
-          <ActivityValidationClient
-            activity={activity}
-            user={user}
-            onChanged={refresh}
-          />
-
           <ActivityEvidence
             activityId={activity.id}
             currentUserId={user?.id ?? null}
@@ -635,6 +489,55 @@ export default function ActivityDetailPage() {
           />
         </div>
       </main>
+
+      {confirmResolve && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="mx-4 w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl dark:bg-[#18181b]">
+            <h3 className="mb-2 text-lg font-bold">
+              {confirmResolve.archive
+                ? "Confirmar realizacion"
+                : "Marcar como no realizada"}
+            </h3>
+            <p className="mb-2 text-sm text-zinc-600 dark:text-zinc-400">
+              {confirmResolve.archive
+                ? `"${activity?.title}" sera marcada como realizada. Los inscritos seran notificados.`
+                : `"${activity?.title}" sera cancelada. Los inscritos seran notificados.`}
+            </p>
+            {confirmResolve.archive && (
+              <p className="mb-4 text-xs text-amber-600 dark:text-amber-400">
+                Nota: una vez marcada como realizada, los inscritos ya no podran subir comprobantes de asistencia.
+              </p>
+            )}
+            {!confirmResolve.archive && <div className="mb-4" />}
+            <div className="flex gap-3">
+              <button
+                onClick={() => setConfirmResolve(null)}
+                className="flex-1 rounded-md border border-zinc-300 px-4 py-2 text-sm font-medium transition hover:bg-zinc-50 dark:border-zinc-600 dark:hover:bg-zinc-800"
+              >
+                Volver
+              </button>
+              <button
+                onClick={() => {
+                  handleResolve(confirmResolve.archive);
+                  setConfirmResolve(null);
+                }}
+                disabled={processing}
+                className={`flex-1 rounded-md px-4 py-2 text-sm font-semibold text-white transition ${
+                  confirmResolve.archive
+                    ? "bg-emerald-600 hover:bg-emerald-700"
+                    : "bg-rose-600 hover:bg-rose-700"
+                } disabled:opacity-50`}
+              >
+                {processing
+                  ? "Procesando..."
+                  : confirmResolve.archive
+                  ? "Confirmar"
+                  : "Marcar no realizada"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

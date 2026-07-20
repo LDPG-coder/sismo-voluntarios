@@ -15,7 +15,7 @@ export function AttendeeList({
   onToggle: (userId: string, attended: boolean) => void;
 }) {
   if (attendees.length === 0) {
-    return <p className="text-sm text-zinc-500">No hay inscritos aun.</p>;
+    return <p className="text-sm text-zinc-500">No hay inscritos aún.</p>;
   }
 
   return (
@@ -34,7 +34,7 @@ export function AttendeeList({
                 onChange={(e) => onToggle(a.user_id, e.target.checked)}
                 className="h-4 w-4 rounded border-zinc-300"
               />
-              Asistio
+              Asistió
             </label>
           </div>
         </div>

@@ -16,11 +16,6 @@ class ActivityStatus(StrEnum):
     active = "active"
     cancelled = "cancelled"
     archived = "archived"
-    # Voluntariado externo oficial: una vez el becario completa la evidencia y
-    # la envia a revision, queda en espera de validacion por un administrador.
-    pending_validation = "pending_validation"
-    # Validada por un administrador: queda registrada la fecha y el responsable.
-    validated = "validated"
 
 
 class ProjectStatus(StrEnum):

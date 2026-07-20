@@ -81,7 +81,7 @@ export function ActivityEvidence({
     const accepted: File[] = [];
     for (const f of picked) {
       if (!f.type.startsWith("image/")) {
-        setError("Solo se permiten imagenes.");
+        setError("Solo se permiten imágenes.");
         continue;
       }
       if (imageTooLarge(f)) {

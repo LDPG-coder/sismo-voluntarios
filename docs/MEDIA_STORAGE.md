@@ -61,9 +61,9 @@ negocio**.
   `id, tenant_id, owner_type, owner_id, kind, filename, content_type,
   byte_size, backend, reference, created_by, deleted_at`.
 - Cada entidad gana una FK **nullable** al asset
-  (`photo_asset_id`, `certificate_asset_id`, `media_asset_id` en
+  (`photo_asset_id`, `media_asset_id` en
   `activity_evidence` e `incubator_attachments`). La columna legada
-  (`photo_url`, `external_certificate`, `image_url`, `data`) pasa a contener la
+  (`photo_url`, `image_url`, `data`) pasa a contener la
   **URL pública de referencia** (o el `data:` legacy hasta migrar).
 - `GET /media/{asset_id}` — `StreamingResponse` autenticado, con `content-type`
   y soporte de *Range* para PDFs.
