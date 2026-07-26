@@ -140,9 +140,9 @@ networks:
 
 volumes:
   media_data:
-    driver: local
+    external: true
   proxy_cache_data:
-    driver: local
+    external: true
 
 secrets:
   # El nombre del secreto = nombre del archivo montado en /run/secrets,

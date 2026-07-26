@@ -65,6 +65,6 @@ services:
 
 volumes:
   sismo_pgdata:
-    name: sismo_pgdata
+    external: true
   media_data:
-    driver: local
+    external: true
