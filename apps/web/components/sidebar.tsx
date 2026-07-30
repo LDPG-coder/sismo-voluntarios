@@ -9,13 +9,16 @@ import {
   CapIcon,
   ChatIcon,
   RunIcon,
+  VolunteersIcon,
   CalendarIcon,
-  ChartIcon,
-  DocumentIcon,
   GlobeIcon,
   LogoutIcon,
 } from "@/components/nav-config";
-import type { SepNavItem } from "@/lib/sep-nav";
+import type {
+  SepNavResponse,
+  SepNavSection,
+  SepNavGroup,
+} from "@/lib/sep-nav";
 
 type User = {
   name: string | null;
@@ -25,34 +28,99 @@ type User = {
 
 const GREEN = "#00A650";
 
+/** Map SEP group labels to sismo icons. */
+const GROUP_ICONS: Record<string, ComponentType<SVGProps<SVGSVGElement>>> = {
+  "Actividades formativas": CapIcon,
+  "Chat clubs de inglés": ChatIcon,
+  Voluntariado: RunIcon,
+  Becarios: VolunteersIcon,
+  Mentores: VolunteersIcon,
+  Captación: VolunteersIcon,
+  "Acciones de administrador": VolunteersIcon,
+};
+
+/** Map SEP section names to a default icon for direct-link items. */
+const SECTION_ICONS: Record<string, ComponentType<SVGProps<SVGSVGElement>>> = {
+  Panel: GridIcon,
+  Mentoria: VolunteersIcon,
+  Captacion: VolunteersIcon,
+};
+
 export function Sidebar({
   user,
   open,
   onClose,
-  sepNav = [],
+  sepNav = { sections: [] },
 }: {
   user: User;
   open: boolean;
   onClose: () => void;
-  sepNav?: SepNavItem[];
+  sepNav?: SepNavResponse;
 }) {
   const pathname = usePathname();
-  const [volOpen, setVolOpen] = useState(true);
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
 
   const isActive = (href: string) =>
     href === "/" ? pathname === "/" : pathname === href;
 
-  const sepNavContent =
-    sepNav.length > 0 ? (
-      <div>
-        <Category>Portal SEP</Category>
-        <div className="space-y-1">
-          {sepNav.map((item) => (
-            <SepNavLink key={item.href} item={item} active={isActive(item.href)} onClick={onClose} />
-          ))}
-        </div>
+  const toggleGroup = (key: string) =>
+    setOpenGroups((prev) => ({ ...prev, [key]: !prev[key] }));
+
+  /** No injection needed — sismo link comes from the SEP API response. */
+  const resolveGroup = (group: SepNavGroup, _sectionName: string): SepNavGroup => {
+    return group;
+  };
+
+  const renderGroup = (group: SepNavGroup, sectionName: string) => {
+    const resolved = resolveGroup(group, sectionName);
+    const hasItems = resolved.items && resolved.items.length > 0;
+    const groupKey = `${sectionName}/${resolved.label}`;
+    const isOpen = openGroups[groupKey] ?? hasItems;
+    const Icon = GROUP_ICONS[resolved.label] ?? GlobeIcon;
+
+    // Direct link only (no sub-items) — render as NavLink
+    if (!hasItems && resolved.href) {
+      return (
+        <NavLink
+          key={groupKey}
+          href={resolved.href}
+          label={resolved.label}
+          Icon={Icon}
+          active={isActive(resolved.href)}
+          bold
+          onClick={onClose}
+        />
+      );
+    }
+
+    // Group with sub-items — render as collapsible
+    return (
+      <div key={groupKey}>
+        <button
+          type="button"
+          onClick={() => toggleGroup(groupKey)}
+          className="flex w-full items-center gap-3 rounded-xl border-2 border-transparent px-1.5 py-2.5 text-[13px] font-semibold text-[#333333] transition hover:bg-zinc-100 dark:text-[#E0E0E0] dark:hover:bg-zinc-800"
+        >
+          <Icon className="h-5 w-5 shrink-0" />
+          <span className="flex-1 text-left">{resolved.label}</span>
+          <Chevron open={isOpen} />
+        </button>
+        {isOpen && (
+          <div className="mt-1 space-y-1 pl-5">
+            {resolved.items!.map((sub) => (
+              <SubLink
+                key={sub.href}
+                href={sub.href}
+                label={sub.label}
+                active={isActive(sub.href)}
+                onClick={onClose}
+              />
+            ))}
+          </div>
+        )}
       </div>
-    ) : null;
+    );
+  };
 
   const navContent = (
     <div className="flex h-full flex-col overflow-hidden bg-white dark:bg-[#121212]">
@@ -71,49 +139,14 @@ export function Sidebar({
       </div>
 
       <nav className="flex-1 space-y-5 overflow-y-auto px-2 py-2">
-        <NavLink href="#" label="Panel general" Icon={GridIcon} active={false} bold={false} onClick={onClose} />
-
-        <div>
-          <Category>Actividades</Category>
-          <div className="space-y-1">
-            <NavLink href="#" label="Actividades formativas" Icon={CapIcon} active={false} bold onClick={onClose} />
-            <NavLink href="#" label="Chats" Icon={ChatIcon} active={false} bold onClick={onClose} />
-            <button
-              type="button"
-              onClick={() => setVolOpen(!volOpen)}
-              className="flex w-full items-center gap-3 rounded-xl border-2 border-transparent px-1.5 py-2.5 text-[13px] font-semibold text-[#333333] transition hover:bg-zinc-100 dark:text-[#E0E0E0] dark:hover:bg-zinc-800"
-            >
-              <RunIcon className="h-5 w-5 shrink-0" />
-              <span className="flex-1 text-left">Voluntariado</span>
-              <Chevron open={volOpen} />
-            </button>
-            {volOpen && (
-              <div className="mt-1 space-y-1 pl-5">
-                <SubLink href="/voluntarios" label="Voluntariado de Becarios" active={isActive("/voluntarios")} onClick={onClose} />
-                <SubLink href="#" label="Registro" active={false} onClick={onClose} />
-              </div>
-            )}
-            <NavLink href="#" label="Oferta de actividades" Icon={CalendarIcon} active={false} iconActive bold onClick={onClose} />
+        {sepNav.sections.map((sec) => (
+          <div key={sec.section}>
+            {sec.section !== "Panel" && <Category>{sec.section}</Category>}
+            <div className="space-y-1">
+              {sec.items.map((group) => renderGroup(group, sec.section))}
+            </div>
           </div>
-        </div>
-
-        {sepNavContent}
-
-        <div>
-          <Category>Análisis</Category>
-          <div className="space-y-1">
-            <NavLink href="#" label="Estadísticas" Icon={ChartIcon} active={false} bold={false} onClick={onClose} />
-          </div>
-        </div>
-
-        <div>
-          <Category>Otros componentes</Category>
-          <div className="space-y-1">
-            <NavLink href="#" label="Registro CVA" Icon={DocumentIcon} active={false} bold={false} onClick={onClose} />
-            <NavLink href="#" label="Notas universitarias" Icon={CapIcon} active={false} bold={false} onClick={onClose} />
-            <NavLink href="#" label="D.O.S Exchange Programs" Icon={GlobeIcon} active={false} bold={false} onClick={onClose} />
-          </div>
-        </div>
+        ))}
       </nav>
 
       <div className="border-t border-zinc-200 p-3 dark:border-zinc-800">
@@ -213,43 +246,6 @@ function SubLink({
     >
       <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[#bbbbbb] dark:bg-[#888888]" />
       {label}
-    </Link>
-  );
-}
-
-// Link to a SEP page. SEP pages may be served on the SEP domain (same origin as
-// SISMO when proxied) or cross-origin; either way we open them in the same tab
-// so SEP owns the navigation. The SEP session cookie is carried automatically
-// for same-origin targets, so no extra token is appended here (see
-// docs/SEP_INTEGRATION.md §2.2 for correlation params SEP may require).
-function SepNavLink({
-  item,
-  active,
-  onClick,
-}: {
-  item: SepNavItem;
-  active: boolean;
-  onClick: () => void;
-}) {
-  const external = !item.href.startsWith("/");
-  const className = cn(
-    "flex items-center gap-3 rounded-xl px-1.5 py-2.5 text-[13px] transition",
-    active
-      ? "bg-[#00A650]/10 text-[#00A650]"
-      : "text-[#333333] hover:bg-zinc-100 dark:text-[#E0E0E0] dark:hover:bg-zinc-800",
-  );
-  if (external) {
-    return (
-      <a href={item.href} onClick={onClick} className={className} target="_self" rel="noopener">
-        <GlobeIcon className="h-5 w-5 shrink-0" />
-        {item.label}
-      </a>
-    );
-  }
-  return (
-    <Link href={item.href} onClick={onClick} className={className}>
-      <GlobeIcon className="h-5 w-5 shrink-0" />
-      {item.label}
     </Link>
   );
 }

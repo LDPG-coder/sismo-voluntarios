@@ -16,6 +16,18 @@ export type UserSession =
   | { authenticated: false; reason: string };
 
 export async function readUserSession(): Promise<UserSession> {
+  // Bypass para modo desarrollo — permite acceder sin cookie de sesión
+  // Para activar: DEV_BYPASS_AUTH=true en .env del contenedor
+  // Para desactivar: comentar estas 3 líneas
+  if (process.env.DEV_BYPASS_AUTH === "true") {
+    return {
+      authenticated: true,
+      user_id: "dev-user-id",
+      role: "admin",
+      status: "active",
+    };
+  }
+
   const store = await cookies();
   const raw = store.get(authCookieName)?.value;
   const result = decodeSession(raw);

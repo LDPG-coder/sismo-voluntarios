@@ -4,14 +4,14 @@ import { useState } from "react";
 import { Sidebar } from "@/components/sidebar";
 import { HeaderBar } from "@/components/header-bar";
 import { useSession } from "@/components/session-provider";
-import type { SepNavItem } from "@/lib/sep-nav";
+import type { SepNavResponse } from "@/lib/sep-nav";
 
 export function AppShell({
   children,
-  sepNav = [],
+  sepNav = { sections: [] },
 }: {
   children: React.ReactNode;
-  sepNav?: SepNavItem[];
+  sepNav?: SepNavResponse;
 }) {
   const [open, setOpen] = useState(false);
   const { user } = useSession();

@@ -1,47 +1,61 @@
 // Server-side consumer of the SEP navigation menu.
 //
-// SISMO's sidebar must mirror the SEP site's navigation. Instead of hard-coding
-// (and constantly drifting from) SEP's structure, SISMO fetches the menu from a
-// JSON endpoint that the SEP platform exposes. SEP owns the list; SISMO only
-// renders it. See docs/SEP_INTEGRATION.md §2.2 for the contract.
+// SISMO's sidebar mirrors the SEP site's navigation. Instead of hard-coding
+// (and constantly drifting from) SEP's structure, SISMO fetches the menu from
+// a JSON endpoint that SEP exposes. SEP owns the list; SISMO only renders it.
+// SEP filters by access tier using the user's email.
 
-export type SepNavItem = {
+export type SepNavSubItem = {
   label: string;
   href: string;
-  requiresSession?: boolean;
 };
 
-type SepNavPayload = {
-  items?: SepNavItem[];
+export type SepNavGroup = {
+  label: string;
+  href: string | null;
+  items?: SepNavSubItem[];
+};
+
+export type SepNavSection = {
+  section: string;
+  items: SepNavGroup[];
+};
+
+export type SepNavResponse = {
+  sections: SepNavSection[];
 };
 
 const NAV_URL = process.env.SEP_NAVIGATION_URL?.trim() || "";
 const TIMEOUT_MS = 2500;
 
 /**
- * Fetch the SEP navigation items. Returns an empty list when unconfigured or on
- * any failure (network error, timeout, bad shape) so the SISMO sidebar always
+ * Fetch the SEP navigation tree. The user's email is passed so SEP can filter
+ * by access tier. Returns an empty sections list when unconfigured or on any
+ * failure (network error, timeout, bad shape) so the SISMO sidebar always
  * renders — SEP's navigation is an enhancement, never a hard dependency.
  */
-export async function getSepNavigation(): Promise<SepNavItem[]> {
-  if (!NAV_URL) return [];
+export async function getSepNavigation(
+  email?: string | null,
+): Promise<SepNavResponse> {
+  if (!NAV_URL) return { sections: [] };
+
+  const url = new URL(NAV_URL);
+  if (email) url.searchParams.set("email", email);
+
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
   try {
-    const res = await fetch(NAV_URL, {
+    const res = await fetch(url, {
       cache: "no-store",
       signal: controller.signal,
       headers: { Accept: "application/json" },
     });
-    if (!res.ok) return [];
-    const data = (await res.json()) as SepNavPayload;
-    if (!Array.isArray(data.items)) return [];
-    return data.items.filter(
-      (it): it is SepNavItem =>
-        !!it && typeof it.label === "string" && typeof it.href === "string",
-    );
+    if (!res.ok) return { sections: [] };
+    const data = (await res.json()) as SepNavResponse;
+    if (!Array.isArray(data.sections)) return { sections: [] };
+    return { sections: data.sections };
   } catch {
-    return [];
+    return { sections: [] };
   } finally {
     clearTimeout(timer);
   }

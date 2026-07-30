@@ -20,6 +20,23 @@ export type CurrentUser = {
 };
 
 export async function fetchCurrentUser(): Promise<CurrentUser | null> {
+  // Bypass para modo desarrollo — devuelve un usuario admin mock
+  // Para activar: DEV_BYPASS_AUTH=true en .env del contenedor
+  // Para desactivar: comentar estas 12 líneas
+  if (process.env.DEV_BYPASS_AUTH === "true") {
+    return {
+      id: "dev-user-id",
+      email: "dev@localhost.com",
+      name: "Dev Admin",
+      photo_url: null,
+      google_photo_url: null,
+      role: "admin",
+      status: "active",
+      auth_source: "sep",
+      referral_code: "DEV-REF",
+    };
+  }
+
   const store = await cookies();
   const cookie = store.get(authCookieName)?.value;
   if (!cookie) return null;

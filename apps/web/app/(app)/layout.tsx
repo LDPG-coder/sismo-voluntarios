@@ -20,9 +20,9 @@ export default async function AppLayout({
   const user = await fetchCurrentUser();
   const isSep = user?.auth_source === "sep";
 
-  // Fetched once per render of the app shell. Cheap (cached by SEP) and
-  // fails open to an empty list if SEP is unreachable.
-  const sepNav = isSep ? await getSepNavigation() : [];
+  // Fetched once per render of the app shell. SEP filters by access tier
+  // using the user's email. Fails open to empty if SEP is unreachable.
+  const sepNav = isSep ? await getSepNavigation(user?.email) : { sections: [] };
 
   return (
     <SessionProvider initialUser={user}>
