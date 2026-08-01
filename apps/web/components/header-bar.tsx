@@ -9,6 +9,8 @@ import { onPhotoChanged } from "@/lib/photo-events";
 import { displayPhoto } from "@/lib/photo";
 import { useSession, type SessionUser } from "@/components/session-provider";
 
+const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH?.trim() || "";
+
 // Shared top header used by both AppShell (SEP users) and ExternalShell (OAuth
 // users). The only structural difference is the left slot: SEP users get the
 // hamburger button that opens the sidebar; OAuth users get no menu button
@@ -116,7 +118,7 @@ export function HeaderBar({ leftSlot }: { leftSlot?: React.ReactNode }) {
                     Configuración
                   </Link>
                   <a
-                    href="/auth/logout"
+                    href={`${BASE_PATH}${user?.auth_source === "sep" ? "/auth/logout?from=sep" : "/auth/logout"}`}
                     className="mx-1 flex items-center justify-between rounded-md px-3 py-2 text-sm font-medium text-rose-600 transition hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-900/20"
                   >
                     <span>Cerrar sesión</span>
