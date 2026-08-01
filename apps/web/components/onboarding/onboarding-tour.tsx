@@ -91,7 +91,7 @@ export function TourProvider({ children }: { children: ReactNode }) {
           onClick={start}
           aria-label="Repetir el tour de inducción"
           title="Repetir el tour de inducción"
-          className="fixed bottom-4 left-4 z-[90] flex h-11 w-11 items-center justify-center rounded-full border border-zinc-200 bg-white text-lg font-bold text-emerald-600 shadow-lg shadow-zinc-900/10 transition hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-emerald-400 dark:hover:bg-zinc-800"
+          className="fixed bottom-4 left-4 z-30 flex h-11 w-11 items-center justify-center rounded-full border border-zinc-200 bg-white text-lg font-bold text-emerald-600 shadow-lg shadow-zinc-900/10 transition hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-emerald-400 dark:hover:bg-zinc-800"
         >
           ?
         </button>

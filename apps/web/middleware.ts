@@ -47,7 +47,12 @@ export function middleware(request: NextRequest) {
     "object-src 'none'",
     // En dev (localhost/http) no se necesita upgrade-insecure-requests;
     // fuerza https y rompe las rutas internas que usan http.
-    ...(isDev ? [] : ["upgrade-insecure-requests"]),
+    // Cuando SISMO se sirve detrás de un proxy HTTP (como SEP en Docker),
+    // se desactiva via SISMO_BEHIND_HTTP_PROXY para no forzar HTTPS contra
+    // un backend que no lo soporta.
+    ...(isDev || process.env.SISMO_BEHIND_HTTP_PROXY === "1"
+      ? []
+      : ["upgrade-insecure-requests"]),
   ].join("; ");
 
   const response = NextResponse.next();

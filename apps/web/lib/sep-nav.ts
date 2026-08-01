@@ -26,13 +26,16 @@ export type SepNavResponse = {
 };
 
 const NAV_URL = process.env.SEP_NAVIGATION_URL?.trim() || "";
+const PARTNER_TOKEN = process.env.SISMO_SEP_PARTNER_TOKEN?.trim() || "";
 const TIMEOUT_MS = 2500;
 
 /**
  * Fetch the SEP navigation tree. The user's email is passed so SEP can filter
- * by access tier. Returns an empty sections list when unconfigured or on any
- * failure (network error, timeout, bad shape) so the SISMO sidebar always
- * renders — SEP's navigation is an enhancement, never a hard dependency.
+ * by access tier, and the shared partner token is sent so SEP's endpoint can
+ * authenticate this server-to-server call. Returns an empty sections list when
+ * unconfigured or on any failure (network error, timeout, bad shape) so the
+ * SISMO sidebar always renders — SEP's navigation is an enhancement, never a
+ * hard dependency.
  */
 export async function getSepNavigation(
   email?: string | null,
@@ -48,7 +51,10 @@ export async function getSepNavigation(
     const res = await fetch(url, {
       cache: "no-store",
       signal: controller.signal,
-      headers: { Accept: "application/json" },
+      headers: {
+        Accept: "application/json",
+        ...(PARTNER_TOKEN ? { "x-sep-partner-token": PARTNER_TOKEN } : {}),
+      },
     });
     if (!res.ok) return { sections: [] };
     const data = (await res.json()) as SepNavResponse;
