@@ -155,6 +155,15 @@ crea otra cuenta distinta.
 > otorgar admin; un usuario SEP nuevo siempre es `volunteer` y la promoción a
 > admin sólo ocurre vía el endpoint admin-only `PATCH /users/{id}`. Así, la fuga
 > del `SISMO_SEP_LOGIN_TOKEN` no permite acuñar cuentas admin.
+>
+> **Bridge temporal (remover):** SEP aún **no** es autoritativo para roles. Como
+> puente temporal, los usuarios SEP listados en `SISMO_SEP_ADMIN_IDS`
+> (emails separados por coma, en minúsculas) pueden asumir el rol `admin` en el
+> login si SEP envía `role: "admin"`; el resto conserva el comportamiento
+> anterior. Este allowlist es un puente para que los admins del SEP accedan al
+> panel de SISMO mientras SEP no dirige roles. Cuando SEP sea autoritativo para
+> roles, se eliminará este allowlist y se confiará directamente en el campo
+> `role` que envía SEP.
 
 ### 2.4 Mostrar la campana de notificaciones de SISMO en el header del SEP
 

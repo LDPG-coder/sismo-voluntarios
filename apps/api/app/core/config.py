@@ -58,6 +58,11 @@ class Settings(BaseSettings):
     # SEP-issued verifier, but the short TTL further limits the replay window.
     sep_code_ttl_seconds: float = 120.0
 
+    # TEMPORARY allowlist of SEP user emails that may assert the admin role on
+    # login (comma-separated, lowercased). Bridges SEP admins into SISMO admin
+    # until SEP becomes authoritative for roles; then remove this field.
+    sep_admin_ids: Annotated[list[str], NoDecode] = Field(default_factory=list)
+
     google_client_id: str | None = None
     google_client_secret: str | None = None
     google_redirect_uri: str = "http://localhost:8000/api/v1/auth/callback"
@@ -158,6 +163,17 @@ class Settings(BaseSettings):
     def _split_csv_scopes(cls, value: object) -> object:
         if isinstance(value, str):
             return [item.strip() for item in value.split(",") if item.strip()]
+        return value
+
+    @field_validator("sep_admin_ids", mode="before")
+    @classmethod
+    def _split_csv_sep_admin_ids(cls, value: object) -> object:
+        if isinstance(value, str):
+            return [
+                item.strip().lower()
+                for item in value.split(",")
+                if item.strip()
+            ]
         return value
 
     @property

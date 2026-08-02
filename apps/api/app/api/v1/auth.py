@@ -241,16 +241,36 @@ class _SepLoginBody(BaseModel):
 
 
 def _resolve_or_create_sep_user(
-    db: Session, *, sep_user_id: str, email: str, name: str | None, role: str | None
+    db: Session,
+    *,
+    settings: Settings,
+    sep_user_id: str,
+    email: str,
+    name: str | None,
+    role: str | None,
 ) -> User:
     """Find or create the SISMO account for a SEP-platform user.
 
     SEP and external (Google) populations are distinct: lookup is by the SEP
     stable id, never by email, so a SEP user is never merged with a Google one.
+
+    TEMPORARY: SEP users listed in `SISMO_SEP_ADMIN_IDS` may assert admin; this
+    bridges SEP admins until SEP becomes authoritative for roles.
     """
     user = db.execute(
         select(User).where(User.sep_user_id == sep_user_id)
     ).scalar_one_or_none()
+    if user is None:
+        # Link an existing account by email instead of failing with a
+        # unique-email violation. This covers accounts restored from production
+        # (auth_source=google, sep_user_id empty) that now log in via SEP SSO.
+        user = db.execute(
+            select(User).where(User.email == email.lower())
+        ).scalar_one_or_none()
+        if user is not None:
+            user.sep_user_id = sep_user_id
+            db.commit()
+            db.refresh(user)
     if user is not None:
         user.email = email.lower()
         if name:
@@ -258,16 +278,24 @@ def _resolve_or_create_sep_user(
         # SEP is NOT authoritative for SISMO roles. It may only assert the
         # volunteer role; admin promotion happens exclusively through the
         # admin-only PATCH /users/{id} endpoint. This prevents a leaked
-        # SEP_API_TOKEN from minting admin accounts.
-        if role == UserRole.volunteer.value:
+        # SEP_API_TOKEN from minting admin accounts. TEMPORARY exception: a SEP
+        # admin whose email is in `SISMO_SEP_ADMIN_IDS` may assert admin; remove
+        # when SEP becomes authoritative for roles.
+        if role == UserRole.admin.value and user.email in settings.sep_admin_ids:
+            user.role = role
+        elif role == UserRole.volunteer.value and user.role != UserRole.admin.value:
             user.role = role
         db.commit()
         db.refresh(user)
         return user
 
-    # New SEP-provisioned accounts are always volunteers. Never trust the
-    # caller-supplied role here.
-    effective_role = _SEP_DEFAULT_ROLE
+    # New SEP-provisioned accounts are volunteers by default. Never trust the
+    # caller-supplied role here, except the TEMPORARY allowlist bridge: a SEP
+    # admin whose email is in `SISMO_SEP_ADMIN_IDS` may be created as admin.
+    if role == UserRole.admin.value and email.lower() in settings.sep_admin_ids:
+        effective_role = UserRole.admin.value
+    else:
+        effective_role = _SEP_DEFAULT_ROLE
     new_user = User(
         email=email.lower(),
         name=name,
@@ -321,7 +349,12 @@ def auth_sep_login(
         raise ApiError(ErrorCode.validation_invalid_format, "code_challenge must be S256 (base64url, 43-128 chars)")
 
     user = _resolve_or_create_sep_user(
-        db, sep_user_id=sep_user_id, email=email, name=body.name, role=body.role
+        db,
+        settings=settings,
+        sep_user_id=sep_user_id,
+        email=email,
+        name=body.name,
+        role=body.role,
     )
     user.last_login_at = datetime.now(UTC)
     db.commit()

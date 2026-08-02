@@ -7,6 +7,7 @@ import {
   GridIcon,
   CalendarIcon,
   GlobeIcon,
+  VolunteersIcon,
 } from "@/components/nav-config";
 import {
   SepWorkshopIcon,
@@ -23,6 +24,7 @@ type User = {
   name: string | null;
   photo_url: string | null;
   email: string;
+  role: "volunteer" | "admin";
 } | null;
 
 const SEP_ORIGIN =
@@ -227,6 +229,31 @@ export function Sidebar({
               </ul>
             </div>
           ))}
+          {user?.role === "admin" && (
+            <div>
+              <SectionSeparator label="Administración" />
+              <ul className="space-y-2">
+                <li>
+                  <ItemLink
+                    href="/admin"
+                    label="Administrar"
+                    icon={<GridIcon />}
+                    active={isLinkActive("/admin", pathname)}
+                    onClick={closeDrawer}
+                  />
+                </li>
+                <li>
+                  <ItemLink
+                    href="/admin/usuarios"
+                    label="Gestionar usuarios"
+                    icon={<VolunteersIcon />}
+                    active={isLinkActive("/admin/usuarios", pathname)}
+                    onClick={closeDrawer}
+                  />
+                </li>
+              </ul>
+            </div>
+          )}
         </div>
       </aside>
     </>
