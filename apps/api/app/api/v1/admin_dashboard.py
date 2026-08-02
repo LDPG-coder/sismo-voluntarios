@@ -79,7 +79,11 @@ def get_dashboard(
     db: Annotated[Session, Depends(get_db)],
 ) -> DashboardStats:
     """Resumen ejecutivo para el panel de admin."""
-    total_users = db.execute(select(func.count(User.id))).scalar() or 0
+    # total_users cuenta los usuarios finales (excluye cuentas admin internas,
+    # que se quedan como staff y no deberían inflar el contador).
+    total_users = db.execute(
+        select(func.count(User.id)).where(User.role != UserRole.admin.value)
+    ).scalar() or 0
     total_activities = db.execute(select(func.count(Activity.id))).scalar() or 0
     active_activities = db.execute(
         select(func.count(Activity.id)).where(Activity.status == ActivityStatus.active.value)
