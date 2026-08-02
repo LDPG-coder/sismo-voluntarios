@@ -52,10 +52,10 @@ export function HeaderBar({ leftSlot }: { leftSlot?: React.ReactNode }) {
     <header className={`sticky top-0 z-30 border-b border-black/[0.06] bg-[#f4f5f7]/70 backdrop-blur-xl backdrop-saturate-150 transition-transform duration-300 ease-out motion-reduce:transition-none dark:border-white/[0.08] dark:bg-[#0c0c0c]/70 ${
       headerHidden ? "-translate-y-full" : "translate-y-0"
     }`}>
-      <div className="flex h-[56px] items-center justify-between gap-3 px-3 md:px-6">
+      <div className="flex h-[56px] items-center gap-3 px-3 md:px-6">
         {leftSlot ?? <span aria-hidden className="h-9 w-9" />}
 
-        <div className="flex items-center gap-2 sm:gap-3">
+        <div className="ml-auto flex items-center gap-2 sm:gap-3">
           {canCreate && (
             <Link
               href="/voluntarios/crear"
