@@ -38,7 +38,7 @@ export function middleware(request: NextRequest) {
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: https:",
     "font-src 'self' data:",
-    isDev
+    isDev || process.env.SISMO_BEHIND_HTTP_PROXY === "1"
       ? "connect-src 'self' http://localhost:* http://127.0.0.1:* https: wss: https://*.cloudflareinsights.com"
       : "connect-src 'self' https: wss: https://*.cloudflareinsights.com",
     "frame-ancestors 'self'",
