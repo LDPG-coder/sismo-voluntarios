@@ -4,49 +4,38 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import {
-  GridIcon,
-  CalendarIcon,
-  GlobeIcon,
-  VolunteersIcon,
-} from "@/components/nav-config";
-import {
+  SepDashboardIcon,
   SepWorkshopIcon,
   SepChatIcon,
   SepVolunteerIcon,
+  SepUserIcon,
   SepLinkIcon,
-  SepChartBarIcon,
-  SepDocumentTextIcon,
-  SepAcademicCapIcon,
+  SepChevronIcon,
 } from "@/components/sep-icons";
 import type { SepNavResponse, SepNavGroup } from "@/lib/sep-nav";
-
-type User = {
-  name: string | null;
-  photo_url: string | null;
-  email: string;
-  role: "volunteer" | "admin";
-} | null;
 
 const SEP_ORIGIN =
   process.env.NEXT_PUBLIC_WEB_ORIGIN?.trim() || "http://localhost:3000";
 const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH?.trim() || "";
 const MOBILE_QUERY = "(max-width: 767px)";
 
+// Icon map mirrors the SEP admin sidebar (src/components/admin/navigation).
+// Labels come from the SEP /api/navigation endpoint and stay in Spanish.
 const LABEL_ICONS: Record<string, ReactNode> = {
-  "Panel general": <GridIcon />,
+  "Panel general": <SepDashboardIcon />,
   "Actividades formativas": <SepWorkshopIcon />,
+  "Chat clubs de inglés": <SepChatIcon />,
   Chats: <SepChatIcon />,
   Voluntariado: <SepVolunteerIcon />,
-  "Oferta de actividades": <CalendarIcon className="text-[#2fc122]" />,
-  Voluntariados: <SepLinkIcon className="text-[#2fc122]" />,
-  Estadísticas: <SepChartBarIcon />,
-  "Registro CVA": <SepDocumentTextIcon />,
-  "Notas universitarias": <SepAcademicCapIcon />,
-  "D.O.S Exchange Programs": <GlobeIcon />,
+  "Voluntariado de Becarios": <SepVolunteerIcon />,
+  Becarios: <SepUserIcon />,
+  Mentores: <SepUserIcon />,
+  Captación: <SepUserIcon />,
+  "Formulario de postulación": <SepLinkIcon />,
 };
 
 function iconFor(label: string): ReactNode {
-  return LABEL_ICONS[label] ?? <GlobeIcon />;
+  return LABEL_ICONS[label] ?? <SepLinkIcon />;
 }
 
 function resolveHref(href: string): string {
@@ -76,15 +65,17 @@ function isLinkActive(href: string, pathname: string): boolean {
 }
 
 export function Sidebar({
-  user,
   open,
   onClose,
   sepNav = { sections: [] },
+  collapsed,
+  onToggleCollapse,
 }: {
-  user: User;
   open: boolean;
   onClose: () => void;
   sepNav?: SepNavResponse;
+  collapsed: boolean;
+  onToggleCollapse: () => void;
 }) {
   const pathname = usePathname();
   const onCloseRef = useRef(onClose);
@@ -155,6 +146,7 @@ export function Sidebar({
           label={group.label}
           icon={icon}
           active={rowActive}
+          collapsed={collapsed}
           onClick={closeDrawer}
         />
       );
@@ -165,6 +157,7 @@ export function Sidebar({
         group={group}
         icon={icon}
         active={rowActive}
+        collapsed={collapsed}
         onClick={closeDrawer}
       />
     );
@@ -183,16 +176,57 @@ export function Sidebar({
       <aside
         aria-label="Menú principal"
         className={cn(
-          "fixed left-0 top-0 z-30 flex h-[100dvh] w-[86vw] max-w-[340px] flex-col overflow-hidden rounded-r-lg border-r border-black/[0.07] bg-white shadow-[0_16px_40px_rgba(4,9,1,0.18)] transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none dark:border-white/[0.08] dark:bg-black md:w-72 md:max-w-none md:rounded-none md:shadow-none md:translate-x-0",
-          open ? "z-[70] translate-x-0" : "z-30 -translate-x-full"
+          "fixed left-0 top-0 z-30 flex h-[100dvh] w-[86vw] max-w-[340px] flex-col overflow-hidden rounded-r-lg border-r border-black/[0.07] bg-white shadow-[0_16px_40px_rgba(4,9,1,0.18)] transition-[transform,width] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none dark:border-white/[0.08] dark:bg-black md:max-w-none md:rounded-none md:border-0 md:overflow-visible md:bg-transparent md:shadow-none",
+          collapsed ? "md:w-[65px]" : "md:w-[290px]",
+          open ? "z-[70] translate-x-0" : "z-30 -translate-x-full md:translate-x-0 md:z-40"
         )}
       >
-        <div className="flex h-[57px] shrink-0 items-center justify-between gap-2 border-b border-black/[0.05] px-4 dark:border-white/[0.06] md:justify-center md:px-5">
+        <button
+          type="button"
+          onClick={onToggleCollapse}
+          aria-label={collapsed ? "Expandir menú" : "Contraer menú"}
+          title={collapsed ? "Expandir menú" : "Contraer menú"}
+          className="absolute -right-[27px] top-[1px] z-50 hidden h-7 w-7 items-center justify-center rounded-md bg-white text-zinc-600 shadow-md ring-1 ring-black/10 transition hover:bg-zinc-100 md:flex dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700 dark:ring-white/10"
+        >
+          <svg
+            className={cn(
+              "h-4 w-4 transition-transform duration-700 ease-in-out",
+              collapsed && "rotate-180"
+            )}
+            fill="none"
+            viewBox="0 0 24 24"
+            strokeWidth={1.5}
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M15.75 19.5 8.25 12l7.5-7.5"
+            />
+          </svg>
+        </button>
+
+        <div className="flex h-[57px] shrink-0 items-center justify-between gap-2 border-b border-black/[0.05] px-4 dark:border-white/[0.06] md:justify-center md:border-b-0 md:px-0">
           <img
             src={`${BASE_PATH}/sidebar/proexcelencia-color.avif`}
             alt="ProExcelencia"
-            className="h-auto w-[150px] md:w-[170px]"
+            className="h-auto w-[150px] md:hidden"
           />
+          <div className="hidden items-center gap-1 md:flex">
+            <img
+              src={`${BASE_PATH}/sidebar/logo-proexcelencia-cap-white-80.avif`}
+              alt="ProExcelencia"
+              className="h-10 w-10 shrink-0"
+            />
+            <img
+              src={`${BASE_PATH}/sidebar/logo-proexcelencia-words-white-280.avif`}
+              alt=""
+              className={cn(
+                "h-3.5 w-[140px] transition-[transform,opacity] duration-300",
+                collapsed && "-translate-x-96 opacity-0 hidden"
+              )}
+            />
+          </div>
           <button
             ref={closeButtonRef}
             type="button"
@@ -216,10 +250,20 @@ export function Sidebar({
           </button>
         </div>
 
-        <div className="flex flex-1 flex-col gap-2 overflow-y-auto px-3 py-4">
+        <div
+          className={cn(
+            "flex-1 overflow-y-auto",
+            collapsed
+              ? "flex flex-col items-center gap-2 px-0 py-4"
+              : "flex flex-col gap-2 px-3 py-4"
+          )}
+        >
           {sepNav.sections.map((sec, idx) => (
-            <div key={sec.section}>
-              {idx > 0 && <SectionSeparator label={sec.section} />}
+            <div
+              key={sec.section}
+              className={cn("w-full", collapsed && "flex flex-col items-center")}
+            >
+              {idx > 0 && <SectionSeparator label={sec.section} collapsed={collapsed} />}
               <ul className="space-y-2">
                 {sec.items.map((group) => (
                   <li key={`${sec.section}/${group.label}`}>
@@ -229,40 +273,16 @@ export function Sidebar({
               </ul>
             </div>
           ))}
-          {user?.role === "admin" && (
-            <div>
-              <SectionSeparator label="Administración" />
-              <ul className="space-y-2">
-                <li>
-                  <ItemLink
-                    href="/admin"
-                    label="Administrar"
-                    icon={<GridIcon />}
-                    active={isLinkActive("/admin", pathname)}
-                    onClick={closeDrawer}
-                  />
-                </li>
-                <li>
-                  <ItemLink
-                    href="/admin/usuarios"
-                    label="Gestionar usuarios"
-                    icon={<VolunteersIcon />}
-                    active={isLinkActive("/admin/usuarios", pathname)}
-                    onClick={closeDrawer}
-                  />
-                </li>
-              </ul>
-            </div>
-          )}
         </div>
       </aside>
     </>
   );
 }
 
-function SectionSeparator({ label }: { label: string }) {
+function SectionSeparator({ label, collapsed }: { label: string; collapsed?: boolean }) {
+  if (collapsed) return null;
   return (
-    <p className="max-w-[248px] truncate px-3 pb-1 pt-2 text-xs font-medium text-gray-500 dark:text-gray-500">
+    <p className="max-w-[248px] truncate px-3 pb-1 pt-2 text-xs font-medium uppercase tracking-wide text-white/60">
       {label}
     </p>
   );
@@ -270,7 +290,7 @@ function SectionSeparator({ label }: { label: string }) {
 
 function IconSlot({ icon }: { icon: ReactNode }) {
   return (
-    <span className="flex h-5 w-5 shrink-0 items-center justify-center [&>svg]:h-full [&>svg]:w-full">
+    <span className="flex h-6 w-6 shrink-0 items-center justify-center [&>svg]:h-full [&>svg]:w-full">
       {icon}
     </span>
   );
@@ -281,27 +301,29 @@ function ItemLink({
   label,
   icon,
   active,
+  collapsed,
   onClick,
 }: {
   href: string;
   label: string;
   icon: ReactNode;
   active: boolean;
+  collapsed: boolean;
   onClick: () => void;
 }) {
   return (
     <a
       href={resolveHref(href)}
       onClick={onClick}
+      title={collapsed ? label : undefined}
       className={cn(
-        "flex h-11 w-full items-center justify-start gap-3 rounded-md px-3 text-sm transition-colors duration-200",
-        active
-          ? "bg-[#f2fdf0] font-semibold text-[#1d8015] dark:bg-[#2fc122]/20 dark:text-[#2fc122]"
-          : "font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-white/[0.06] dark:hover:text-gray-100"
+        "flex h-11 items-center rounded-md text-white transition-colors duration-200",
+        collapsed ? "w-11 justify-center" : "w-full justify-start gap-3 px-3 text-sm font-medium",
+        active ? "bg-white/20" : "hover:bg-white/10"
       )}
     >
       <IconSlot icon={icon} />
-      <span className="flex-1 whitespace-nowrap text-left">{label}</span>
+      {!collapsed && <span className="flex-1 whitespace-nowrap text-left">{label}</span>}
     </a>
   );
 }
@@ -310,11 +332,13 @@ function ItemGroup({
   group,
   icon,
   active,
+  collapsed,
   onClick,
 }: {
   group: SepNavGroup;
   icon: ReactNode;
   active: boolean;
+  collapsed: boolean;
   onClick: () => void;
 }) {
   const pathname = usePathname();
@@ -325,6 +349,31 @@ function ItemGroup({
     if (window.innerWidth <= 768) setOpen(false);
   }, [pathname]);
 
+  // When the sidebar is collapsed only the icon is shown. Groups without a
+  // target link are not reachable until expanded again.
+  if (collapsed) {
+    if (group.href !== null) {
+      return (
+        <ItemLink
+          href={group.href}
+          label={group.label}
+          icon={icon}
+          active={active}
+          collapsed
+          onClick={onClick}
+        />
+      );
+    }
+    return (
+      <span
+        title={group.label}
+        className="flex h-11 w-11 items-center justify-center rounded-md text-white/80"
+      >
+        <IconSlot icon={icon} />
+      </span>
+    );
+  }
+
   const toggle = () => setOpen((v) => !v);
 
   return (
@@ -333,33 +382,19 @@ function ItemGroup({
         type="button"
         onClick={toggle}
         className={cn(
-          "flex h-11 w-full items-center justify-start gap-3 rounded-md px-3 text-sm transition-colors duration-200",
-          active
-            ? "bg-[#f2fdf0] font-semibold text-[#1d8015] dark:bg-[#2fc122]/20 dark:text-[#2fc122]"
-            : "font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-white/[0.06] dark:hover:text-gray-100"
+          "flex h-11 w-full items-center justify-start gap-3 rounded-md px-3 text-sm font-medium text-white transition-colors duration-200",
+          active ? "bg-white/20" : "hover:bg-white/10"
         )}
       >
         <IconSlot icon={icon} />
         <span className="flex-1 whitespace-nowrap text-left">{group.label}</span>
         <span
           className={cn(
-            "block h-4 w-4 shrink-0 text-gray-400 transition-transform duration-200",
+            "block h-4 w-4 shrink-0 text-white/80 transition-transform duration-200 [&>svg]:h-full [&>svg]:w-full",
             isOpen && "rotate-180"
           )}
         >
-          <svg
-            className="h-4 w-4"
-            fill="none"
-            viewBox="0 0 24 24"
-            strokeWidth={2}
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M19.5 8.25 12 15.75 4.5 8.25"
-            />
-          </svg>
+          <SepChevronIcon />
         </span>
       </button>
       {isOpen && (
@@ -372,18 +407,14 @@ function ItemGroup({
                   href={resolveHref(sub.href)}
                   onClick={onClick}
                   className={cn(
-                    "flex w-full items-center gap-3 rounded-md py-2 pl-11 pr-3 text-sm transition-colors duration-200",
-                    subActive
-                      ? "font-medium text-[#1d8015] dark:text-[#2fc122]"
-                      : "text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
+                    "flex w-full items-center gap-3 rounded-md py-2 pl-8 pr-3 text-sm text-white transition-colors duration-200",
+                    subActive ? "bg-white/20" : "hover:bg-white/10"
                   )}
                 >
                   <span
                     className={cn(
-                      "h-1.5 w-1.5 shrink-0 rounded-full transition-colors duration-200",
-                      subActive
-                        ? "bg-[#23a217] dark:bg-[#2fc122]"
-                        : "bg-gray-300 dark:bg-gray-600"
+                      "h-1 w-1 shrink-0 rounded-full",
+                      subActive ? "bg-white" : "bg-gray-200"
                     )}
                   />
                   {sub.label}
