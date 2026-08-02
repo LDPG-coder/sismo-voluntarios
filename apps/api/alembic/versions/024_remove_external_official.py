@@ -24,10 +24,16 @@ def upgrade() -> None:
     op.drop_constraint(
         "fk_activities_validated_by_users", "activities", type_="foreignkey"
     )
-    op.drop_constraint(
-        "fk_activities_certificate_asset_id_media_assets",
-        "activities",
-        type_="foreignkey",
+    # 017 created certificate_asset_id with an inline sa.ForeignKey, so
+    # Postgres auto-named it activities_certificate_asset_id_fkey. Drop by
+    # either name so fresh databases do not fail with UndefinedObject.
+    op.execute(
+        "ALTER TABLE activities DROP CONSTRAINT IF EXISTS "
+        "activities_certificate_asset_id_fkey"
+    )
+    op.execute(
+        "ALTER TABLE activities DROP CONSTRAINT IF EXISTS "
+        "fk_activities_certificate_asset_id_media_assets"
     )
 
     # Drop columns

@@ -85,22 +85,33 @@ def test_create_activity_validation(client, db):
 # -- C2: SEP cannot escalate privileges -------------------------------------
 
 
-def test_sep_cannot_escalate_to_admin(db):
+def test_sep_cannot_escalate_to_admin(db, settings):
     sep_id = "sep-" + uuid4().hex
     # New SEP user asserting admin role is created as volunteer.
     u = _resolve_or_create_sep_user(
-        db, sep_user_id=sep_id, email="sep1@example.com", name=None, role="admin"
+        db,
+        settings=settings,
+        sep_user_id=sep_id,
+        email="sep1@example.com",
+        name=None,
+        role="admin",
     )
     assert u.role == "volunteer"
 
     # Existing SEP user stays volunteer even if SEP claims admin.
     u2 = _resolve_or_create_sep_user(
-        db, sep_user_id=sep_id, email="sep1@example.com", name="X", role="admin"
+        db,
+        settings=settings,
+        sep_user_id=sep_id,
+        email="sep1@example.com",
+        name="X",
+        role="admin",
     )
     assert u2.id == u.id
     assert u2.role == "volunteer"
 
-    # An existing admin reached via SEP is not demoted/promoted by SEP.
+    # An existing admin whose email is NOT in the allowlist is revoked: the
+    # allowlist is the only source of admin for SEP users.
     admin = make_user(
         db,
         role="admin",
@@ -109,11 +120,42 @@ def test_sep_cannot_escalate_to_admin(db):
         sep_user_id="sep-admin-1",
         email="admin@example.com",
     )
+    assert "admin@example.com" not in settings.sep_admin_ids
     u3 = _resolve_or_create_sep_user(
-        db, sep_user_id="sep-admin-1", email="admin@example.com", name="Y", role="admin"
+        db,
+        settings=settings,
+        sep_user_id="sep-admin-1",
+        email="admin@example.com",
+        name="Y",
+        role="admin",
     )
     assert u3.id == admin.id
-    assert u3.role == "admin"
+    assert u3.role == "volunteer"
+
+
+def test_sep_admin_in_allowlist_kept_admin(db):
+    # An existing admin whose email IS in the allowlist stays admin.
+    from app.core.config import Settings
+
+    allow = Settings(sep_admin_ids=["listed@example.com"])
+    admin = make_user(
+        db,
+        role="admin",
+        status="active",
+        auth_source="sep",
+        sep_user_id="sep-admin-2",
+        email="listed@example.com",
+    )
+    u = _resolve_or_create_sep_user(
+        db,
+        settings=allow,
+        sep_user_id="sep-admin-2",
+        email="listed@example.com",
+        name="Z",
+        role="admin",
+    )
+    assert u.id == admin.id
+    assert u.role == "admin"
 
 
 # -- Refresh tokens: rotation + family revocation --------------------------

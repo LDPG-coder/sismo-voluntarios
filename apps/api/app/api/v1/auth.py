@@ -286,6 +286,11 @@ def _resolve_or_create_sep_user(
         # when SEP becomes authoritative for roles.
         if role == UserRole.admin.value and user.email in settings.sep_admin_ids:
             user.role = role
+        # allowlist is the only source of admin for SEP users; revoke persisted
+        # admin when the email is no longer listed.
+        elif user.role == UserRole.admin.value and user.email not in settings.sep_admin_ids:
+            user.role = UserRole.volunteer.value
+            _log.warning("auth.sep.admin_revoked", email=user.email)
         elif role == UserRole.volunteer.value and user.role != UserRole.admin.value:
             user.role = role
         db.commit()
