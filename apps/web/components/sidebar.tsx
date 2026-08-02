@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { usePathname } from "next/navigation";
+import { MoreHorizontal } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   SepDashboardIcon,
@@ -17,7 +18,7 @@ import type { SepNavResponse, SepNavGroup } from "@/lib/sep-nav";
 const SEP_ORIGIN =
   process.env.NEXT_PUBLIC_WEB_ORIGIN?.trim() || "http://localhost:3000";
 const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH?.trim() || "";
-const MOBILE_QUERY = "(max-width: 767px)";
+const MOBILE_QUERY = "(max-width: 1023px)";
 
 // Icon map mirrors the SEP admin sidebar (src/components/admin/navigation).
 // Labels come from the SEP /api/navigation endpoint and stay in Spanish.
@@ -83,6 +84,20 @@ export function Sidebar({
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const isFirstRender = useRef(true);
 
+  // Below lg the sidebar is a drawer, so the collapsed state is ignored: labels,
+  // groups and separators always render full width (mirrors SEP's useMobile()).
+  const [isNarrow, setIsNarrow] = useState(() =>
+    typeof window !== "undefined" ? window.matchMedia(MOBILE_QUERY).matches : false
+  );
+  useEffect(() => {
+    const mq = window.matchMedia(MOBILE_QUERY);
+    const onChange = () => setIsNarrow(mq.matches);
+    onChange();
+    mq.addEventListener("change", onChange);
+    return () => mq.removeEventListener("change", onChange);
+  }, []);
+  const effectiveCollapsed = isNarrow ? false : collapsed;
+
   // Close the drawer after navigating on mobile — the chosen route is now behind it.
   useEffect(() => {
     if (isFirstRender.current) {
@@ -93,7 +108,7 @@ export function Sidebar({
   }, [pathname]);
 
   // Mobile drawer behaves like a modal: lock the page, close on Escape, focus
-  // the close button. The lock follows the breakpoint so crossing to md+ while
+  // the close button. The lock follows the breakpoint so crossing to lg+ while
   // open frees scroll and closes the drawer.
   useEffect(() => {
     if (!open) return;
@@ -146,7 +161,7 @@ export function Sidebar({
           label={group.label}
           icon={icon}
           active={rowActive}
-          collapsed={collapsed}
+          collapsed={effectiveCollapsed}
           onClick={closeDrawer}
         />
       );
@@ -157,7 +172,7 @@ export function Sidebar({
         group={group}
         icon={icon}
         active={rowActive}
-        collapsed={collapsed}
+        collapsed={effectiveCollapsed}
         onClick={closeDrawer}
       />
     );
@@ -169,16 +184,16 @@ export function Sidebar({
         <div
           onClick={closeDrawer}
           aria-hidden="true"
-          className="fixed inset-0 z-[60] bg-black/50 md:hidden"
+          className="fixed inset-0 z-[60] bg-black/50 lg:hidden"
         />
       )}
 
       <aside
         aria-label="Menú principal"
         className={cn(
-          "fixed left-0 top-0 z-30 flex h-[100dvh] w-[86vw] max-w-[340px] flex-col overflow-hidden rounded-r-lg border-r border-black/[0.07] bg-white shadow-[0_16px_40px_rgba(4,9,1,0.18)] transition-[transform,width] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none dark:border-white/[0.08] dark:bg-black md:max-w-none md:rounded-none md:border-0 md:overflow-visible md:bg-transparent md:shadow-none",
-          collapsed ? "md:w-[65px]" : "md:w-[290px]",
-          open ? "z-[70] translate-x-0" : "z-30 -translate-x-full md:translate-x-0 md:z-40"
+          "fixed left-0 top-0 z-30 flex h-[100dvh] w-[86vw] max-w-[340px] flex-col overflow-hidden rounded-r-lg bg-[#137832] transition-[transform,width] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none dark:bg-[#083A17] lg:max-w-none lg:rounded-none lg:overflow-visible lg:bg-transparent",
+          collapsed ? "lg:w-[65px]" : "lg:w-[290px]",
+          open ? "z-[70] translate-x-0" : "z-30 -translate-x-full lg:translate-x-0 lg:z-40"
         )}
       >
         <button
@@ -186,7 +201,7 @@ export function Sidebar({
           onClick={onToggleCollapse}
           aria-label={collapsed ? "Expandir menú" : "Contraer menú"}
           title={collapsed ? "Expandir menú" : "Contraer menú"}
-          className="absolute -right-[27px] top-[1px] z-50 hidden h-7 w-7 items-center justify-center rounded-md bg-white text-zinc-600 shadow-md ring-1 ring-black/10 transition hover:bg-zinc-100 md:flex dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700 dark:ring-white/10"
+          className="absolute -right-[27px] top-[1px] z-50 hidden h-8 w-8 items-center justify-center rounded-lg bg-zinc-100 text-zinc-700 lg:flex dark:bg-zinc-800 dark:text-zinc-200"
         >
           <svg
             className={cn(
@@ -206,13 +221,8 @@ export function Sidebar({
           </svg>
         </button>
 
-        <div className="flex h-[57px] shrink-0 items-center justify-between gap-2 border-b border-black/[0.05] px-4 dark:border-white/[0.06] md:justify-center md:border-b-0 md:px-0">
-          <img
-            src={`${BASE_PATH}/sidebar/proexcelencia-color.avif`}
-            alt="ProExcelencia"
-            className="h-auto w-[150px] md:hidden"
-          />
-          <div className="hidden items-center gap-1 md:flex">
+        <div className="flex h-[57px] shrink-0 items-center justify-between gap-2 border-b border-black/[0.05] px-4 dark:border-white/[0.06] lg:justify-center lg:border-b-0 lg:px-0">
+          <div className="flex items-center gap-1">
             <img
               src={`${BASE_PATH}/sidebar/logo-proexcelencia-cap-white-80.avif`}
               alt="ProExcelencia"
@@ -223,7 +233,7 @@ export function Sidebar({
               alt=""
               className={cn(
                 "h-3.5 w-[140px] transition-[transform,opacity] duration-300",
-                collapsed && "-translate-x-96 opacity-0 hidden"
+                effectiveCollapsed && "-translate-x-96 opacity-0 hidden"
               )}
             />
           </div>
@@ -232,7 +242,7 @@ export function Sidebar({
             type="button"
             onClick={closeDrawer}
             aria-label="Cerrar menú"
-            className="flex h-8 w-8 items-center justify-center rounded-full text-gray-500 transition hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 md:hidden"
+            className="flex h-8 w-8 items-center justify-center rounded-full text-gray-500 transition hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 lg:hidden"
           >
             <svg
               className="h-5 w-5"
@@ -253,7 +263,7 @@ export function Sidebar({
         <div
           className={cn(
             "flex-1 overflow-y-auto",
-            collapsed
+            effectiveCollapsed
               ? "flex flex-col items-center gap-2 px-0 py-4"
               : "flex flex-col gap-2 px-3 py-4"
           )}
@@ -261,9 +271,11 @@ export function Sidebar({
           {sepNav.sections.map((sec, idx) => (
             <div
               key={sec.section}
-              className={cn("w-full", collapsed && "flex flex-col items-center")}
+              className={cn("w-full", effectiveCollapsed && "flex flex-col items-center")}
             >
-              {idx > 0 && <SectionSeparator label={sec.section} collapsed={collapsed} />}
+              {idx > 0 && (
+                <SectionSeparator label={sec.section} collapsed={effectiveCollapsed} />
+              )}
               <ul className="space-y-2">
                 {sec.items.map((group) => (
                   <li key={`${sec.section}/${group.label}`}>
@@ -280,11 +292,17 @@ export function Sidebar({
 }
 
 function SectionSeparator({ label, collapsed }: { label: string; collapsed?: boolean }) {
-  if (collapsed) return null;
+  if (!collapsed) {
+    return (
+      <p className="max-w-[248px] truncate px-3 pb-1 pt-2 text-xs font-medium text-gray-500 dark:text-gray-500">
+        {label}
+      </p>
+    );
+  }
   return (
-    <p className="max-w-[248px] truncate px-3 pb-1 pt-2 text-xs font-medium uppercase tracking-wide text-white/60">
-      {label}
-    </p>
+    <div className="flex w-full items-center justify-center p-1">
+      <MoreHorizontal className="h-6 w-6 text-white" />
+    </div>
   );
 }
 
@@ -346,7 +364,7 @@ function ItemGroup({
 
   // Collapse expanded groups after navigating on mobile.
   useEffect(() => {
-    if (window.innerWidth <= 768) setOpen(false);
+    if (window.matchMedia(MOBILE_QUERY).matches) setOpen(false);
   }, [pathname]);
 
   // When the sidebar is collapsed only the icon is shown. Groups without a
