@@ -25,6 +25,16 @@ const SessionContext = createContext<SessionContextValue | null>(null);
 
 const STORAGE_KEY = "sismo_session_user";
 
+// SEP origin: in the SEP-integrated deployment the sismo web is served under
+// the SEP domain and NEXT_PUBLIC_WEB_ORIGIN points at the SEP itself. The SEP
+// /api/sismo/sso endpoint mints a session for an already-signed-in SEP user.
+const SEP_ORIGIN =
+  process.env.NEXT_PUBLIC_WEB_ORIGIN?.trim() || "http://localhost:3000";
+
+function redirectToSepSso(): void {
+  window.location.href = `${SEP_ORIGIN}/api/sismo/sso`;
+}
+
 export function SessionProvider({
   initialUser,
   children,
@@ -44,16 +54,24 @@ export function SessionProvider({
     async function bootstrap() {
       if (!user) {
         const ok = await refreshSession();
-        if (ok) {
-          const me = await fetchMeClient();
-          if (me && active) setUser(me);
+        if (!ok) {
+          // Refresh died or was revoked: the SEP session is gone too, so send
+          // the user back through the SEP SSO instead of leaving a broken page.
+          redirectToSepSso();
+          return;
         }
+        const me = await fetchMeClient();
+        if (me && active) setUser(me);
       }
     }
     void bootstrap();
 
-    // Keep the short-lived access token fresh while the tab is open.
-    const interval = setInterval(() => void refreshSession(), 20 * 60 * 1000);
+    // Keep the short-lived access token fresh while the tab is open. If the
+    // refresh stops working mid-session, re-authenticate through the SEP SSO.
+    const interval = setInterval(async () => {
+      const ok = await refreshSession();
+      if (!ok) redirectToSepSso();
+    }, 20 * 60 * 1000);
 
     return () => {
       active = false;

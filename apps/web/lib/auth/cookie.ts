@@ -51,7 +51,7 @@ export function encodeSession(
 
 export type VerifyResult =
   | { ok: true; payload: SessionPayload }
-  | { ok: false; reason: "missing" | "malformed" | "bad-signature" };
+  | { ok: false; reason: "missing" | "malformed" | "bad-signature" | "expired" };
 
 export function decodeSession(value: string | undefined | null): VerifyResult {
   let failReason: string | undefined;
@@ -114,6 +114,10 @@ export function decodeSession(value: string | undefined | null): VerifyResult {
                       : null;
                 if (identity === null) {
                   failReason = "malformed";
+                } else if (typeof obj.exp !== "number" || !Number.isFinite(obj.exp)) {
+                  failReason = "malformed";
+                } else if (Date.now() / 1000 >= obj.exp) {
+                  failReason = "expired";
                 } else {
                   return {
                     ok: true,
@@ -127,5 +131,8 @@ export function decodeSession(value: string | undefined | null): VerifyResult {
       }
     }
   }
-  return { ok: false, reason: (failReason ?? "malformed") as "missing" | "malformed" | "bad-signature" };
+  return {
+    ok: false,
+    reason: (failReason ?? "malformed") as "missing" | "malformed" | "bad-signature" | "expired",
+  };
 }
