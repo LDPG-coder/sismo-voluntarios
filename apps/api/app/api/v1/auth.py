@@ -264,11 +264,14 @@ def _resolve_or_create_sep_user(
         # Link an existing account by email instead of failing with a
         # unique-email violation. This covers accounts restored from production
         # (auth_source=google, sep_user_id empty) that now log in via SEP SSO.
+        # The account becomes a SEP user so the web chrome (SEP sidebar) matches
+        # how the user is authenticating.
         user = db.execute(
             select(User).where(User.email == email.lower())
         ).scalar_one_or_none()
         if user is not None:
             user.sep_user_id = sep_user_id
+            user.auth_source = "sep"
             db.commit()
             db.refresh(user)
     if user is not None:
