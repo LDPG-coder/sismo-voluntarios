@@ -65,6 +65,16 @@ function isLinkActive(href: string, pathname: string): boolean {
   return pathname === internalPath(resolveHref(href));
 }
 
+// The "Voluntariado de Becarios" item points at the SEP SSO endpoint
+// (/api/sismo/sso), which mints the session that lands the user here. This
+// sidebar only renders inside sismo, so whenever it is visible the user is
+// inside sismo and that bridge item is the active "page".
+const SISMO_SSO_PATH = "/api/sismo/sso";
+
+function isSismoSsoHref(href: string): boolean {
+  return internalPath(resolveHref(href)) === SISMO_SSO_PATH;
+}
+
 export function Sidebar({
   open,
   onClose,
@@ -150,7 +160,7 @@ export function Sidebar({
     const rowActive =
       (group.href !== null && isLinkActive(group.href, pathname)) ||
       (hasItems
-        ? group.items!.some((sub) => isLinkActive(sub.href, pathname))
+        ? group.items!.some((sub) => isLinkActive(sub.href, pathname) || isSismoSsoHref(sub.href))
         : false);
 
     if (!hasItems && group.href !== null) {
@@ -385,7 +395,10 @@ function ItemGroup({
     return (
       <span
         title={group.label}
-        className="flex h-11 w-11 items-center justify-center rounded-md text-white/80"
+        className={cn(
+          "flex h-11 w-11 items-center justify-center rounded-md",
+          active ? "bg-white/20 text-white" : "text-white/80"
+        )}
       >
         <IconSlot icon={icon} />
       </span>
@@ -418,7 +431,7 @@ function ItemGroup({
       {isOpen && (
         <ul className="mt-1 space-y-0.5">
           {group.items!.map((sub) => {
-            const subActive = isLinkActive(sub.href, pathname);
+            const subActive = isLinkActive(sub.href, pathname) || isSismoSsoHref(sub.href);
             return (
               <li key={`${sub.label}/${sub.href}`}>
                 <a
