@@ -28,6 +28,12 @@ out/
 
 # OS
 .DS_Store
+
+# Skill registry cache
+.atl/
+
+# Local backup dumps (ad-hoc, data not code)
+infra/backups/
 Thumbs.db
 
 # Dev state
