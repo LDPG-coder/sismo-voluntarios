@@ -60,3 +60,6 @@ next-env.d.ts
 # Playwright artifacts (local runs)
 apps/web/test-results/
 apps/web/tmp/
+
+# Local agent instructions (not shared in the repo)
+AGENTS.md
