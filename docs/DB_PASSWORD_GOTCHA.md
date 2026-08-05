@@ -7,7 +7,7 @@ failed for user "sismo"`.
 
 ## Cómo funciona la contraseña (fuente de la confusión)
 
-- `infra/.env` define `SISMO_DB_PASSWORD=[REDACTED_DB_PASSWORD_LEAKED]`.
+- `infra/.env` define `SISMO_DB_PASSWORD` (el valor real vive en `infra/secrets/sismo_db_password`, que está gitignored y NO se commitea).
 - **La API NO recibe la contraseña como env var.** Se pasa como Docker secret:
   `infra/secrets/sismo_db_password` (montado en `/run/secrets/...` y exportado a
   env por `docker-entrypoint.sh`). Por eso `docker exec infra-api-1 printenv` **no**

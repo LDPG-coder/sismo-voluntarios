@@ -5,7 +5,7 @@
 - App: FastAPI (`apps/api`) + Next.js 15 (`apps/web`), Postgres + Redis.
 - Auth cookie `sismo_session` = `base64url(json).hmac_sha256(secret, encoded)`, payload `{user_id,role,status,iat,exp,jti}`; secret = `SISMO_SESSION_SECRET` (Docker secret `infra/secrets/sismo_session_secret`, 64 chars). CSRF: cookie `XSRF-TOKEN` + header `X-CSRF-Token`.
 - **Contraseña de BD (CRÍTICO — ver `docs/DB_PASSWORD_GOTCHA.md`):**
-  - `SISMO_DB_PASSWORD=[REDACTED_DB_PASSWORD_LEAKED]` (en `infra/.env`; el `#` se conserva bien).
+  - `SISMO_DB_PASSWORD` value lives in the Docker secret `infra/secrets/sismo_db_password` (and `infra/.env`), NOT in this repo. The `#` in the value must be preserved (`cut -d= -f2-`).
   - La API NO recibe la pw como env var: viene de Docker secret `infra/secrets/sismo_db_password` (montado en `/run/secrets/...`, exportado a env por `docker-entrypoint.sh`). El fallback `config.py` (`db_password="sismo"`) solo aplica si el secret no está montado.
   - Postgres rol `sismo` password DEBE coincidir exactamente con el valor del secret (también = `POSTGRES_PASSWORD`).
   - **TRAMPAS (no repetir):** (1) NUNCA `ALTER ROLE sismo WITH PASSWORD 'sismo'`. (2) NUNCA recrear postgres con `docker-compose.dev.yml` (usa `sismo_pgdata_dev` + red `sismo-dev`). Usar override estándar (`sismo_pgdata` + red `sismo`).
